@@ -57,60 +57,6 @@ def home(eth_address):
                            gremlinJournalAddress=gremlinJournalAddress,
                            gremlinJournalABI=json.dumps(gremlinJournalABI, ensure_ascii=False))
 
-# Example logging usage
-@blueprint.route('/forum')
-def forum():
-    return render_template('forum.html', 
-                           gremlinThreadABI=json.dumps(gremlinThreadABI, ensure_ascii=False),  # Avoid ASCII escaping
-                           gremlinThreadAddress=gremlinThreadAddress,
-                           gremlinAdminABI=json.dumps(gremlinAdminABI, ensure_ascii=False),  # Avoid ASCII escaping
-                           gremlinAdminAddress=gremlinAdminAddress,
-                           gremlinReplyABI=json.dumps(gremlinReplyABI, ensure_ascii=False),
-                           gremlinReplyAddress=gremlinReplyAddress)
-
-# Example logging usage
-@blueprint.route('/test')
-def test():
-    return render_template('test.html', 
-                           gremlinThreadABI=json.dumps(gremlinThreadABI, ensure_ascii=False),  # Avoid ASCII escaping
-                           gremlinThreadAddress=gremlinThreadAddress,
-                           gremlinAdminABI=json.dumps(gremlinAdminABI, ensure_ascii=False),  # Avoid ASCII escaping
-                           gremlinAdminAddress=gremlinAdminAddress,
-                           gremlinReplyABI=json.dumps(gremlinReplyABI, ensure_ascii=False),
-                           gremlinReplyAddress=gremlinReplyAddress)
-
-
-
-
-@app.route('/challenges')
-def challenges_page():
-    # Inject the ABI and contract address into the page
-    return render_template('challenge.html', abi=json.dumps(gremlinChallengeABI, ensure_ascii=False), 
-                            contract_address=gremlinChallengeAddress)
-
-@app.route('/rentals')
-def rentals():
-    return render_template('rental.html')
-
-
-@app.route('/treasury')
-def treasury():
-    # Inject the ABI and contract address into the page
-    return render_template('dao.html', abi=json.dumps(gremlinDAOABI, ensure_ascii=False), 
-                            contract_address=gremlinDAOAddress)
-
-@app.route('/manage')
-def management():
-    # Inject the ABI and contract address into the page
-    return render_template('admin.html', abi=json.dumps(gremlinAdminABI, ensure_ascii=False), 
-                            contract_address=gremlinAdminAddress)
-
-@app.route('/leaderboard')
-def leaderboard():
-    # Inject the ABI and contract address into the page
-    return render_template('leaderboard.html', abi=json.dumps(gremlinLeaderboardABI, ensure_ascii=False), 
-                            contract_address=gremlinLeaderboardAddress)
-
 
 
 @app.route('/upload', methods=['POST'])
