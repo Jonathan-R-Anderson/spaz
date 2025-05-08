@@ -21,12 +21,15 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import padding
 import base64
 
+LOG_FILE_PATH = os.path.join("logs", "app.log")
+
+
 # Set up logging
 logging.basicConfig(
     level=logging.DEBUG,  # Set to DEBUG for detailed logs
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("shared.log"),  # Specify log file
+        logging.FileHandler(LOG_FILE_PATH),  # Specify log file
         logging.StreamHandler()  # Also log to console
     ]
 )

@@ -5,11 +5,11 @@ from shared import gremlinReplyABI, gremlinReplyAddress
 from shared import allowed_file, FILE_DIR, save_whitelist
 from shared import save_blacklist, blacklist, whitelist
 from shared import app, gremlinProfileAddress, gremlinProfileABI
-from shared import client, VPN_CONFIG_DIR, VPN_TEMPLATE_PATH
-from shared import CERT_DIR, EASYRSA_DIR, WEBTORRENT_CONTAINER_URL
+from shared import client
+from shared import WEBTORRENT_CONTAINER_URL
 from shared import HMAC_SECRET_KEY, session_store, generate_ecc_key_pair
 from shared import serialize_public_key
-from shared import RTMP_URLS, DB_API_URL
+from shared import RTMP_URLS, DB_API_URL, LOG_FILE_PATH
 from shared import gremlinChallengeABI, gremlinChallengeAddress
 from shared import gremlinDAOABI, gremlinDAOAddress
 from shared import gremlinAdminABI, gremlinAdminAddress
@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.DEBUG,  # Set to DEBUG for detailed logs
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("routes.log"),  # Specify log file
+        logging.FileHandler(LOG_FILE_PATH),  # Specify log file
         logging.StreamHandler()  # Also log to console
     ]
 )
@@ -116,11 +116,13 @@ def upload_file():
 #    return send_from_directory(FILE_DIR, filename)
 
 @app.route('/css/<filename>', methods=['GET'])
-def styles(filename):
+def css(filename):
+    logging.info(f"Serving from: {os.path.join('hosted', 'css')}, file: {filename}")
     return send_from_directory(os.path.join('hosted', 'css'), filename)
 
 @app.route('/js/<filename>', methods=['GET'])
 def js(filename):
+    logging.info(f"Serving from: {os.path.join('hosted', 'css')}, file: {filename}")
     return send_from_directory(os.path.join('hosted', 'js'), filename)
 
 # Route to add to blacklist

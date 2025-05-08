@@ -1,0 +1,45 @@
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,332 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,478 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,480 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,605 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,637 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,638 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,638 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,638 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,649 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,714 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,714 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,715 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,715 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,720 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,766 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,810 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,810 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,811 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,811 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,816 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,920 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824

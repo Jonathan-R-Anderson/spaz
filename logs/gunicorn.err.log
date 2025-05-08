@@ -1,0 +1,59 @@
+[2025-05-08 23:25:39 +0000] [8] [INFO] Starting gunicorn 23.0.0
+[2025-05-08 23:25:39 +0000] [8] [INFO] Listening at: https://0.0.0.0:5000 (8)
+[2025-05-08 23:25:39 +0000] [8] [INFO] Using worker: gevent
+[2025-05-08 23:25:39 +0000] [27] [INFO] Booting worker with pid: 27
+[2025-05-08 23:25:39 +0000] [28] [INFO] Booting worker with pid: 28
+[2025-05-08 23:25:39 +0000] [29] [INFO] Booting worker with pid: 29
+[2025-05-08 23:25:39 +0000] [30] [INFO] Booting worker with pid: 30
+[2025-05-08 23:25:39 +0000] [31] [INFO] Booting worker with pid: 31
+[2025-05-08 23:25:39 +0000] [32] [INFO] Booting worker with pid: 32
+[2025-05-08 23:25:39 +0000] [33] [INFO] Booting worker with pid: 33
+[2025-05-08 23:25:39 +0000] [34] [INFO] Booting worker with pid: 34
+[2025-05-08 23:25:39 +0000] [35] [INFO] Booting worker with pid: 35
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,314 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,332 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,467 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,468 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,478 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,480 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,598 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,605 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,637 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,638 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,638 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,638 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,649 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,714 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,714 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,715 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,715 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,720 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,761 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,766 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,810 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,810 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,811 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,811 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,816 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - Trying paths: ['/root/.docker/config.json', '/root/.dockercfg']
+2025-05-08 23:25:40,915 - docker.utils.config - DEBUG - No config file found
+2025-05-08 23:25:40,920 - urllib3.connectionpool - DEBUG - http://localhost:None "GET /version HTTP/11" 200 824
+[2025-05-08 23:31:27 +0000] [8] [INFO] Handling signal: term
+[2025-05-08 23:31:27 +0000] [35] [INFO] Worker exiting (pid: 35)

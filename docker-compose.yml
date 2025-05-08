@@ -10,6 +10,7 @@ services:
     volumes:
       - hls_data:/app/static  # Shared volume
       - /var/run/docker.sock:/var/run/docker.sock  # Allow Docker management
+      - ./logs:/app/logs
     environment:
       - FLASK_ENV=development
     ports:
@@ -37,6 +38,7 @@ services:
       - profile_db
     volumes:
       - hls_data:/app/static  # Shared volume
+      - ./logs:/app/logs
     network_mode: host  # Use host network
     logging:
       driver: "json-file"
@@ -61,7 +63,8 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
-
+    volumes:
+      - ./logs:/app/logs
 
   rtmp:
     build:
@@ -74,6 +77,7 @@ services:
       - "8080:8080"
     volumes:
       - hls_data:/app/static
+      - ./logs:/app/logs
     depends_on:
       - profile_db
     network_mode: host  # Use host network

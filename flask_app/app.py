@@ -1,13 +1,10 @@
 import logging
 import os
 import threading
-from shared import app, FILE_DIR
+from shared import app, FILE_DIR, LOG_FILE_PATH
 from blueprints.routes import blueprint
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_cors import CORS
-
-# Ensure logging is configured before any logging call
-LOG_FILE_PATH = "app.log"
 
 # Setup logging
 logging.basicConfig(
