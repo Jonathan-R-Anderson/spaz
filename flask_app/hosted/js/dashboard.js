@@ -1,6 +1,52 @@
 let web3;
 let gremlinLeaderboard;
 
+
+  // Simulate viewer count updating
+  setInterval(() => {
+    const count = Math.floor(Math.random() * 100);
+    document.getElementById('viewerCount').textContent = count;
+  }, 5000);
+
+  // Stream Key Management
+  function generateNewKey() {
+    const newKey = 'sk_live_' + Math.random().toString(36).substring(2, 18);
+    document.getElementById('streamKey').value = newKey;
+  }
+
+  function updateKey() {
+    const key = document.getElementById('streamKey').value;
+    alert('Stream key updated to: ' + key);
+    // Send update to backend if connected
+  }
+
+  // Chat Messaging
+  function sendChat() {
+    const chatBox = document.getElementById('chatLog');
+    const msg = document.getElementById('chatInput').value;
+    if (msg.trim() === '') return;
+    const user = document.getElementById('username').textContent;
+    const newMsg = document.createElement('div');
+    newMsg.textContent = `${user}: ${msg}`;
+    chatBox.appendChild(newMsg);
+    document.getElementById('chatInput').value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // Moderator Handling
+  function addModerator() {
+    const address = document.getElementById('modInput').value;
+    if (!address.startsWith('0x')) {
+      alert('Invalid address');
+      return;
+    }
+    const li = document.createElement('li');
+    li.textContent = address;
+    document.getElementById('modList').appendChild(li);
+    document.getElementById('modInput').value = '';
+  }
+
+
 window.onload = async function() {
     document.body.appendChild(profilePopup);
     console.log("Window loaded.");
