@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="challenge-container">
+    <h1>Challenges</h1>
+
+    <!-- List of existing challenges -->
+    <div id="challenges-list">
+        <h2>Active Challenges</h2>
+        <ul id="challenge-list-items">
+            <!-- List items will be dynamically populated here -->
+        </ul>
+    </div>
+
+    <!-- Form to create a new challenge -->
+    <div id="create-challenge">
+        <h2>Create New Challenge</h2>
+        <form id="challenge-form">
+            <label for="category">Category:</label>
+            <select id="category">
+                <option value="machine-learning">Machine Learning</option>
+                <option value="hacking">Hacking</option>
+                <option value="coding">Coding</option>
+            </select>
+
+            <label for="overview">Overview:</label>
+            <textarea id="overview" required></textarea>
+
+            <label for="data">Data Magnet URL:</label>
+            <input type="text" id="data" required placeholder="magnet:?xt=urn:btih:..." oninput="validateMagnetUrl()">
+
+            <label for="rules">Rules:</label>
+            <textarea id="rules" required></textarea>
+
+            <label for="prize">Prize (ETH):</label>
+            <input type="number" id="prize" step="0.01" required>
+
+            <label for="duration">Duration (Days):</label>
+            <input type="number" id="duration" min="1" max="30" required>
+
+            <button type="submit" disabled id="submit-challenge-btn">Create Challenge</button>
+        </form>
+    </div>
+
+    <!-- Form to submit a model URL (only for participants) -->
+    <div id="submit-model" style="display:none;">
+        <h2>Submit Your Model</h2>
+        <form id="model-form">
+            <label for="model-url">Model Magnet URL:</label>
+            <input type="text" id="model-url" required placeholder="magnet:?xt=urn:btih:..." oninput="validateMagnetUrl()">
+            <button type="submit">Submit Model</button>
+        </form>
+    </div>
+
+    <!-- Search bar and sort dropdown -->
+    <div>
+        <input type="text" id="search-bar" placeholder="Search challenges" oninput="searchChallenges()">
+        <select id="sort-dropdown" onchange="sortChallenges()">
+            <option value="category">Category</option>
+            <option value="prize">Prize</option>
+            <option value="duration">Duration</option>
+        </select>
+    </div>
+
+    <!-- Challenges list -->
+    <div id="challenge-list">
+        <!-- Dynamically populated list of challenges -->
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@1.3.0/dist/web3.min.js"></script>
+<script>
+    const abi = {{ abi|safe }};
+    const contractAddress = "{{ contract_address }}";
+
+    let challenges = [];
+
+    async function loadChallenges() {
+        if (typeof window.ethereum !== 'undefined') {
+            const web3 = new Web3(window.ethereum);
+            await window.ethereum.enable(); // Request account access
+            const contract = new web3.eth.Contract(abi, contractAddress);
+
+            // Assuming the smart contract has a `getChallenges` function that returns the list of challenges
+            const totalChallenges = await contract.methods.getChallenges().call();
+
+            // Fetch details for each challenge
+            for (let i = 0; i < totalChallenges.length; i++) {
+                const details = await contract.methods.getChallengeDetails(i).call();
+                challenges.push(details);
+            }
+
+            displayChallenges(challenges);
+        } else {
+            alert('Ethereum provider not found! Install MetaMask.');
+        }
+    }
+
+    // Display challenges in the challenge-list div
+    function displayChallenges(challenges) {
+        const list = document.getElementById("challenge-list");
+        list.innerHTML = '';  // Clear the list
+
+        challenges.forEach((challenge, index) => {
+            const challengeItem = document.createElement('div');
+            challengeItem.classList.add('challenge-item');
+            challengeItem.innerHTML = `
+                <h3>${challenge.category}</h3>
+                <p>${challenge.overview}</p>
+                <p>Prize: ${challenge.prize} ETH</p>
+                <p>Duration: ${challenge.duration} days</p>
+                <button onclick="showModelForm(${index})">Submit Model</button>
+            `;
+            list.appendChild(challengeItem);
+        });
+    }
+
+    // Search challenges by category or overview
+    function searchChallenges() {
+        const searchTerm = document.getElementById("search-bar").value.toLowerCase();
+        const filteredChallenges = challenges.filter(challenge =>
+            challenge.category.toLowerCase().includes(searchTerm) ||
+            challenge.overview.toLowerCase().includes(searchTerm)
+        );
+        displayChallenges(filteredChallenges);
+    }
+
+    // Sort challenges based on the selected dropdown option
+    function sortChallenges() {
+        const sortBy = document.getElementById("sort-dropdown").value;
+
+        let sortedChallenges;
+        if (sortBy === "category") {
+            sortedChallenges = challenges.sort((a, b) => a.category.localeCompare(b.category));
+        } else if (sortBy === "prize") {
+            sortedChallenges = challenges.sort((a, b) => b.prize - a.prize);
+        } else if (sortBy === "duration") {
+            sortedChallenges = challenges.sort((a, b) => b.duration - a.duration);
+        }
+
+        displayChallenges(sortedChallenges);
+    }
+
+    // Handle challenge creation
+    document.getElementById("challenge-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const category = document.getElementById("category").value;
+        const overview = document.getElementById("overview").value;
+        const data = document.getElementById("data").value;
+        const rules = document.getElementById("rules").value;
+        const prize = document.getElementById("prize").value;
+        const duration = document.getElementById("duration").value;
+
+        if (typeof window.ethereum !== 'undefined') {
+            const web3 = new Web3(window.ethereum);
+            const accounts = await web3.eth.getAccounts();
+            const contract = new web3.eth.Contract(abi, contractAddress);
+
+            // Assuming the contract has a `createChallenge` method that accepts these parameters
+            try {
+                await contract.methods.createChallenge(category, overview, data, rules, prize, duration).send({ from: accounts[0], value: web3.utils.toWei(prize, 'ether') });
+                alert("Challenge created successfully!");
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                alert("Failed to create challenge.");
+            }
+        } else {
+            alert('Ethereum provider not found! Install MetaMask.');
+        }
+    });
+
+    // Handle model submission for participants
+    document.getElementById("model-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const modelURL = document.getElementById("model-url").value;
+        const challengeId = document.getElementById("model-form").dataset.challengeId;
+
+        if (typeof window.ethereum !== 'undefined') {
+            const web3 = new Web3(window.ethereum);
+            const accounts = await web3.eth.getAccounts();
+            const contract = new web3.eth.Contract(abi, contractAddress);
+
+            // Assuming the contract has a `submitModel` method that accepts the challengeId and model URL
+            try {
+                await contract.methods.submitModel(challengeId, modelURL).send({ from: accounts[0] });
+                alert("Model submitted successfully!");
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+                alert("Failed to submit model.");
+            }
+        } else {
+            alert('Ethereum provider not found! Install MetaMask.');
+        }
+    });
+
+    // Function to show model submission form for the specific challenge
+    function showModelForm(challengeId) {
+        document.getElementById("submit-model").style.display = "block";
+        document.getElementById("model-form").dataset.challengeId = challengeId;
+    }
+
+    // Validate magnet URL format for Data URL and Model URL inputs
+    function validateMagnetUrl() {
+        const dataUrlInput = document.getElementById('data');
+        const modelUrlInput = document.getElementById('model-url');
+        const magnetRegex = /^magnet:\?xt=urn:btih:[a-zA-Z0-9]{40,}.*$/;
+
+        const isValidDataUrl = magnetRegex.test(dataUrlInput.value);
+        const isValidModelUrl = modelUrlInput ? magnetRegex.test(modelUrlInput.value) : true;
+
+        const submitButton = document.getElementById('submit-challenge-btn');
+        
+        if (isValidDataUrl && isValidModelUrl) {
+            submitButton.disabled = false;
+        } else {
+            submitButton.disabled = true;
+            if (!isValidDataUrl) {
+                dataUrlInput.setCustomValidity("Please enter a valid magnet URL.");
+            } else {
+                dataUrlInput.setCustomValidity("");
+            }
+        }
+    }
+
+    // Load challenges when the page is ready
+    window.onload = function() {
+        loadChallenges();
+    };
+</script>
+
+<style>
+    /* Apply the theme styling */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f0f0f0;
+    }
+
+    #challenge-container {
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+        color: #333;
+    }
+
+    #challenges-list, #create-challenge, #submit-model {
+        margin-bottom: 20px;
+    }
+
+    .challenge-item {
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    #search-bar, select, input, textarea, button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .navbar {
+        padding: 10px;
+        background-color: #333;
+        color: white;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    #create-challenge, #submit-model {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
+
+    #submit-model {
+        display: none;
+    }
+</style>
+
+{% endblock %}

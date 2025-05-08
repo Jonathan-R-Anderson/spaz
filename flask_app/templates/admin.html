@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="dao-admin-container">
+    <h1>Gremlin Admin Management</h1>
+
+    <!-- Treasury Address Section -->
+    <div id="dao-treasury">
+        <h2>Treasury Address Management</h2>
+        <p>Current Treasury Address: <span id="treasury-address">Loading...</span></p>
+        <form id="update-treasury-form">
+            <label for="new-treasury-address">New Treasury Address:</label>
+            <input type="text" id="new-treasury-address" placeholder="Enter new treasury address" required>
+            <button type="submit">Update Treasury Address</button>
+        </form>
+    </div>
+
+    <!-- Admin Management Section -->
+    <div id="admin-management">
+        <h2>Manage Admins</h2>
+        <form id="add-admin-form">
+            <label for="admin-address">Admin Address:</label>
+            <input type="text" id="admin-address" placeholder="Enter admin address" required>
+            <label for="can-manage-threads">Can Manage Threads:</label>
+            <input type="checkbox" id="can-manage-threads">
+            <label for="can-manage-replies">Can Manage Replies:</label>
+            <input type="checkbox" id="can-manage-replies">
+            <label for="can-manage-tax">Can Manage Tax:</label>
+            <input type="checkbox" id="can-manage-tax">
+            <label for="can-manage-treasury">Can Manage Treasury:</label>
+            <input type="checkbox" id="can-manage-treasury">
+            <button type="submit">Add Admin</button>
+        </form>
+
+        <h3>Current Admins</h3>
+        <ul id="admin-list">
+            <!-- Admins will be populated here -->
+        </ul>
+    </div>
+
+    <!-- Global Tax Management -->
+    <div id="global-tax">
+        <h2>Global Tax Management</h2>
+        <p>Current Tax Percentage: <span id="current-tax">Loading...</span></p>
+        <form id="update-tax-form">
+            <label for="new-tax">Set New Tax Percentage:</label>
+            <input type="number" id="new-tax" min="0" max="100" required>
+            <button type="submit">Update Tax</button>
+        </form>
+    </div>
+
+    <!-- Thread/Reply Management -->
+    <div id="thread-reply-management">
+        <h2>Thread/Reply Management</h2>
+        <form id="manage-thread-form">
+            <label for="thread-id">Thread ID to Manage:</label>
+            <input type="number" id="thread-id" required>
+            <button type="button" onclick="blacklistThread()">Blacklist Thread</button>
+            <button type="button" onclick="whitelistThread()">Whitelist Thread</button>
+            <button type="button" onclick="deleteThread()">Delete Thread</button>
+        </form>
+        <form id="manage-reply-form">
+            <label for="reply-id">Reply ID to Manage:</label>
+            <input type="number" id="reply-id" required>
+            <button type="button" onclick="blacklistReply()">Blacklist Reply</button>
+            <button type="button" onclick="whitelistReply()">Whitelist Reply</button>
+            <button type="button" onclick="deleteReply()">Delete Reply</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@1.3.0/dist/web3.min.js"></script>
+<script>
+    const gremlinAdminABI = {{ gremlinAdminABI|safe }};
+    const contractAddress = "{{ contract_address }}";
+    let adminContract;
+    let currentAccount;
+
+    // Initialize Web3
+    async function initializeWeb3() {
+        if (typeof window.ethereum !== 'undefined') {
+            const web3 = new Web3(window.ethereum);
+            await window.ethereum.enable();
+            currentAccount = (await web3.eth.getAccounts())[0];
+
+            adminContract = new web3.eth.Contract(gremlinAdminABI, contractAddress);
+
+            // Load initial values
+            loadAdmins();
+            loadTreasuryAddress();
+            loadGlobalTax();
+        } else {
+            alert('Ethereum provider not found. Please install MetaMask.');
+        }
+    }
+
+    // Load admins
+    async function loadAdmins() {
+        const adminCount = await adminContract.methods.adminCount().call();
+        const adminList = document.getElementById('admin-list');
+        adminList.innerHTML = '';
+
+        for (let i = 0; i < adminCount; i++) {
+            const adminAddress = await adminContract.methods.adminAddresses(i).call();
+            adminList.innerHTML += `<li>${adminAddress} <button onclick="removeAdmin('${adminAddress}')">Remove</button></li>`;
+        }
+    }
+
+    // Add a new admin
+    document.getElementById("add-admin-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const address = document.getElementById('admin-address').value;
+        const canManageThreads = document.getElementById('can-manage-threads').checked;
+        const canManageReplies = document.getElementById('can-manage-replies').checked;
+        const canManageTax = document.getElementById('can-manage-tax').checked;
+        const canManageTreasury = document.getElementById('can-manage-treasury').checked;
+
+        try {
+            await adminContract.methods.addAdmin(address, canManageThreads, canManageReplies, canManageTax, canManageTreasury)
+                .send({ from: currentAccount });
+            alert('Admin added successfully!');
+            loadAdmins();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to add admin.');
+        }
+    });
+
+    // Remove an admin
+    async function removeAdmin(address) {
+        try {
+            await adminContract.methods.removeAdmin(address).send({ from: currentAccount });
+            alert('Admin removed successfully!');
+            loadAdmins();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to remove admin.');
+        }
+    }
+
+    // Load the current treasury address
+    async function loadTreasuryAddress() {
+        const treasuryAddress = await adminContract.methods.treasuryAddress().call();
+        document.getElementById('treasury-address').innerText = treasuryAddress;
+    }
+
+    // Update treasury address
+    document.getElementById("update-treasury-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const newAddress = document.getElementById('new-treasury-address').value;
+
+        try {
+            await adminContract.methods.setTreasuryAddress(newAddress).send({ from: currentAccount });
+            alert('Treasury address updated successfully!');
+            loadTreasuryAddress();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update treasury address.');
+        }
+    });
+
+    // Load the global tax percentage
+    async function loadGlobalTax() {
+        const tax = await adminContract.methods.globalTax().call();
+        document.getElementById('current-tax').innerText = tax + "%";
+    }
+
+    // Update global tax percentage
+    document.getElementById("update-tax-form").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const newTax = document.getElementById('new-tax').value;
+
+        try {
+            await adminContract.methods.setGlobalTax(newTax).send({ from: currentAccount });
+            alert('Global tax updated successfully!');
+            loadGlobalTax();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update global tax.');
+        }
+    });
+
+    // Thread and Reply Management
+    async function blacklistThread() {
+        const threadId = document.getElementById('thread-id').value;
+        await adminContract.methods.blacklistThread(threadId).send({ from: currentAccount });
+        alert('Thread blacklisted successfully!');
+    }
+
+    async function whitelistThread() {
+        const threadId = document.getElementById('thread-id').value;
+        await adminContract.methods.whitelistThread(threadId).send({ from: currentAccount });
+        alert('Thread whitelisted successfully!');
+    }
+
+    async function deleteThread() {
+        const threadId = document.getElementById('thread-id').value;
+        await adminContract.methods.deleteThread(threadId).send({ from: currentAccount });
+        alert('Thread deleted successfully!');
+    }
+
+    async function blacklistReply() {
+        const replyId = document.getElementById('reply-id').value;
+        await adminContract.methods.blacklistReply(replyId).send({ from: currentAccount });
+        alert('Reply blacklisted successfully!');
+    }
+
+    async function whitelistReply() {
+        const replyId = document.getElementById('reply-id').value;
+        await adminContract.methods.whitelistReply(replyId).send({ from: currentAccount });
+        alert('Reply whitelisted successfully!');
+    }
+
+    async function deleteReply() {
+        const replyId = document.getElementById('reply-id').value;
+        await adminContract.methods.deleteReply(replyId).send({ from: currentAccount });
+        alert('Reply deleted successfully!');
+    }
+
+    // Initialize the page
+    window.onload = function() {
+        initializeWeb3();
+    };
+</script>
+
+<style>
+    /* Apply theme styling */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f0f0f0;
+    }
+
+    #dao-admin-container {
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2, h3 {
+        color: #333;
+    }
+
+    #admin-management, #dao-treasury, #global-tax, #thread-reply-management {
+        margin-bottom: 20px;
+    }
+
+    input, button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+{% endblock %}

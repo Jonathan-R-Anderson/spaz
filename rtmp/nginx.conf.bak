@@ -1,0 +1,77 @@
+load_module modules/ngx_rtmp_module.so;
+
+user www-data;
+worker_processes auto;
+
+events {
+    worker_connections 1024;
+}
+
+# HTTP server for proxying to Flask API and handling HTTPS
+http {
+    upstream api {
+        server 127.0.0.1:5004;
+    }
+
+    # Use the map directive here, at the HTTP level (not inside RTMP)
+    map $arg_name $eth_address {
+        "~^(0x[a-fA-F0-9]{40})" $1;
+    }
+
+    server {
+        listen 8080;
+        server_name gremlin.codes;
+
+        location / {
+            proxy_pass http://127.0.0.1:5004;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Serve HLS video files
+        location /hls/ {
+            types {
+                application/vnd.apple.mpegurl m3u8;
+                video/mp2t ts;
+            }
+            root /app/static/;
+            add_header Cache-Control no-cache;
+        }
+    }
+}
+
+# RTMP configuration
+rtmp {
+    server {
+        listen 1935;  # RTMP port for streaming
+        chunk_size 4096;
+
+        application live {
+            live on;
+
+            # HLS configuration
+            hls on;  # Enable HLS streaming
+            hls_path /app/static/hls/;  # Directory to save HLS segments
+            hls_fragment 5s;  # Duration of each HLS segment
+            hls_playlist_length 60s;  # Length of the playlist (in seconds)
+            hls_continuous on;  # Continue writing into the same playlist
+
+            # Optional: record the stream to HLS chunks, if needed
+            hls_cleanup on;  # Clean up old HLS files
+            hls_fragment_naming system;  # Use system timestamp for fragment naming
+            hls_type live;  # Set HLS to live mode
+
+            # URL to authorize stream publish requests
+            on_publish http://localhost:5004/verify_secret;
+
+            # Called when a stream stops
+            on_publish_done http://localhost:5003/on_publish_done/$arg_name;
+
+            # Allow publishing and playing
+            allow publish all;
+            allow play all;
+        }
+    }
+}

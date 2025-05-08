@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masonry Comments Grid</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f8f8;
+            overflow: hidden; /* Disable vertical scrolling */
+        }
+
+        .comments-grid-container {
+            width: 800px; /* Fixed width for 4 columns */
+            height: 660px; /* Fixed height for 4 rows */
+            overflow-x: auto; /* Horizontal scrolling */
+            overflow-y: hidden; /* No vertical scrolling */
+            display: flex;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            border-radius: 8px;
+            scrollbar-width: thin; /* Firefox scrollbar styling */
+            scrollbar-color: #888 #f0f0f0; /* Thumb and track colors */
+        }
+
+        /* Scrollbar styling for Webkit-based browsers */
+        .comments-grid-container::-webkit-scrollbar {
+            height: 12px; /* Horizontal scrollbar height */
+        }
+        .comments-grid-container::-webkit-scrollbar-thumb {
+            background: #888; /* Scrollbar thumb color */
+            border-radius: 6px;
+        }
+        .comments-grid-container::-webkit-scrollbar-thumb:hover {
+            background: #555; /* Hover color */
+        }
+        .comments-grid-container::-webkit-scrollbar-track {
+            background: #f0f0f0; /* Scrollbar track color */
+        }
+
+        .comments-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 200px); /* 4 columns */
+            grid-template-rows: repeat(4, 150px); /* 4 rows */
+            gap: 10px;
+        }
+
+        .comment-tile {
+            width: 200px;
+            height: 150px;
+            perspective: 1000px;
+        }
+
+        .tile-inner {
+            width: 100%;
+            height: 100%;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+
+        .tile-inner:hover {
+            transform: rotateY(180deg); /* Flip on hover */
+        }
+
+        .tile-front, .tile-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .tile-front {
+            background-color: #add8e6;
+        }
+
+        .tile-back {
+            background-color: #ffcccb;
+            transform: rotateY(180deg);
+        }
+
+        .comment-text {
+            font-size: 14px;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tile-back .comment-text {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="position: absolute; top: 20px; width: 100%; text-align: center;">Masonry-Style Comments Grid</h1>
+    <div class="comments-grid-container" id="commentsGridContainer">
+        <!-- Dynamic grid pages will be injected here -->
+    </div>
+
+    <script>
+        // Generate a large dataset for testing
+        const comments = [];
+        for (let i = 1; i <= 100; i++) {
+            comments.push({
+                id: i,
+                content: `This is comment number ${i}. It is a test comment for the grid layout. It can be long or short to test dynamic layouts.`
+            });
+        }
+
+        function renderCommentsGrid(comments, maxColumns = 4, maxRows = 4) {
+            const container = document.getElementById("commentsGridContainer");
+            container.innerHTML = ""; // Clear existing content
+
+            const maxVisibleCells = maxColumns * maxRows;
+            let currentGrid = createNewGrid();
+            container.appendChild(currentGrid);
+
+            comments.forEach((comment, index) => {
+                if (index > 0 && index % maxVisibleCells === 0) {
+                    // Create a new grid if we exceed the max visible cells
+                    currentGrid = createNewGrid();
+                    container.appendChild(currentGrid);
+                }
+
+                const tile = createCommentTile(comment);
+                currentGrid.appendChild(tile);
+            });
+
+            // Adjust the container width if the number of grids fits within the viewport
+            container.style.width = `${container.children.length * 800}px`; // Width adjusts for the number of grids
+        }
+
+        function createNewGrid() {
+            const grid = document.createElement("div");
+            grid.className = "comments-grid";
+            return grid;
+        }
+
+        function createCommentTile(comment) {
+            const tile = document.createElement("div");
+            tile.className = "comment-tile";
+
+            const innerTile = document.createElement("div");
+            innerTile.className = "tile-inner";
+
+            const front = document.createElement("div");
+            front.className = "tile-front";
+            const frontText = document.createElement("div");
+            frontText.className = "comment-text";
+            frontText.textContent = comment.content.slice(0, 50) + "..."; // Display part of the content
+            front.appendChild(frontText);
+
+            const back = document.createElement("div");
+            back.className = "tile-back";
+            const backText = document.createElement("div");
+            backText.className = "comment-text";
+            backText.textContent = comment.content; // Display full content on hover
+            back.appendChild(backText);
+
+            innerTile.appendChild(front);
+            innerTile.appendChild(back);
+            tile.appendChild(innerTile);
+
+            return tile;
+        }
+
+        // Initialize the comments grid
+        renderCommentsGrid(comments);
+    </script>
+</body>
+</html>

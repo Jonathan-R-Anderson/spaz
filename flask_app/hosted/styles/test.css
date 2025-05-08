@@ -1,0 +1,361 @@
+/* General Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    position: relative;
+    overflow-x: hidden; /* Prevent horizontal scrollbars */
+    overflow-y: auto; /* Allow vertical scrolling */
+}
+
+#status {
+    margin-top: 20px;
+    color: #555;
+}
+
+/* Thread Container */
+.thread-container {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #444;
+    background-color: #1A1A1A;
+    border-radius: 10px;
+    position: relative;
+    overflow: visible; /* Ensure content inside is visible */
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping to new lines */
+    justify-content: space-between; /* Space between tree and grid */
+    align-items: flex-start; /* Align content to the top */
+    gap: 20px; /* Add spacing between elements */
+}
+
+#tree-container {
+    width: 100%;
+    height: 600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: #121212;
+}
+
+.word-cloud-tooltip {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    pointer-events: none; /* Ensures the tooltip doesn't block mouse events */
+    z-index: 10;
+}
+
+#tree-container svg {
+    width: 100%; /* Make the SVG responsive */
+    height: 100%; /* Adjust height proportionally */
+    max-width: 100%; /* Ensure SVG does not grow larger than its container */
+    max-height: 100%; /* Ensure SVG does not overflow vertically */
+}
+
+.masonry-grid {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    overflow-x: auto; /* Enable horizontal scrolling */
+    gap: 10px; /* Add spacing between grid items */
+    padding: 10px;
+    width: 100%; /* Ensure it occupies the rest of the container */
+    height: 300px; /* Set height for consistent appearance */
+    box-sizing: border-box; /* Include padding in dimensions */
+}
+
+
+.thread-container img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Comments Container */
+.comments-container {
+    display: block; /* Ensure visibility */
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #1A1A1A; /* Dark background for contrast */
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #ffffff;
+    overflow-y: auto; /* Allow vertical scrolling */
+    max-height: 300px; /* Limit height */
+    position: relative;
+}
+
+/* Individual Comment */
+.comment {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #0DC5C1; /* Light teal background for comments */
+    color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding: 100px 40px;
+    color: #ffffff;
+    position: relative;
+    z-index: 1;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+}
+
+.hero button {
+    padding: 15px 30px;
+    background-color: #0DC5C1;
+    border: none;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    transition: background-color 0.3s;
+}
+
+.hero button:hover {
+    background-color: #0FB5B1;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.tag {
+    padding: 5px 10px;
+    background-color: #0DC5C1;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Comments Grid */
+.comments-grid-container {
+    display: none; /* Hidden by default */
+    width: 100%;
+    height: 200px;
+    overflow-x: auto; /* Horizontal scrolling */
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    scrollbar-width: thin; /* Firefox styling */
+    scrollbar-color: #888 #f0f0f0; /* Scrollbar colors */
+}
+
+.comments-grid-container::-webkit-scrollbar {
+    height: 12px; /* Scrollbar height */
+}
+
+.comments-grid-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 6px;
+}
+
+.comments-grid-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.comments-grid-container::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.comments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 200px); /* Dynamic columns */
+    grid-auto-rows: 150px; /* Fixed row height */
+    gap: 10px;
+}
+
+.comment-tile {
+    flex-shrink: 0; /* Prevent tiles from shrinking */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background-color: #f4f4f4;
+    overflow: hidden;
+}
+
+#overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent */
+    z-index: 10000;
+    overflow-y: auto;
+}
+
+#overlayContent {
+    position: relative;
+    margin: 50px auto;
+    padding: 20px;
+    width: 60%;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+#closeOverlayBtn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: red;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.eth-address {
+    color: #007bff; 
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.eth-address:hover {
+    text-decoration: underline;
+}
+
+.thread-container p {
+    margin: 5px 0;
+}
+
+a {
+    color: #0DC5C1;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+#closeOverlayBtn:hover {
+    background-color: darkred;
+}
+
+.tile-inner {
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+}
+
+.tile-inner:hover {
+    transform: rotateY(180deg);
+}
+
+.tile-front, .tile-back {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    text-align: center;
+}
+
+.tile-front {
+    background-color: #add8e6;
+}
+
+.tile-back {
+    background-color: #ffcccb;
+    transform: rotateY(180deg);
+}
+
+/* Scrollbar Styling */
+.comments-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.comments-container::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+
+.comments-container::-webkit-scrollbar-track {
+    background-color: #222;
+}
+
+/* Animations */
+.comment.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.fade-out {
+    animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.comment-tile {
+    transition: transform 0.5s, box-shadow 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.comment-tile:hover {
+    background-color: #f0f0f0;
+    transform: scale(1.05);
+    transition: 0.3s ease-in-out;
+}
+
+
+#commentOverlay {
+    display: none;
+}
+
+.comment-text {
+    font-size: 14px;
+    color: #333;
+    word-wrap: break-word;
+}

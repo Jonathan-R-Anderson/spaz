@@ -1,0 +1,4 @@
+Flask
+redis
+psycopg2-binary
+Flask-SQLAlchemy

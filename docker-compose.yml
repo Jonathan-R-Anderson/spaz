@@ -1,0 +1,88 @@
+version: '3'
+
+services:
+
+  flask_app:
+    build:
+      context: ./flask_app
+      args:
+        - DOCKER_BUILDKIT=0  # Disables BuildKit
+    volumes:
+      - hls_data:/app/static  # Shared volume
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow Docker management
+    environment:
+      - FLASK_ENV=development
+    ports:
+      - "5000:5000"
+      - "443:443"
+      - "80:80"
+      - "3000:3000"
+    network_mode: host  # Use host network
+    command: > 
+      supervisord -c /app/supervisord.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  webtorrent_seeder:
+    build:
+      context: ./webtorrent
+      args:
+        - DOCKER_BUILDKIT=0  # Disables BuildKit
+    ports:
+      - "5002:5002"
+    depends_on:
+      - profile_db
+    volumes:
+      - hls_data:/app/static  # Shared volume
+    network_mode: host  # Use host network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  profile_db:
+    build:
+      context: ./profile_db
+      args:
+        - DOCKER_BUILDKIT=0  # Disables BuildKit
+    ports:
+      - "5003:5003"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=rtmp_db
+    network_mode: host  # Use host network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+
+  rtmp:
+    build:
+      context: ./rtmp
+      args:
+        - DOCKER_BUILDKIT=0  # Disables BuildKit
+    ports:
+      - "1935:1935"
+      - "5004:5004"
+      - "8080:8080"
+    volumes:
+      - hls_data:/app/static
+    depends_on:
+      - profile_db
+    network_mode: host  # Use host network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+volumes:
+  hls_data:
+    driver: local

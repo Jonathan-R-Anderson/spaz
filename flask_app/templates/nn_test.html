@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Neural Network Visualizer with Data Flow</title>
+  <style>
+    #dashboard {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80vh;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .node {
+      fill: #3498db;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .node:hover {
+      transform: scale(1.2);
+    }
+    .link {
+      stroke: #95a5a6;
+      stroke-width: 2px;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .histogram {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .histogram svg {
+      border: 1px solid #ccc;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <input type="file" id="fileInput" accept=".csv" />
+    <button onclick="processData()">Process Data</button>
+  </div>
+  <div id="dashboard"></div>
+  <div class="histogram" id="histograms"></div>
+
+  <!-- D3.js Library -->
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script>
+    let nodes = [];
+    let layerCounts = [3, 5, 4, 2]; // Layers with node counts per layer
+    const layerSpacing = 200; // Space between layers
+    let data = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const svgWidth = 1200;
+      const svgHeight = 600;
+
+      const svg = d3.select("#dashboard")
+                    .append("svg")
+                    .attr("width", svgWidth)
+                    .attr("height", svgHeight)
+                    .call(d3.zoom().scaleExtent([0.5, 2]).on("zoom", (event) => {
+                      svgGroup.attr("transform", event.transform);
+                    }));
+
+      // Create a group inside the SVG for zooming and panning
+      const svgGroup = svg.append("g");
+
+      // Store nodes and links
+      const links = [];
+
+      // Create nodes and add them to the nodes array
+      layerCounts.forEach((nodeCount, layerIdx) => {
+        const x = (layerIdx + 1) * layerSpacing;
+        const nodeSpacing = svgHeight / (nodeCount + 1);
+
+        for (let i = 0; i < nodeCount; i++) {
+          const y = i * nodeSpacing - svgHeight / 2 + nodeSpacing;
+          nodes.push({ x, y, layer: layerIdx });
+        }
+      });
+
+      // Create links and add them to the links array
+      for (let i = 0; i < layerCounts.length - 1; i++) {
+        const currentLayerNodes = nodes.filter(node => node.layer === i);
+        const nextLayerNodes = nodes.filter(node => node.layer === i + 1);
+        
+        currentLayerNodes.forEach((source) => {
+          nextLayerNodes.forEach((target) => {
+            links.push({ source, target });
+          });
+        });
+      }
+
+      // Render links
+      const linkElements = svgGroup.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("class", "link")
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      // Render nodes
+      const nodeElements = svgGroup.selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("circle")
+        .attr("class", "node")
+        .attr("r", 15)
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .call(d3.drag()
+          .on("start", dragStarted)
+          .on("drag", dragged)
+          .on("end", dragEnded));
+
+      // Drag functions
+      function dragStarted(event, d) {
+        d3.select(this).raise().attr("stroke", "black");
+      }
+
+      function dragged(event, d) {
+        d.x = event.x;
+        d.y = event.y;
+        d3.select(this)
+          .attr("cx", d.x)
+          .attr("cy", d.y);
+        updateLinks();
+      }
+
+      function dragEnded(event, d) {
+        d3.select(this).attr("stroke", null);
+      }
+
+      // Update link positions based on node positions
+      function updateLinks() {
+        linkElements
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+      }
+    });
+
+    // Handle file upload
+    document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const text = e.target.result;
+          data = d3.csvParseRows(text).map(row => row.map(Number));
+          alert('Data uploaded successfully!');
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    function processData() {
+      if (data.length === 0) {
+        alert("Please upload a dataset first.");
+        return;
+      }
+
+      const histogramContainer = document.getElementById("histograms");
+      histogramContainer.innerHTML = ''; // Clear previous histograms
+
+      layerCounts.forEach((_, layerIdx) => {
+        const layerData = data.map(row => row[layerIdx % row.length]); // Example transformation
+        drawHistogram(layerData, `Layer ${layerIdx + 1}`);
+      });
+    }
+
+    function drawHistogram(data, layerName) {
+      const histogramContainer = document.getElementById("histograms");
+
+      // Define dimensions
+      const width = 200;
+      const height = 100;
+      const margin = { top: 10, right: 10, bottom: 30, left: 30 };
+
+      // Create SVG for histogram
+      const svg = d3.select(histogramContainer)
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // Create x-scale and bins
+      const x = d3.scaleLinear()
+                  .domain(d3.extent(data))
+                  .nice()
+                  .range([0, width - margin.left - margin.right]);
+
+      const bins = d3.histogram()
+                    .domain(x.domain())
+                    .thresholds(x.ticks(20))(data);
+
+      // Create y-scale
+      const y = d3.scaleLinear()
+                  .domain([0, d3.max(bins, d => d.length)])
+                  .range([height, 0]);
+
+      // Append x-axis
+      svg.append("g")
+         .attr("transform", `translate(0,${height})`)
+         .call(d3.axisBottom(x).ticks(5));
+
+      // Append bars
+      svg.selectAll("rect")
+         .data(bins)
+         .enter()
+         .append("rect")
+         .attr("x", d => x(d.x0))
+         .attr("y", d => y(d.length))
+         .attr("width", d => x(d.x1) - x(d.x0) - 1)
+         .attr("height", d => height - y(d.length))
+         .style("fill", "#3498db");
+
+      // Append y-axis
+      svg.append("g").call(d3.axisLeft(y).ticks(3));
+
+      // Layer label
+      svg.append("text")
+         .attr("x", width / 2 - margin.left)
+         .attr("y", -5)
+         .attr("text-anchor", "middle")
+         .style("font-size", "12px")
+         .text(layerName);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gremlin Codes Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <script type="module" src="https://{{ request.host.split(':')[0] }}:5000{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #0D0F12;
+            color: #ffffff;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .sidebar {
+            background-color: #1A1A1A;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 20px 0;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #ffffff;
+            font-size: 18px;
+        }
+
+        .sidebar ul li a:hover {
+            color: #0DC5C1;
+        }
+
+        .sidebar ul li.active a {
+            color: #0DC5C1;
+        }
+
+        .main-content {
+            margin-left: 240px;
+            padding: 20px;
+        }
+
+        .announcement {
+            background-color: #2C2F33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .announcement h4 {
+            color: #0DC5C1;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .dashboard .card {
+            background-color: #1A1A1A;
+            padding: 20px;
+            border-radius: 8px;
+            width: calc(33% - 20px);
+        }
+
+        .card h5 {
+            color: #0DC5C1;
+        }
+
+        .progress-bar {
+            background-color: #0DC5C1;
+        }
+
+        .extra-section {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .extra-section .card {
+            width: 48%;
+        }
+
+        .card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .card ul li {
+            background-color: #2C2F33;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .bottom-section {
+            display: flex;
+            gap: 20px;
+        }
+
+        .bottom-section .card {
+            width: 48%;
+        }
+
+        .submit-paper-section,
+        .vpn-section,
+        .docker-section,
+        .queue-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2C2F33;
+            border-radius: 8px;
+        }
+
+        .queue-section ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        .queue-section ul li {
+            background-color: #1A1A1A;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo mb-4">
+            <img src="https://example.com/logo.png" alt="Logo" class="img-fluid">
+        </div>
+        <ul>
+            <li class="active"><a href="#"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fas fa-cogs"></i> VPN</a></li>
+            <li><a href="#"><i class="fas fa-trophy"></i> Challenges</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Community</a></li>
+            <li><a href="#"><i class="fas fa-graduation-cap"></i> Forum</a></li>
+            <li><a href="#"><i class="fas fa-wallet"></i> Treasury</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Announcement Section -->
+        <div class="announcement">
+            <h4>Announcement</h4>
+            <p>Gremlin Codes is now live! Join the most secure decentralized platform for coding challenges and more.</p>
+        </div>
+
+        <!-- Dashboard Elements -->
+        <div class="dashboard">
+            <div class="card">
+                <h5>Current Rank</h5>
+                <p>Noob</p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">10%</div>
+                </div>
+            </div>
+            <div class="card">
+                <h5>Team Invites</h5>
+                <ul>
+                    <li>Team Alpha <button class="btn btn-success btn-sm float-end">Join</button></li>
+                    <li>Team Beta <button class="btn btn-danger btn-sm float-end">Reject</button></li>
+                </ul>
+            </div>
+            <div class="card">
+                <h5>Leaderboard</h5>
+                <ul>
+                    <li>UserA - 500pts</li>
+                    <li>UserB - 450pts</li>
+                    <li>UserC - 400pts</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Paper Submission Section -->
+        <div class="submit-paper-section">
+            <h5>Submit a New Paper</h5>
+            <form id="submit-paper-form">
+                <input type="text" id="paper-title" placeholder="Title" class="form-control mb-2" required>
+                <textarea id="paper-description" placeholder="Description" class="form-control mb-2" required></textarea>
+                <input type="text" id="paper-magnet-url" placeholder="Magnet URL" class="form-control mb-2" required>
+                <button type="submit" class="btn btn-primary">Submit Paper</button>
+            </form>
+        </div>
+
+        <!-- Resource Queue Section -->
+        <div class="queue-section">
+            <h5>Resource Queue</h5>
+            <form id="add-to-queue-form">
+                <input type="number" id="queue-cores" placeholder="Cores" min="1" max="128" class="form-control mb-2" required>
+                <input type="number" id="queue-gpus" placeholder="GPUs" min="1" max="10" class="form-control mb-2" required>
+                <input type="number" id="queue-ram" placeholder="RAM (GB)" min="1" max="512" class="form-control mb-2" required>
+                <input type="number" id="queue-duration" placeholder="Duration (hours)" min="1" max="24" class="form-control mb-2" required>
+                <button type="submit" class="btn btn-primary">Add to Queue</button>
+            </form>
+            <h6>Your Wait Time: <span id="estimated-wait-time">--</span> seconds</h6>
+            <h6>Current Queue:</h6>
+            <ul id="queue-list"></ul>
+        </div>
+
+        <!-- Other Sections -->
+        <div class="vpn-section">
+            <h5>VPN Configuration</h5>
+            <button id="vpn-generate-btn" class="btn btn-secondary">Generate VPN Config</button>
+            <a id="vpn-config-link" href="#" download style="display:none;">Download VPN Config</a>
+        </div>
+
+        <div class="docker-section">
+            <h5>Docker Container Management</h5>
+            <button id="list-containers-btn" class="btn btn-info">List Available Containers</button>
+            <ul id="container-list"></ul>
+            <button id="spin-up-container-btn" class="btn btn-success mt-2">Spin Up Container</button>
+        </div>
+
+        <div class="profile-editor">
+            <h5>Edit Profile</h5>
+            <textarea id="profile-css" placeholder="Edit Profile CSS" rows="5" class="form-control mb-2"></textarea>
+            <textarea id="profile-html" placeholder="Edit Profile HTML" rows="5" class="form-control mb-2"></textarea>
+            <button id="save-profile-btn" class="btn btn-primary">Save Changes</button>
+        </div>
+    </div>
+    <script>
+        const _gremlinThreadABI = {{ gremlinLeaderboardABI | safe }};
+        const _gremlinThreadAddress = "{{ gremlinLeaderboardAddress }}";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+
+</body>
+
+</html>

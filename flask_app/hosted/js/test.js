@@ -1,0 +1,2050 @@
+let web3;
+let gremlinThreadContract;
+let gremlinReplyContract;
+let gremlinAdminContract;
+let currentAccount = null;
+const client = new WebTorrent();
+let allThreads = [];
+let threadMap = {};
+let isAdmin = false;  // Default to non-admin
+const addedMagnets = new Set();
+let selectedTags = [];
+let pyodide = null;
+const visibleComments = {};
+
+// Create a popup div
+const profilePopup = document.createElement('div');
+profilePopup.style.position = 'absolute';
+profilePopup.style.width = '300px';   // Set a small size for the mini window
+profilePopup.style.height = '200px';  // Adjust the height accordingly
+profilePopup.style.backgroundColor = 'white';
+profilePopup.style.border = '1px solid #ccc';
+profilePopup.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+profilePopup.style.padding = '10px';
+profilePopup.style.overflow = 'auto';
+profilePopup.style.display = 'none';  // Hidden by default
+profilePopup.style.zIndex = '10000';
+profilePopup.style.borderRadius = '8px';
+
+window.onload = async function() {
+    document.body.appendChild(profilePopup);
+    console.log("Window loaded.");
+    console.log("Natural library check:", window.natural); // Debug check for natural library
+    if (typeof window.ethereum !== 'undefined') {
+        console.log("MetaMask detected.");
+        web3 = new Web3(window.ethereum);
+
+        gsap.fromTo('#connectWalletIcon', { scale: 0.8 }, { scale: 1.2, duration: 0.5, yoyo: true, repeat: -1, ease: 'power1.inOut' });
+
+        try {
+            console.log("Requesting MetaMask accounts...");
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const accounts = await web3.eth.getAccounts();
+            if (accounts.length === 0) {
+                document.getElementById('connectWalletIcon').style.display = 'block';
+            } else {
+                currentAccount = accounts[0];
+                document.getElementById('connectWalletIcon').style.display = 'none';
+                document.getElementById("status").innerText = `Connected account: ${currentAccount}`;
+                await initializePyodide();
+                initializeContracts();
+                console.log("Gremlin contracts initialized successfully.");
+                await checkIfAdmin(currentAccount); 
+                await loadAndDisplayThreads();
+            }
+
+        } catch (error) {
+            console.error('MetaMask access error:', error);
+            document.getElementById("status").innerText = 'Could not access MetaMask. Please ensure you have authorized access.';
+        }
+    } else {
+        console.log("MetaMask is not installed.");
+        document.getElementById("status").innerText = 'MetaMask is not installed. Please install MetaMask to use this DApp.';
+    }
+};
+
+document.getElementById('showOverlayBtn').addEventListener('click', function() {
+    document.getElementById('replyContext').style.display = 'none';
+    document.getElementById('newPostTitle').style.display = 'block';
+    document.getElementById('newPostTags').style.display = 'block';
+    document.getElementById('overlayTitle').innerText = 'Create a New Post';
+    document.getElementById('overlay').style.height = '100%';
+    gsap.to(window, { duration: 1, scrollTo: '#overlayContent', ease: 'power2.inOut' });
+});
+
+// Attach hover event listeners to the Ethereum address elements
+document.addEventListener('DOMContentLoaded', () => {
+    const ethAddressElements = document.querySelectorAll('.eth-address'); // Use the class you applied to Ethereum addresses
+
+    ethAddressElements.forEach(el => {
+        const ethAddress = el.dataset.ethAddress;
+        
+        el.addEventListener('mouseenter', (event) => showProfilePopup(event, ethAddress));
+        el.addEventListener('mouseleave', hideProfilePopup);
+    });
+});
+
+function initializeContracts() {
+    gremlinThreadContract = new web3.eth.Contract(_gremlinThreadABI, _gremlinThreadAddress);
+    gremlinReplyContract = new web3.eth.Contract(_gremlinReplyABI, _gremlinReplyAddress);
+    gremlinAdminContract = new web3.eth.Contract(_gremlinAdminABI, _gremlinAdminAddress);
+    console.log("Contract instances created.");
+}
+
+
+async function initializePyodide() {
+    if (!pyodide) {
+        console.log('Initializing Pyodide...');
+        pyodide = await loadPyodide();  // Load Pyodide when the page loads
+        console.log('Pyodide initialized.');
+    }
+}
+
+// Separate function to initialize Ace Editors after new blockchain data is fetched
+function initializeCodeEditors() {
+    console.log("Initializing Ace editors...");
+
+    const codeBlocks = document.querySelectorAll('pre code[data-lang="python"]');
+    console.log(`Found ${codeBlocks.length} <pre><code> blocks.`);
+
+    codeBlocks.forEach((codeBlock, index) => {
+        const codeContent = codeBlock.textContent.trim();
+        console.log(`Processing code block ${index + 1}:`, codeContent);
+
+        // Create a container div for the editor and buttons
+        const editorContainer = document.createElement('div');
+        editorContainer.classList.add('code-container');
+        editorContainer.innerHTML = `
+            <div id="editor-${index}" class="code-editor"></div>
+            <button class="run-button" onclick="runPythonCode(${index})">Run Code</button>
+            <div id="output-${index}" class="output">Output will be shown here...</div>
+        `;
+
+        // Replace the <pre> element with the editor container
+        const preTag = codeBlock.closest('pre');
+        if (preTag) {
+            preTag.replaceWith(editorContainer);
+            console.log(`Replaced <pre><code> block ${index + 1} with Ace editor.`);
+        } else {
+            console.error(`No <pre> tag found for code block ${index + 1}.`);
+        }
+
+        // Initialize Ace editor
+        const editor = ace.edit(`editor-${index}`);
+        editor.session.setMode("ace/mode/python");
+        editor.setTheme("ace/theme/monokai");
+        editor.setValue(codeContent, -1);  // Insert code content and move cursor to the end
+        editor.setOptions({
+        fontSize: "16pt"  // Change to desired font size
+        });
+
+        // Attach editor to global variable for later access
+        window[`editor_${index}`] = editor;
+
+        console.log(`Ace Editor initialized for block ${index + 1}.`);
+    });
+}
+
+
+// Function to fetch and show the profile
+async function showProfilePopup(event, ethAddress) {
+    try {
+        // Fetch the profile HTML from the server
+        const response = await fetch(`/users/${ethAddress}`);
+        const profileHTML = await response.text();
+
+        // Inject the fetched HTML into the popup
+        profilePopup.innerHTML = profileHTML;
+
+        // Position the popup near the cursor
+        profilePopup.style.left = `${event.pageX + 10}px`;
+        profilePopup.style.top = `${event.pageY + 10}px`;
+
+        // Display the popup
+        profilePopup.style.display = 'block';
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+    }
+}
+
+// Hide the profile popup when the mouse leaves
+function hideProfilePopup() {
+    profilePopup.style.display = 'none';
+}
+
+// Show overlay with full comment
+function showCommentOverlay(content) {
+    const overlay = document.createElement('div');
+    overlay.id = 'commentOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.color = '#fff';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = '1000';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.innerText = content;
+    contentDiv.style.padding = '20px';
+    contentDiv.style.border = '1px solid #444';
+    contentDiv.style.borderRadius = '8px';
+    contentDiv.style.backgroundColor = '#1A1A1A';
+
+    overlay.appendChild(contentDiv);
+
+    // Close overlay on click
+    overlay.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+    });
+
+    document.body.appendChild(overlay);
+}
+
+// Show overlay for creating a new thread
+function showNewThreadOverlay() {
+    document.getElementById('replyContext').style.display = 'none'; // Hide reply-specific content
+    document.getElementById('newPostTitle').style.display = 'block';
+    document.getElementById('newPostTags').style.display = 'block';
+    document.getElementById('overlayTitle').innerText = 'Create a New Post';
+    document.getElementById('overlay').style.display = 'block'; // Show overlay
+    gsap.to(window, { duration: 1, scrollTo: '#overlayContent', ease: 'power2.inOut' });
+}
+
+// Show overlay for replying to a thread
+function showReplyOverlay(thread) {
+    document.getElementById('replyContext').style.display = 'block'; // Show reply-specific content
+    document.getElementById('replyThreadTitle').innerText = thread.name;
+    document.getElementById('replyThreadTitle').dataset.threadId = thread.id;
+    document.getElementById('overlayTitle').innerText = 'Reply to Thread';
+    document.getElementById('overlay').style.display = 'block'; // Show overlay
+
+    // Hide thread creation fields
+    document.getElementById('newPostTitle').value = thread.name;
+    document.getElementById('newPostTags').style.display = 'none';
+}
+
+// Close the overlay
+function closeOverlay() {
+    document.getElementById('newPostTitle').value = '';
+    document.getElementById('newPostContent').value = '';
+    document.getElementById('newPostTags').value = '';
+    document.getElementById('newPostEmail').value = '';
+    document.getElementById('imageUpload').value = '';
+    document.getElementById('overlay').style.height = '0%';
+    document.getElementById('overlay').style.display = 'none'; // Hide overlay
+}
+
+
+function updateTagDisplay() {
+    const filterMode = document.querySelector('input[name="filterMode"]:checked').value;
+    const tagDisplayTitle = document.getElementById('tagDisplayTitle');
+    const tagDisplay = document.getElementById('tagDisplay');
+
+    if (filterMode === 'whitelist') {
+        tagDisplayTitle.innerText = "Current Whitelist:";
+        tagDisplay.innerHTML = '<li>Example Whitelist Tag 1</li><li>Example Whitelist Tag 2</li>';
+    } else if (filterMode === 'blacklist') {
+        tagDisplayTitle.innerText = "Current Blacklist:";
+        tagDisplay.innerHTML = '<li>Example Blacklist Tag 1</li><li>Example Blacklist Tag 2</li>';
+    }
+}
+
+function addTagOnEnter(event) {
+    if (event.key === 'Enter') {
+        const tag = event.target.value.trim();
+        if (tag) {
+            addTagToSearchBar(tag);
+            event.target.value = '';
+        }
+    }
+}
+
+function addTagToSearchBar(tag) {
+    const searchBar = document.getElementById('searchTagsDisplay');
+    if (selectedTags.includes(tag)) return;
+
+    selectedTags.push(tag);
+    const tagButton = document.createElement('button');
+    tagButton.innerText = `${tag} X`;
+    tagButton.className = 'tag-button';
+    tagButton.style.margin = '5px';
+
+    tagButton.onclick = function() {
+        selectedTags = selectedTags.filter(selectedTag => selectedTag !== tag);
+        searchBar.removeChild(tagButton);
+        applyTagFilter();
+    };
+
+    searchBar.appendChild(tagButton);
+    applyTagFilter();
+}
+
+function applyTagFilter() {
+    const filterMode = document.querySelector('input[name="filterMode"]:checked').value;
+    const allThreadContainers = document.querySelectorAll('.thread-container');
+
+    allThreadContainers.forEach(container => {
+        const tagsContainer = container.querySelector('.tags');
+        const threadTags = Array.from(tagsContainer.querySelectorAll('.tag')).map(tagElem => tagElem.innerText);
+
+        if (filterMode === 'whitelist') {
+            const hasAllTags = selectedTags.every(tag => threadTags.includes(tag));
+            container.style.display = hasAllTags ? 'block' : 'none';
+        } else if (filterMode === 'blacklist') {
+            const hasAnySelectedTag = selectedTags.some(tag => threadTags.includes(tag));
+            container.style.display = hasAnySelectedTag ? 'none' : 'block';
+        }
+    });
+}
+
+async function submitPost() {
+    const title = document.getElementById('newPostTitle').value.trim() || 'Untitled Post';
+    const email = document.getElementById('newPostEmail').value || 'no-email@example.com';
+    const content = document.getElementById('newPostContent').value.trim() || 'No content provided';
+    const tags = document.getElementById('newPostTags').style.display === 'block'
+        ? (document.getElementById('newPostTags').value.split(',').map(tag => tag.trim()) || ['uncategorized'])
+        : ['uncategorized'];
+    const imageFile = document.getElementById('imageUpload').files[0];
+
+    try {
+        let magnetUrl = '';
+        if (imageFile) {
+            const uploadResponse = await uploadToServer(imageFile);
+            magnetUrl = uploadResponse;
+        } else {
+            magnetUrl = '0';
+        }
+
+        const isReply = document.getElementById('replyContext').style.display !== 'none';
+        let parentThreadId = isReply ? document.getElementById('replyThreadTitle').dataset.threadId : '0';
+
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const account = accounts[0];
+
+        let contractMethod;
+        let gasEstimate;
+
+        if (isReply) {
+            contractMethod = gremlinReplyContract.methods.createReply(content, email, magnetUrl, parentThreadId);
+        } else {
+            contractMethod = gremlinThreadContract.methods.createThread(
+                title, title, email, magnetUrl, tags, content, parentThreadId
+            );
+        }
+
+        gasEstimate = await contractMethod.estimateGas({ from: account });
+        await contractMethod.send({ from: account, gas: gasEstimate })
+            .on('receipt', function(receipt) {
+                console.log('Transaction receipt:', receipt);
+            });
+
+        closeOverlay();
+        await loadAndDisplayThreads();
+
+    } catch (error) {
+        console.error('Error submitting post:', error);
+    }
+}
+
+function uploadToServer(file) {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        console.log('Uploading file to server...');
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.magnet_url) {
+                const magnetUrl = String(data.magnet_url);
+                console.log('Server seeding: Magnet URL:', magnetUrl);
+
+                const existingTorrent = client.get(magnetUrl);
+                if (existingTorrent) {
+                    console.log('Torrent already exists, reusing it:', existingTorrent.infoHash);
+                    resolve(magnetUrl);
+                } else {
+                    const trackerOptions = {
+                        announce: ['wss://tracker.openwebtorrent.com']
+                    };
+                    client.add(magnetUrl, trackerOptions, torrent => {
+                        console.log('Torrent added successfully with the specified tracker:', torrent.infoHash);
+                        resolve(magnetUrl);
+                    });
+                }
+            } else {
+                console.error('Error from server:', data.error || 'Unknown error');
+                reject(data.error || 'Unknown error');
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading to server:', error);
+            reject(error);
+        });
+    });
+}
+
+
+function organizeThreadsAndReplies(threads, replies) {
+    threadMap = {};
+
+    threads.forEach(thread => {
+        const threadId = thread.id.toString();
+        threadMap[threadId] = { thread: thread, replies: [] };
+    });
+
+    replies.forEach(reply => {
+        const parentThreadId = reply.parentId.toString();
+        console.log('Organizing reply:', reply, 'for parent thread ID:', parentThreadId);
+
+        if (threadMap[parentThreadId]) {
+            threadMap[parentThreadId].replies.push(reply);
+        } else {
+            console.warn(`Reply with parentThreadId ${parentThreadId} has no matching thread.`);
+        }
+    });
+
+    console.log('Thread map after organizing replies:', threadMap);
+}
+
+function displaySortedThreads() {
+    const contentDiv = document.getElementById('infiniteScrollContent');
+    contentDiv.innerHTML = '';
+    const validThreads = Object.values(threadMap).filter(({ thread }) => thread !== null && thread !== undefined);
+
+    if (validThreads.length === 0) {
+        console.log("No valid root threads to display.");
+        document.getElementById("status").innerText = "No valid root threads found.";
+        return;
+    }
+
+    const sortedThreads = validThreads.sort((a, b) => {
+        const latestA = getLastActivityTimestamp(a);
+        const latestB = getLastActivityTimestamp(b);
+        return latestB - latestA;
+    });
+
+    console.log("Displaying sorted threads...");
+    sortedThreads.forEach(({ thread, replies }) => {
+        const hierarchicalReplies = generateTFIDFHierarchy(replies);
+        displayThreadWithReplies(thread, hierarchicalReplies);
+    });
+}
+
+function displayThreadWithReplies(thread, hierarchicalReplies) {
+    console.log("Starting to display thread with replies...");
+    console.log("Thread data received:", thread);
+    console.log("Hierarchical replies received:", hierarchicalReplies);
+
+    // Thread Container
+    const threadContainer = document.createElement('div');
+    threadContainer.className = 'thread-container';
+    threadContainer.id = `thread-${thread.id}`;
+    console.log(`Created thread container with ID: thread-${thread.id}`);
+
+    // Left Image Section
+    const leftImage = document.createElement('div');
+    leftImage.className = 'left-image';
+    console.log("Created left image section for thread.");
+
+    if (thread.magnetUrl && thread.magnetUrl !== '0') {
+        console.log(`Thread has a magnet URL: ${thread.magnetUrl}. Attempting to download image...`);
+        downloadImage(thread.magnetUrl, leftImage)
+            .then(() => {
+                console.log("Image successfully downloaded.");
+            })
+            .catch((error) => {
+                console.error("Failed to download image:", error);
+            });
+    } else {
+        console.log("No magnet URL available for this thread.");
+    }
+    threadContainer.appendChild(leftImage);
+    console.log("Left image section appended to thread container.");
+
+    // Right Content Section
+    const rightContent = document.createElement('div');
+    rightContent.className = 'right-content';
+    threadContainer.appendChild(rightContent);
+    console.log("Right content section created and appended to thread container.");
+
+    // Post Content
+    const postContainer = document.createElement('div');
+    postContainer.className = 'postContainer opContainer';
+    postContainer.id = `pc${thread.id}`;
+    console.log(`Post container created with ID: pc${thread.id}`);
+
+    const post = document.createElement('div');
+    post.className = 'post op';
+    post.id = `p${thread.id}`;
+    console.log(`Post div created with ID: p${thread.id}`);
+
+    // Post Info
+    const postInfo = document.createElement('div');
+    postInfo.className = 'postInfo desktop';
+    postInfo.id = `pi${thread.id}`;
+    console.log(`Post info div created with ID: pi${thread.id}`);
+
+    // Name and Metadata
+    const nameBlock = document.createElement('span');
+    nameBlock.className = 'nameBlock';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.innerText = thread.name || 'Anonymous';
+    console.log("Thread name added:", name.innerText);
+
+    const idSpan = document.createElement('span');
+    idSpan.className = 'posteruid';
+    idSpan.innerHTML = `(ID: <span class="hand" title="Highlight posts by this ID">${thread.sender}</span>)`;
+    nameBlock.appendChild(name);
+    nameBlock.appendChild(document.createTextNode(' '));
+    nameBlock.appendChild(idSpan);
+    postInfo.appendChild(nameBlock);
+    console.log("Name block with sender information added to post info.");
+
+    const dateTime = document.createElement('span');
+    dateTime.className = 'dateTime';
+    dateTime.innerText = new Date(Number(thread.timestamp) * 1000).toLocaleString();
+    const postNum = document.createElement('span');
+    postNum.className = 'postNum desktop';
+    postNum.innerHTML = `<a href="#thread/${thread.id}#p${thread.id}">No.</a>
+                         <a href="#thread/${thread.id}#q${thread.id}">${thread.id}</a>`;
+    postInfo.appendChild(dateTime);
+    postInfo.appendChild(postNum);
+    console.log("DateTime and post number added to post info.");
+
+    post.appendChild(postInfo);
+
+    // Thread Content
+    const content = document.createElement('blockquote');
+    content.className = 'postMessage';
+    content.innerHTML = renderMarkdown(thread.content);
+    post.appendChild(content);
+    console.log("Thread content added as markdown.");
+
+    postContainer.appendChild(post);
+    rightContent.appendChild(postContainer);
+    console.log("Post container added to right content section.");
+
+    // Radial Tree
+    const treeContainer = document.createElement('div');
+    treeContainer.id = `treeContainer-${thread.id}`;
+    treeContainer.style.width = '100%';
+    treeContainer.style.height = '600px';
+    treeContainer.style.marginTop = '20px';
+    treeContainer.className = 'tree-container';
+    console.log(`Radial tree container created with ID: treeContainer-${thread.id}`);
+
+    console.log('replies before check:', hierarchicalReplies);
+
+    if (hierarchicalReplies && hierarchicalReplies.length > 0) {
+        console.log("Rendering radial tree with hierarchical replies...");
+        threadContainer.appendChild(treeContainer);
+
+        setTimeout(() => {
+            try {
+                renderRadialTreeWithWordCloud(hierarchicalReplies, `treeContainer-${thread.id}`);
+            } catch (error) {
+                console.error("Error render radial tree:", error);
+            }
+        }, 0);
+    } else {
+        console.log("No hierarchical replies available to render.");
+    }
+
+    // Masonry Grid for Comments
+    const commentsGridContainer = document.createElement('div');
+    commentsGridContainer.id = `commentsGridContainer-${thread.id}`;
+    commentsGridContainer.className = 'comments-grid-container';
+    commentsGridContainer.style.display = 'none';
+    threadContainer.appendChild(commentsGridContainer);
+    console.log(`Comments grid container created with ID: commentsGridContainer-${thread.id}`);
+
+    const commentsGrid = document.createElement('div');
+    commentsGrid.className = 'comments-grid';
+    commentsGrid.id = `commentsGrid-${thread.id}`;
+    commentsGridContainer.appendChild(commentsGrid);
+    console.log(`Comments grid created with ID: commentsGrid-${thread.id}`);
+
+    // Append Thread to Main Content
+    const contentDiv = document.getElementById('infiniteScrollContent');
+    if (contentDiv) {
+        contentDiv.appendChild(threadContainer);
+        console.log(`Thread container with ID: thread-${thread.id} appended to main content.`);
+    } else {
+        console.error("Content container not found. Cannot append thread.");
+    }
+
+    console.log(`Thread with ID: ${thread.id} displayed successfully.`);
+}
+
+// Word Cloud Click Handler
+function handleWordClick(word, comments, commentsGridId) {
+    const commentsGridContainer = document.getElementById(commentsGridId);
+    commentsGridContainer.style.display = 'block';
+
+    const commentsGrid = document.getElementById(commentsGridId.replace('Container', ''));
+    comments.forEach((comment, index) => {
+        const commentTile = document.createElement('div');
+        commentTile.className = 'comment-tile fade-in';
+        commentTile.style.animationDelay = `${index * 0.1}s`; // Stagger animations
+        commentTile.innerText = comment;
+        commentsGrid.appendChild(commentTile);
+    });
+}
+
+function downloadImage(magnetURI, container) {
+    return new Promise((resolve, reject) => {
+        const output = document.createElement('p');
+        output.innerText = 'Fetching file...';
+        container.appendChild(output);
+
+        const trackerOptions = {
+            announce: ['wss://tracker.openwebtorrent.com']
+        };
+
+        const existingTorrent = client.get(magnetURI);
+
+        if (existingTorrent) {
+            console.log(`Reusing torrent: ${magnetURI}`);
+            renderFiles(existingTorrent, magnetURI, container)
+                .then(resolve) // Resolve the Promise after rendering files
+                .catch(reject); // Reject the Promise if rendering fails
+        } else {
+            client.add(magnetURI, trackerOptions, (torrent) => {
+                console.log(`Torrent added: ${torrent.infoHash}`);
+                renderFiles(torrent, magnetURI, container)
+                    .then(resolve) // Resolve after rendering files
+                    .catch(reject); // Reject if rendering fails
+            }).on('error', (err) => {
+                console.error(`Error adding torrent: ${err.message}`);
+                output.innerText = `Failed to fetch file: ${err.message}`;
+                reject(err); // Reject the Promise if torrent addition fails
+            });
+        }
+    });
+}
+
+function renderFiles(torrent, magnetURI, container) {
+    return new Promise((resolve, reject) => {
+        const file = torrent.files.find((file) => file.name.match(/\.(jpg|jpeg|png|gif)$/i));
+
+        if (!file) {
+            const error = new Error("No image file found in torrent.");
+            console.error(error.message);
+            reject(error);
+            return;
+        }
+
+        const img = document.createElement('img');
+        file.getBlobURL((err, url) => {
+            if (err) {
+                console.error(`Failed to get blob URL for file: ${err.message}`);
+                reject(err);
+                return;
+            }
+
+            img.onload = () => {
+                container.appendChild(img);
+                console.log("Image loaded and appended.");
+                resolve(); // Resolve when the image loads successfully
+            };
+
+            img.onerror = (error) => {
+                console.error("Error loading image:", error);
+                reject(error); // Reject if the image fails to load
+            };
+
+            img.src = url; // Set the image source to the blob URL
+        });
+    });
+}
+
+
+function getLastActivityTimestamp({ thread, replies }) {
+    if (!thread) return 0;
+    const latestReplyTimestamp = replies.length > 0
+        ? Math.max(...replies.map(reply => reply ? Number(reply.timestamp) : 0))
+        : 0;
+    return Math.max(Number(thread.timestamp), latestReplyTimestamp);
+}
+
+
+
+function findMostCentralReply(similarityMatrix) {
+    // Calculate the sum of similarities for each reply and choose the one with the highest sum
+    const totalSimilarities = similarityMatrix.map(row => row.reduce((sum, val) => sum + val, 0));
+    const maxIndex = totalSimilarities.indexOf(Math.max(...totalSimilarities));
+    return maxIndex;
+}
+
+
+
+function visualizeReplyAssociations(replies, associations) {
+    // Create the visualization container
+    const container = d3.select('#treeOfLifeContainer');
+    container.html('');  // Clear previous content
+
+    const width = 800;
+    const height = 800;
+
+    const svg = container
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .append('g')
+        .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+    // Draw nodes for each reply
+    const nodes = svg.selectAll('circle')
+        .data(replies)
+        .enter()
+        .append('circle')
+        .attr('r', 5)
+        .attr('cx', (d, i) => 200 * Math.cos((i / replies.length) * 2 * Math.PI))  // Circular layout
+        .attr('cy', (d, i) => 200 * Math.sin((i / replies.length) * 2 * Math.PI))
+        .style('fill', '#69b3a2');
+
+    // Draw links between associated replies
+    const links = svg.selectAll('line')
+        .data(associations)
+        .enter()
+        .append('line')
+        .attr('x1', d => 200 * Math.cos((replies.findIndex(r => r.id === d.source) / replies.length) * 2 * Math.PI))
+        .attr('y1', d => 200 * Math.sin((replies.findIndex(r => r.id === d.source) / replies.length) * 2 * Math.PI))
+        .attr('x2', d => 200 * Math.cos((replies.findIndex(r => r.id === d.target) / replies.length) * 2 * Math.PI))
+        .attr('y2', d => 200 * Math.sin((replies.findIndex(r => r.id === d.target) / replies.length) * 2 * Math.PI))
+        .style('stroke', '#ccc')
+        .style('stroke-width', d => 2 * d.similarity);
+}
+
+
+
+// Compute the mean and standard deviation of similarity values
+function computeMeanAndStdDev(similarityMatrix) {
+    let values = [];
+    similarityMatrix.forEach(row => values.push(...row.filter(value => value > 0)));
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const variance = values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
+    return { mean, stdDev: Math.sqrt(variance) };
+}
+
+// Filtered Similarities function based on high TF-IDF values
+function computeFilteredSimilarities(repliesWithTFIDF, tfidfThreshold) {
+    const similarityMatrix = [];
+    for (let i = 0; i < repliesWithTFIDF.length; i++) {
+        similarityMatrix[i] = [];
+        for (let j = 0; j < repliesWithTFIDF.length; j++) {
+            if (i !== j) {
+                const filteredTFIDF1 = filterHighTFIDFTerms(repliesWithTFIDF[i].tfidfData, tfidfThreshold);
+                const filteredTFIDF2 = filterHighTFIDFTerms(repliesWithTFIDF[j].tfidfData, tfidfThreshold);
+                const similarity = calculateCosineSimilarity(filteredTFIDF1, filteredTFIDF2);
+                similarityMatrix[i][j] = similarity;
+            } else {
+                similarityMatrix[i][j] = 0; // No self-similarity
+            }
+        }
+    }
+    return similarityMatrix;
+}
+
+// Filter out low TF-IDF values
+function filterHighTFIDFTerms(tfidfData, threshold) {
+    const filteredTFIDF = {};
+    for (const term in tfidfData) {
+        if (tfidfData[term] > threshold) {
+            filteredTFIDF[term] = tfidfData[term];
+        }
+    }
+    return filteredTFIDF;
+}
+
+function buildHierarchy(comments) {
+    const commentMap = new Map();
+
+    // Step 1: Map each comment by its ID for quick lookup
+    comments.forEach(comment => {
+        comment.children = []; // Initialize children
+        commentMap.set(comment.id, comment);
+    });
+
+    // Step 2: Organize comments into a hierarchy
+    const rootComments = [];
+    comments.forEach(comment => {
+        if (!comment.parentId) {
+            // No parentId means it's a direct reply to the root
+            rootComments.push(comment);
+        } else {
+            // Find the parent comment and add this comment as its child
+            const parent = commentMap.get(comment.parentId);
+            if (parent) {
+                parent.children.push(comment);
+            }
+        }
+    });
+
+    return rootComments;
+}
+
+function renderRadialTreeWithWordCloud(data, containerId) {
+    console.log(`Initializing radial tree rendering for container: ${containerId}`);
+
+    const diameter = 200;
+    const radius = diameter / 2;
+
+    const container = d3.select(`#${containerId}`);
+    if (container.empty()) {
+        console.error(`Container with id "${containerId}" not found.`);
+        return;
+    }
+
+    const svg = container
+        .html("") // Clear previous content
+        .append("svg")
+        .attr("viewBox", `0 0 ${diameter} ${diameter}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .append("g")
+        .attr("transform", `translate(${radius},${radius})`);
+
+    const tree = d3.tree()
+        .size([2 * Math.PI, radius])
+        .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+
+    const root = tree(
+        d3.hierarchy(data[0], d => d.children)
+            .sort((a, b) => d3.ascending(a.data.name, b.data.name))
+    );
+
+    // Render links
+    svg.append("g")
+        .attr("fill", "none")
+        .attr("stroke", "#555")
+        .attr("stroke-opacity", 0.4)
+        .attr("stroke-width", 1.5)
+        .selectAll()
+        .data(root.links())
+        .join("path")
+        .attr("d", d3.linkRadial()
+            .angle(d => d.x)
+            .radius(d => d.y)
+        );
+
+    // Render nodes
+    const nodeGroup = svg.append("g")
+        .selectAll("g")
+        .data(root.descendants())
+        .join("g")
+        .attr("transform", d => `
+            rotate(${(d.x * 180) / Math.PI - 90})
+            translate(${d.y},0)
+        `);
+
+    // Add circles for nodes
+    nodeGroup.append("circle")
+        .attr("r", 4)
+        .attr("fill", d => d.children ? "#555" : "#999")
+        .on("mouseover", (event, d) => showWordCloud(event, d))
+        .on("mouseout", hideWordCloud)
+        .on("click", (event, d) => renderComments(d));
+
+    // Add labels
+    nodeGroup.append("text")
+        .attr("dy", "0.31em")
+        .attr("x", d => (d.x < Math.PI ? 10 : -10))
+        .attr("text-anchor", d => (d.x < Math.PI ? "start" : "end"))
+        .attr("transform", d => (d.x >= Math.PI ? "rotate(180)" : null))
+        .text(d => d.data.name);
+
+    // Word cloud tooltip
+    const wordCloudTooltip = d3.select("body")
+        .append("div")
+        .attr("class", "word-cloud-tooltip")
+        .style("position", "absolute")
+        .style("background", "white")
+        .style("border", "1px solid #ccc")
+        .style("border-radius", "5px")
+        .style("padding", "10px")
+        .style("box-shadow", "0 2px 10px rgba(0, 0, 0, 0.2)")
+        .style("display", "none")
+        .style("pointer-events", "none");
+
+    // Show word cloud near the cursor
+    function showWordCloud(event, d) {
+        const words = generateWordFrequenciesFromProcessed(d.data.processedWords || []);
+        if (words.length > 0) {
+            wordCloudTooltip
+                .style("display", "block")
+                .style("left", `${event.pageX + 15}px`) // Offset for better visibility
+                .style("top", `${event.pageY + 15}px`)
+                .html(""); // Clear previous content
+
+            // Create an SVG inside the tooltip
+            const wordCloudSvg = wordCloudTooltip
+                .append("svg")
+                .attr("width", 200)
+                .attr("height", 200);
+
+            // Dynamically scale word cloud
+            const scale = Math.min(3 / words.length, 1);
+
+            // Render word cloud inside the tooltip's SVG
+            renderWordCloud(wordCloudSvg, words, 60 * scale);
+        }
+    }
+
+    // Hide word cloud
+    function hideWordCloud() {
+        wordCloudTooltip.style("display", "none").html("");
+    }
+
+    // Render comments on click
+    function renderComments(d) {
+        const commentsContainer = d3.select("#comments-container"); // Replace with your actual container
+        commentsContainer.html(""); // Clear existing comments
+        if (d.data.comments) {
+            d.data.comments.forEach(comment => {
+                commentsContainer.append("p").text(comment);
+            });
+        }
+    }
+}
+
+
+function renderWordCloud(node, words, maxFontSize, nodeId) {
+    console.log("Node passed to renderWordCloud:", node);
+
+    // Validate the node
+    if (!node || typeof node.append !== "function") {
+        console.error("Invalid node passed to renderWordCloud:", node);
+        return;
+    }
+
+    // Validate words array
+    if (!Array.isArray(words) || words.length === 0) {
+        console.error("Invalid words array passed to renderWordCloud:", words);
+        return;
+    }
+
+    // Define scales for font size and color
+    const wordScale = d3.scaleLinear()
+        .domain(d3.extent(words, d => d.size) || [1, 10]) // Fallback domain
+        .range([10, maxFontSize]);
+
+    const wordColor = d3.scaleSequential(d3.interpolateBlues)
+        .domain(d3.extent(words, d => d.size) || [1, 10]);
+
+    // Define word cloud layout
+    const layout = d3.layout.cloud()
+        .size([300, 300]) // Larger canvas size for better rendering
+        .words(words)
+        .padding(5)
+        .fontSize(d => wordScale(d.size))
+        .rotate(() => Math.random() > 0.5 ? 0 : 90) // Random rotation (0° or 90°)
+        .on("end", wordArray => {
+            console.log("Word cloud generated:", wordArray);
+        
+            // Calculate scaling factor based on word count and maximum word length
+            const maxWordLength = Math.max(...wordArray.map(d => d.text.length));
+            const scalingFactor = Math.min(1, 3 / wordArray.length, 15 / maxWordLength);
+        
+            // Ensure the node is valid
+            const g = d3.select(node.node ? node.node() : node)
+                .append("g")
+                .attr("transform", `translate(150, 150) scale(${scalingFactor})`); // Scale to fit
+        
+            // Append words to the group
+            g.selectAll("text")
+                .data(wordArray)
+                .join("text")
+                .style("font-size", d => `${Math.max(d.size * scalingFactor, 10)}px`) // Adjust font size
+                .style("fill", d => wordColor(d.size))
+                .attr("text-anchor", "middle")
+                .attr("transform", d => `translate(${d.x},${d.y}) rotate(${d.rotate})`)
+                .text(d => d.text)
+                .on("click", (event, d) => {
+                    console.log("Word clicked:", d.text);
+                    handleWordCloudClick(d, nodeId); // Pass the clicked word and node ID
+                }); // Add click event listener
+        });
+
+    // Start the layout
+    try {
+        layout.start();
+    } catch (error) {
+        console.error("Error starting word cloud layout:", error);
+    }
+}
+
+
+
+function handleWordCloudClick(word, nodeId) {
+    console.log("Word selected from word cloud:", word.text);
+
+    // Collect all comments in the branch related to this node
+    const branchComments = collectBranchComments(nodeId);
+
+    // Filter comments that include the selected word
+    const filteredComments = branchComments.filter(comment =>
+        comment.content && comment.content.toLowerCase().includes(word.text.toLowerCase())
+    );
+
+    console.log("Nodeid:", nodeId);
+    console.log("Nodeid:", nodeId);
+
+    // Render the comments grid with filtered comments
+    createMasonryGrid(filteredComments, `commentsGrid-${nodeId}`);
+
+    // Ensure the grid container is visible
+    const gridContainer = document.getElementById(`commentsGridContainer-${nodeId}`);
+    if (gridContainer) {
+        gridContainer.style.display = 'flex';
+    }
+}
+
+
+// Ensure word cloud input uses only processed words
+function generateWordFrequenciesFromProcessed(processedWords) {
+    const frequencies = {};
+
+    // Count word occurrences
+    processedWords.forEach(word => {
+        frequencies[word] = (frequencies[word] || 0) + 1;
+    });
+
+    // Convert to the format required by the word cloud library
+    return Object.entries(frequencies).map(([word, size]) => ({ text: word, size }));
+}
+
+
+// Helper function to compute word frequencies
+function getWordFrequencies(words) {
+    const frequencies = {};
+    words.forEach(word => {
+        frequencies[word] = (frequencies[word] || 0) + 1;
+    });
+    return Object.entries(frequencies).map(([word, freq]) => ({ text: word, size: freq }));
+}
+
+
+// Generate random colors for word cloud
+function generateRandomColorPalette() {
+    const colors = d3.schemeCategory10.concat(d3.schemePastel1).concat(d3.schemeSet3);
+    return d3.scaleOrdinal(colors);
+}
+
+function generateWordFrequencies(text) {
+    const stopWords = new Set(['a', 'an', 'the', 'and', 'or', 'but', 'on', 'in', 'with', 'at', 'of', 'to', 'from', 'by', 'for']);
+    const wordCounts = {};
+
+    // Tokenize and count words
+    text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).forEach(word => {
+        if (!stopWords.has(word)) {
+            wordCounts[word] = (wordCounts[word] || 0) + 1;
+        }
+    });
+
+    // Convert to array of objects
+    return Object.entries(wordCounts).map(([word, size]) => ({ text: word, size }));
+}
+
+
+
+
+function collectCommentsFromNode(node) {
+    console.log("Collecting comments for node:", node);
+    const comments = [];
+
+    function traverse(node) {
+        if (!node.data || !node.data.id || !node.data.content) {
+            console.warn("Node data is invalid:", node.data);
+            return;
+        }
+        comments.push({
+            id: node.data.id,
+            content: node.data.content
+        });
+        if (node.children) {
+            node.children.forEach(traverse);
+        }
+    }
+
+    if (node) {
+        traverse(node);
+    } else {
+        console.warn("No node provided for traversal.");
+    }
+
+    console.log("Collected comments:", comments);
+    return comments;
+}
+
+
+
+function collectBranchComments(nodeId) {
+    const branchComments = [];
+
+    function traverse(node) {
+        if (node.id === nodeId || branchComments.length > 0) {
+            branchComments.push(node);
+
+            if (node.children) {
+                node.children.forEach(traverse);
+            }
+        }
+    }
+
+    // Traverse the preloaded comments hierarchy
+    Object.values(visibleComments).forEach(rootNode => traverse(rootNode));
+
+    console.log(`Collected comments for node ID ${nodeId}:`, branchComments);
+    return branchComments;
+}
+
+
+function renderCommentsSection(comments, threadId, threadcontainerId) {
+    console.log("Rendering comments:", comments);
+
+    // Locate the correct thread container by threadId
+    const threadContainer = document.getElementById(`${threadcontainerId}`);
+    if (!threadContainer) {
+        console.error(`Thread container with ID thread-${threadcontainerId} not found.`);
+        return;
+    }
+
+    // Check if a comments section already exists within the thread container
+    let commentsContainer = threadContainer.querySelector(".comments-container");
+    if (!commentsContainer) {
+        // Create the comments container if it doesn't exist
+        commentsContainer = document.createElement("div");
+        commentsContainer.className = "comments-container";
+        commentsContainer.style.marginTop = "10px"; // Optional: Add spacing
+        threadContainer.appendChild(commentsContainer);
+    }
+
+    // Clear any previous comments
+    commentsContainer.innerHTML = '';
+    console.log("Cleared comments container.");
+
+    if (!comments || comments.length === 0) {
+        // Display a message if there are no comments
+        commentsContainer.innerHTML = "<p>No comments available.</p>";
+        return;
+    }
+
+    // Add each comment to the comments container
+    comments.forEach(comment => {
+        const commentDiv = document.createElement("div");
+        commentDiv.className = "comment";
+        commentDiv.textContent = comment.content || "No content available"; // Fallback content
+        commentsContainer.appendChild(commentDiv);
+    });
+
+    console.log("Comments rendered successfully.");
+}
+
+
+
+
+// Build hierarchy based on a dynamic threshold
+function buildHierarchyWithThreshold(rootIndex, repliesWithTFIDF, similarityMatrix, threshold, visited = new Set()) {
+    // Check if the rootIndex is valid and if the reply at that index has an 'id'
+    if (visited.has(rootIndex) || !repliesWithTFIDF[rootIndex] || !repliesWithTFIDF[rootIndex].id) {
+        return null; // Skip if reply is invalid or already visited
+    }
+    
+    visited.add(rootIndex);
+    
+    const rootReply = repliesWithTFIDF[rootIndex];
+    const root = {
+        name: `Reply ID: ${rootReply.id}`,
+        content: rootReply.content,
+        children: []
+    };
+
+    // Find children of the current root based on dynamic threshold
+    similarityMatrix[rootIndex].forEach((similarity, idx) => {
+        if (idx !== rootIndex && similarity >= threshold && !visited.has(idx) && repliesWithTFIDF[idx]) {
+            const childHierarchy = buildHierarchyWithThreshold(idx, repliesWithTFIDF, similarityMatrix, threshold, visited);
+            if (childHierarchy) root.children.push(childHierarchy);
+        }
+    });
+
+    return root;
+}
+
+function bigIntReplacer(key, value) {
+    if (typeof value === 'bigint') {
+        return value.toString(); // Convert BigInt to string
+    }
+    return value; // Return other types unchanged
+}
+
+
+function convertBigIntToString(obj) {
+    if (typeof obj === 'bigint') {
+        return obj.toString(); // Convert BigInt to string
+    } else if (Array.isArray(obj)) {
+        return obj.map(convertBigIntToString); // Recursively process arrays
+    } else if (typeof obj === 'object' && obj !== null) {
+        return Object.fromEntries(
+            Object.entries(obj).map(([key, value]) => [key, convertBigIntToString(value)])
+        ); // Recursively process objects
+    } else {
+        return obj; // Return other types as is
+    }
+}
+
+function generateTFIDFHierarchy(replies) {
+    const stopWords = new Set([
+        'a', 'an', 'the', 'and', 'or', 'but', 'on', 'in', 'with', 'at', 'of', 'to', 'from', 'by', 'for', 'is', 'it',
+        'this', 'that', 'these', 'those', 'am', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+        'do', 'does', 'did', 'will', 'would', 'shall', 'should', 'may', 'might', 'can', 'could', 'as', 'if', 'then',
+        'else', 'than', 'when', 'where', 'why', 'what', 'which', 'who', 'whom', 'whose', 'how', 'I', 'me', 'my',
+        'we', 'us', 'our', 'you', 'your', 'he', 'him', 'his', 'she', 'her', 'they', 'them', 'their', 'its', 'not',
+        'so', 'too', 'very', 'just', 'only', 'even', 'about', 'into', 'like', 'over', 'under', 'again', 'all', 'any',
+        'both', 'each', 'every', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'same', 'up', 'down',
+        'out', 'off', 'about', 'above', 'below', 'before', 'after', 'near', 'between', 'because', 'through', 'during',
+        'while', 'though', 'although', 'until', 'unless', 'since', 'whether', 'also', 'well', 'now', 'then', 'there',
+        'here', 'always', 'never', 'often', 'sometimes', 'once'
+    ]);
+
+    // Helper function for basic stemming
+    function stemWord(word) {
+        return word.replace(/(ing|ed|es|s)$/i, ''); // Simple stemming
+    }
+
+    // Function to tokenize, filter stop words, and normalize
+    function processText(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s]/g, '') // Remove punctuation
+            .split(/\s+/)
+            .filter(word => word && !stopWords.has(word)) // Remove stopwords
+            .map(stemWord); // Apply stemming
+    }
+
+    // Step 1: Calculate TF-IDF for all replies
+    const tokenizedDocs = replies.map(reply => processText(reply.content));
+    const tfidfVectors = calculateTFIDF(tokenizedDocs);
+
+    const repliesWithTFIDF = replies.map((reply, index) => ({
+        ...reply,
+        tfidfData: tfidfVectors[index],
+        processedWords: Object.keys(tfidfVectors[index]), // Extract words from the TF-IDF vector
+    }));
+
+    // Step 2: Ensure the vocabulary is built only from filtered words
+    const vocabulary = new Set(repliesWithTFIDF.flatMap(reply => reply.processedWords));
+
+    // Step 3: Build the hierarchy
+    return buildHierarchy(repliesWithTFIDF, vocabulary);
+
+    // Helper to build the hierarchy
+    function buildHierarchy(replies, vocabulary) {
+        if (replies.length === 0) return [];
+
+        replies.forEach(reply => {
+            reply.score = reply.processedWords.reduce((sum, word) => sum + (vocabulary.has(word) ? 1 : 0), 0);
+        });
+
+        const avgScore = replies.reduce((sum, reply) => sum + reply.score, 0) / replies.length || 0;
+        const parentCandidates = replies.filter(reply => reply.score > avgScore);
+
+        if (parentCandidates.length === 0) return replies.map(replyToTreeNode);
+
+        const parentNode = parentCandidates.reduce((best, curr) => (curr.score > best.score ? curr : best), parentCandidates[0]);
+
+        const children = replies.filter(reply => reply !== parentNode && isChild(reply, parentNode));
+        const siblings = replies.filter(reply => reply !== parentNode && !children.includes(reply));
+
+        parentNode.children = buildHierarchy(children, new Set(children.flatMap(reply => reply.processedWords)));
+
+        return [replyToTreeNode(parentNode), ...buildHierarchy(siblings, vocabulary)];
+    }
+
+    // Helper to check if a reply is a child
+    function isChild(child, parent) {
+        const sharedKeywords = child.processedWords.filter(word => parent.processedWords.includes(word));
+        const overlap = sharedKeywords.length / child.processedWords.length;
+        return overlap > 0.2; // 20% overlap
+    }
+
+    // Convert reply to tree node
+    function replyToTreeNode(reply) {
+        return {
+            id: reply.id,
+            content: reply.content,
+            score: reply.score,
+            processedWords: reply.processedWords, // Include processedWords
+            children: reply.children || [],
+        };
+    }
+
+    // TF-IDF Calculation Functions
+    function calculateTFIDF(documents) {
+        const idf = calculateIDF(documents);
+        return documents.map(doc => {
+            const tf = calculateTF(doc);
+            const tfidf = {};
+            Object.keys(tf).forEach(term => {
+                tfidf[term] = tf[term] * (idf[term] || 0);
+            });
+            return tfidf;
+        });
+    }
+
+    function calculateIDF(documents) {
+        const documentCount = documents.length;
+        const termDocumentCounts = {};
+
+        documents.forEach(doc => {
+            const uniqueTerms = new Set(doc);
+            uniqueTerms.forEach(term => {
+                termDocumentCounts[term] = (termDocumentCounts[term] || 0) + 1;
+            });
+        });
+
+        const idf = {};
+        Object.keys(termDocumentCounts).forEach(term => {
+            idf[term] = Math.log(documentCount / (termDocumentCounts[term] || 1));
+        });
+        return idf;
+    }
+
+    function calculateTF(terms) {
+        const termCounts = {};
+        terms.forEach(term => {
+            termCounts[term] = (termCounts[term] || 0) + 1;
+        });
+        const totalTerms = terms.length;
+        const tf = {};
+        Object.keys(termCounts).forEach(term => {
+            tf[term] = termCounts[term] / totalTerms;
+        });
+        return tf;
+    }
+}
+
+
+
+
+function removeCircularReferences(node) {
+    const clone = { ...node }; // Shallow copy the node to avoid mutating the original
+    delete clone.parent; // Remove the circular reference
+
+    // Recursively process children if they exist
+    if (clone.children) {
+        clone.children = clone.children.map(removeCircularReferences);
+    }
+    return clone;
+}
+
+
+function buildHierarchyFromReply(rootIndex, repliesWithTFIDF, similarityMatrix, visited = new Set()) {
+    if (visited.has(rootIndex) || !repliesWithTFIDF[rootIndex] || !repliesWithTFIDF[rootIndex].id) {
+        console.warn(`Skipping rootIndex ${rootIndex} - Invalid or already visited.`);
+        return null;
+    }
+
+    visited.add(rootIndex);
+
+    const rootReply = repliesWithTFIDF[rootIndex];
+    console.log(`Building hierarchy from root reply ID: ${rootReply.id}`);
+
+    const root = {
+        name: `Reply ID: ${rootReply.id}`,
+        content: rootReply.content,
+        children: []
+    };
+
+    const threshold = 0.5;
+    similarityMatrix[rootIndex].forEach((similarity, idx) => {
+        if (idx !== rootIndex && similarity >= threshold && !visited.has(idx) && repliesWithTFIDF[idx]) {
+            console.log(`Adding child reply ID: ${repliesWithTFIDF[idx].id} with similarity: ${similarity}`);
+            const childHierarchy = buildHierarchyFromReply(idx, repliesWithTFIDF, similarityMatrix, visited);
+            if (childHierarchy) root.children.push(childHierarchy);
+        }
+    });
+
+    console.log(`Hierarchy for root reply ID ${rootReply.id}:`, root);
+    return root;
+}
+
+function showCommentsForNode(comments, threadId) {
+    // Check if there are any comments
+    if (!comments || comments.length === 0) {
+        console.log("No comments available for this node.");
+        return;
+    }
+
+    // Create or select the comment listing container for the thread
+    let commentsContainer = document.getElementById(`commentListing-${threadId}`);
+    if (!commentsContainer) {
+        commentsContainer = document.createElement('div');
+        commentsContainer.id = `commentListing-${threadId}`;
+        commentsContainer.className = 'comment-listing';
+        document.getElementById(`treeContainer-${threadId}`).appendChild(commentsContainer);
+    }
+
+    // Render comments in the comments container
+    renderComments(comments, commentsContainer.id);
+    console.log("Displayed comments for node:", comments);
+}
+
+
+
+// Render comments in horizontal, expandable layout with collapse/expand functionality
+function renderComments(comments, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = ''; // Clear previous comments
+
+    comments.forEach((comment, index) => {
+        const commentDiv = document.createElement('div');
+        commentDiv.classList.add('comment');
+        commentDiv.innerText = comment.content;
+
+        // Initially collapse if more than 3 comments
+        if (index >= 3) {
+            commentDiv.classList.add('collapsed');
+        }
+
+        container.appendChild(commentDiv);
+    });
+
+    // Add an expand button if there are more than 3 comments
+    if (comments.length > 3) {
+        const expandButton = document.createElement('button');
+        expandButton.innerText = "Show more";
+        expandButton.onclick = () => toggleCollapse(containerId);
+        container.appendChild(expandButton);
+    }
+
+    // Set up horizontal scroll display
+    container.style.display = 'flex';
+    container.style.overflowX = 'auto';
+}
+
+// Toggle collapse/expand for comments
+function toggleCollapse(containerId) {
+    const container = document.getElementById(containerId);
+    const comments = container.querySelectorAll('.comment');
+
+    comments.forEach((comment, index) => {
+        if (index >= 3) {
+            comment.classList.toggle('collapsed');
+        }
+    });
+}
+
+function visualizeRepliesInThread(replies) {
+    const repliesWithTFIDF = calculateTFIDFForThread(replies);
+    const similarityMatrix = computeSimilaritiesBetweenReplies(repliesWithTFIDF);
+    const associations = createAssociationsFromSimilarities(repliesWithTFIDF, similarityMatrix);
+
+    visualizeReplyAssociations(repliesWithTFIDF, associations);
+}
+
+
+function displayReply(reply, repliesContainer) {
+    if (!reply) return;
+
+    const replyContainer = document.createElement('div');
+    replyContainer.className = 'reply-container';
+
+    // Display Reply ID
+    const replyID = document.createElement('p');
+    replyID.innerText = `Reply ID: ${reply.id}`;
+    replyContainer.appendChild(replyID);
+
+    // Reply Content
+    const replyContent = document.createElement('p');
+    replyContent.innerHTML = renderMarkdown(reply.content);
+    replyContainer.appendChild(replyContent);
+
+    // Author Ethereum Address
+    const submitter = document.createElement('p');
+    submitter.innerHTML = `Author: <a href="/users/${reply.sender}" class="eth-address" data-eth-address="${reply.sender}">${reply.sender}</a>`;
+    replyContainer.appendChild(submitter);
+
+    // Email Address
+    const email = document.createElement('p');
+    email.innerText = `Email: ${reply.email || 'No email provided'}`;
+    replyContainer.appendChild(email);
+
+    // Timestamp
+    const timestamp = document.createElement('p');
+    timestamp.innerText = `Posted on: ${new Date(Number(reply.timestamp) * 1000).toLocaleString()}`;
+    replyContainer.appendChild(timestamp);
+
+    // Magnet URL for Uploaded Files
+    if (reply.magnetUrl && reply.magnetUrl !== '0') {
+        downloadImage(reply.magnetUrl, replyContainer);
+    }
+
+    repliesContainer.appendChild(replyContainer);
+
+    // Add hover event listeners for Ethereum address
+    const ethAddressSpan = submitter.querySelector('.eth-address');
+    const ethAddress = ethAddressSpan.dataset.ethAddress;
+
+    ethAddressSpan.addEventListener('mouseenter', (event) => showProfilePopup(event, ethAddress));
+    ethAddressSpan.addEventListener('mouseleave', hideProfilePopup);
+
+    // Attach click event to open the overlay
+    replyContainer.onclick = () => openReplyOverlay(reply);
+}
+
+
+
+function renderMarkdown(text) {
+    const converter = new showdown.Converter({
+        extensions: [
+            function() {
+                return [{
+                    type: 'lang',
+                    regex: /```([^]+?)```/g, // Match code blocks between triple backticks
+                    replace: function(match, codeContent) {
+                        // Clean up any accidental HTML <br> or whitespace added
+                        codeContent = codeContent.trim();
+                        return `<pre><code data-lang="python">${codeContent}</code></pre>`;
+                    }
+                }];
+            }
+        ],
+        tables: true,
+        strikethrough: true,
+        tasklists: true,
+        simpleLineBreaks: true
+    });
+
+    // Convert the remaining markdown text
+    return converter.makeHtml(text);
+}
+
+
+function renderImageForAllOccurrences(torrent, magnetURI, threadContainer) {
+    // Loop through all files in the torrent
+    torrent.files.forEach(file => {
+        file.getBlob((err, blob) => {
+            if (err) {
+                console.error('Error downloading image:', err);
+                return;
+            }
+
+            // Log the Blob object to make sure it's being generated correctly
+            console.log(`Generated Blob object: ${blob} for file: ${file.name}`);
+
+            // Create the Blob URL from the file
+            const url = URL.createObjectURL(blob);
+
+            // Check if threadContainer exists
+            if (!threadContainer) {
+                console.error('Error: threadContainer is undefined or null');
+                return;
+            }
+
+            // Create a magnet info paragraph
+            const magnetInfo = document.createElement('p');
+            magnetInfo.innerText = `Magnet URL: ${magnetURI}, Filename: ${file.name}`;
+
+            // Create the image element
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = file.name;
+            img.style.maxWidth = '200px';
+            img.style.cursor = 'pointer';
+            img.onclick = () => openImageFullScreen(url); // Open in full screen on click
+
+            // Insert the image and magnet info into the container
+            const contentSection = threadContainer.querySelector('p + p'); // Adjust based on where you want to insert
+            if (contentSection) {
+                threadContainer.insertBefore(magnetInfo, contentSection.nextSibling);
+                threadContainer.insertBefore(img, magnetInfo.nextSibling);
+            } else {
+                threadContainer.appendChild(magnetInfo);
+                threadContainer.appendChild(img);
+            }
+
+            // Log the successful image insertion
+            console.log('Image successfully inserted into the DOM');
+        });
+    });
+}
+
+
+function openImageFullScreen(url) {
+    const overlayDiv = document.createElement('div');
+    overlayDiv.style.position = 'fixed';
+    overlayDiv.style.top = '0';
+    overlayDiv.style.left = '0';
+    overlayDiv.style.width = '100%';
+    overlayDiv.style.height = '100%';
+    overlayDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+    overlayDiv.style.zIndex = '10000';
+    overlayDiv.style.display = 'flex';
+    overlayDiv.style.justifyContent = 'center';
+    overlayDiv.style.alignItems = 'center';
+
+    const fullScreenImage = document.createElement('img');
+    fullScreenImage.src = url;
+    fullScreenImage.style.maxWidth = '90%';
+    fullScreenImage.style.maxHeight = '90%';
+
+    overlayDiv.appendChild(fullScreenImage);
+    document.body.appendChild(overlayDiv);
+
+    overlayDiv.onclick = () => {
+        document.body.removeChild(overlayDiv);
+    };
+}
+
+function openReplyOverlay(reply) {
+    // Show overlay
+    const overlay = document.getElementById('overlay');
+    overlay.style.height = '100%';
+
+    // Set overlay content
+    document.getElementById('replyContext').style.display = 'block';
+    document.getElementById('replyThreadTitle').innerText = `Reply ID: ${reply.id}`;
+    document.getElementById('replyThreadTitle').dataset.threadId = reply.id;
+
+    // Fill overlay fields with reply data
+    document.getElementById('newPostTitle').value = `Reply to: ${reply.id}`;
+    document.getElementById('newPostContent').value = reply.content;
+    document.getElementById('newPostTags').value = 'Reply'; // Default tag for replies
+    document.getElementById('newPostTags').style.display = 'none';
+
+    // Disable fields to prevent editing
+    document.getElementById('newPostTitle').disabled = true;
+    document.getElementById('newPostContent').disabled = true;
+
+    // File details
+    if (reply.magnetUrl && reply.magnetUrl !== '0') {
+        const magnetLink = document.createElement('a');
+        magnetLink.href = reply.magnetUrl;
+        magnetLink.target = '_blank';
+        magnetLink.innerText = 'Download File';
+        document.getElementById('overlayContent').appendChild(magnetLink);
+    }
+}
+
+
+async function checkIfAdmin(account) {
+    try {
+        const admin = await gremlinAdminContract.methods.owner().call();
+        console.log("Admin address from contract:", admin);
+        console.log("Current connected account:", account);
+        const adminPanel = document.getElementById('adminPanel');
+        if (admin.toLowerCase() === account.toLowerCase()) {
+            isAdmin = true;
+            console.log("User is admin:", isAdmin);
+            adminPanel.style.display = 'block'; // Show admin panel
+        } else {
+            console.log("User is not admin:", isAdmin);
+            adminPanel.style.display = 'none'; // Hide admin panel
+
+        }
+    } catch (error) {
+        console.error("Error during admin check:", error);
+    }
+}
+
+
+// Function to calculate the average and standard deviation of collision rates
+function computeStatistics(collisionRates) {
+    const avg = collisionRates.reduce((sum, rate) => sum + rate, 0) / collisionRates.length;
+    const variance = collisionRates.reduce((sum, rate) => sum + Math.pow(rate - avg, 2), 0) / collisionRates.length;
+    const stdDev = Math.sqrt(variance);
+    return { average: avg, stdDev: stdDev };
+}
+
+
+function calculateTFIDFForThread(replies) {
+    // Tokenize and calculate TF-IDF for all replies in the thread
+    const documents = replies.map(reply => reply.content);  // Collect the content of each reply
+    const tfidfVectors = calculateTFIDF(documents);  // Calculate TF-IDF for the set of replies
+    console.log("tfidfvectors", tfidfVectors);
+    // Attach TF-IDF vectors back to the original replies
+    return replies.map((reply, index) => {
+        return { ...reply, tfidfData: tfidfVectors[index] };  // Attach TF-IDF data to each reply
+    });
+}
+
+
+function createAssociationsFromSimilarities(repliesWithTFIDF, similarityMatrix, threshold = 0.2) {
+    const associations = [];
+
+    for (let i = 0; i < similarityMatrix.length; i++) {
+        for (let j = 0; j < similarityMatrix[i].length; j++) {
+            if (similarityMatrix[i][j] >= threshold) {
+                associations.push({
+                    source: repliesWithTFIDF[i].id,
+                    target: repliesWithTFIDF[j].id,
+                    similarity: similarityMatrix[i][j]
+                });
+            }
+        }
+    }
+
+    return associations;
+}
+
+
+
+function computeSimilaritiesBetweenReplies(repliesWithTFIDF) {
+    const similarityMatrix = [];
+
+    // Calculate cosine similarity between each pair of replies
+    for (let i = 0; i < repliesWithTFIDF.length; i++) {
+        similarityMatrix[i] = [];
+        for (let j = 0; j < repliesWithTFIDF.length; j++) {
+            if (i !== j) {
+                const similarity = calculateCosineSimilarity(repliesWithTFIDF[i].tfidfData, repliesWithTFIDF[j].tfidfData);
+                similarityMatrix[i][j] = similarity;
+            } else {
+                similarityMatrix[i][j] = 0;  // No self-similarity
+            }
+        }
+    }
+
+    return similarityMatrix;
+}
+
+async function loadAndDisplayThreads() {
+    try {
+        console.log("Fetching threads and replies from the blockchain...");
+
+        // Fetch all threads and replies
+        const allFetchedThreads = await gremlinThreadContract.methods.getAllThreads().call();
+        const allFetchedReplies = await gremlinReplyContract.methods.getAllReplies().call();
+
+        // Organize threads and replies into a structured format
+        organizeThreadsAndReplies(allFetchedThreads, allFetchedReplies);
+
+        // Check if threads exist and display them
+        if (!allFetchedThreads || allFetchedThreads.length === 0) {
+            console.warn("No threads available to display.");
+            document.getElementById("status").innerText = "No threads found on the blockchain.";
+            return;
+        }
+
+        // Display sorted threads
+        displaySortedThreads();
+
+    } catch (error) {
+        console.error("Error loading threads:", error);
+        document.getElementById("status").innerText = "Failed to load threads. Please try again.";
+    }
+}
+
+
+// Create and display comments in a horizontal masonry grid
+function createMasonryGrid(comments, containerId) {
+    const container = document.getElementById(containerId);
+
+    // Style the container to allow horizontal scrolling
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = 'repeat(5, max-content)'; // 5 tiles per row
+    container.style.gridAutoRows = 'max-content'; // Dynamic row height
+    container.style.gridGap = '10px';
+    container.style.overflowX = 'auto';
+    container.style.whiteSpace = 'nowrap';
+    container.style.padding = '10px';
+
+    // Clear existing content
+    container.innerHTML = '';
+
+    comments.forEach((comment, index) => {
+        const commentTile = document.createElement('div');
+        commentTile.className = 'comment-tile';
+
+        // Random width and height for a Windows Phone look
+        const randomWidth = Math.floor(Math.random() * 2 + 1) * 100; // 100px or 200px
+        const randomHeight = Math.floor(Math.random() * 2 + 1) * 100; // 100px or 200px
+        commentTile.style.width = `${randomWidth}px`;
+        commentTile.style.height = `${randomHeight}px`;
+        commentTile.style.backgroundColor = getRandomColor();
+        commentTile.style.borderRadius = '8px';
+        commentTile.style.display = 'flex';
+        commentTile.style.justifyContent = 'center';
+        commentTile.style.alignItems = 'center';
+        commentTile.style.position = 'relative';
+        commentTile.style.overflow = 'hidden';
+        commentTile.style.cursor = 'pointer';
+
+        // Add truncated text
+        const truncatedText = document.createElement('div');
+        truncatedText.className = 'truncated-text';
+        truncatedText.innerText = comment.content.slice(0, 30) + '...';
+        truncatedText.style.textAlign = 'center';
+        truncatedText.style.padding = '10px';
+        truncatedText.style.color = '#fff';
+        truncatedText.style.pointerEvents = 'none';
+
+        // Append truncated text
+        commentTile.appendChild(truncatedText);
+
+        // Add hover effect for flipping
+        commentTile.addEventListener('mouseenter', () => flipTile(commentTile, comment.content));
+        commentTile.addEventListener('mouseleave', () => resetTile(commentTile, truncatedText));
+
+        // Add click event for overlay
+        commentTile.addEventListener('click', () => showCommentOverlay(comment.content));
+
+        container.appendChild(commentTile);
+    });
+}
+
+
+// Flip tile to show full comment
+function flipTile(tile, content) {
+    tile.style.transition = 'transform 0.5s';
+    tile.style.transform = Math.random() > 0.5 ? 'rotateY(180deg)' : 'rotateX(180deg)';
+
+    // Replace content with full comment
+    const fullContent = document.createElement('div');
+    fullContent.className = 'full-content';
+    fullContent.innerText = content;
+    fullContent.style.textAlign = 'center';
+    fullContent.style.padding = '10px';
+    fullContent.style.color = '#fff';
+
+    // Remove existing children and add full content
+    tile.innerHTML = '';
+    tile.appendChild(fullContent);
+}
+
+// Reset tile back to truncated text
+function resetTile(tile, truncatedText) {
+    tile.style.transition = 'transform 0.5s';
+    tile.style.transform = 'rotateY(0deg) rotateX(0deg)';
+    tile.innerHTML = '';
+    tile.appendChild(truncatedText);
+}
+
+
+// Generate random colors
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+
+// Function to run the Python code from Ace Editor
+function runPythonCode(editorIndex) {
+    console.log(`Running code from editor-${editorIndex}...`);
+    
+    const editor = window[`editor_${editorIndex}`];
+    if (!editor) {
+        console.error(`Editor not found for index ${editorIndex}.`);
+        return;
+    }
+
+    const code = editor.getValue();
+    console.log(`Code from editor-${editorIndex}:`, code);
+
+    const outputDiv = document.getElementById(`output-${editorIndex}`);
+    if (!outputDiv) {
+        console.error(`Output div not found for editor-${editorIndex}.`);
+        return;
+    }
+
+    // Simulate Python execution and display result
+    try {
+        const result = evalPythonCode(code);  // Replace with real Python backend call
+        outputDiv.textContent = result;
+        console.log(`Execution result for editor-${editorIndex}:`, result);
+    } catch (error) {
+        outputDiv.textContent = `Error: ${error.message}`;
+        console.error(`Error executing code from editor-${editorIndex}:`, error);
+    }
+}
+
+// Dummy function to simulate Python execution
+function evalPythonCode(code) {
+    // Simulate some basic code execution
+    if (code.includes("hello")) {
+        return 'Hello, World!';
+    }
+    return 'Python code executed successfully.';
+}
+
+
+async function importPublicKey(pem) {
+    const binaryDer = str2ab(pem);
+    return crypto.subtle.importKey(
+        "spki",
+        binaryDer,
+        { name: "ECDH", namedCurve: "P-256" },
+        true,
+        []
+    );
+}
+
+// Function to convert base64 PEM to binary
+function str2ab(str) {
+    const binaryString = window.atob(str);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+// Generate HMAC using WebCrypto
+async function generateHMAC(secret, data) {
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        true,
+        ["sign"]
+    );
+    const signature = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        new TextEncoder().encode(data)
+    );
+    return bufferToHex(signature);
+}
+
+// Convert ArrayBuffer to Hex string
+function bufferToHex(buffer) {
+    const byteArray = new Uint8Array(buffer);
+    return Array.prototype.map.call(byteArray, x => ('00' + x.toString(16)).slice(-2)).join('');
+}
+
+// Fetch the public key and generate HMAC on frontend
+async function fetchPublicKeyAndGenerateHMAC() {
+    const ethAddress = "user_ethereum_address";  // e.g., get from MetaMask
+
+    // Fetch the public key from the backend
+    const response = await fetch('/start_session', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ eth_address: ethAddress })
+    });
+    const data = await response.json();
+
+    // Import the public key (ECC)
+    const publicKey = await importPublicKey(data.public_key);
+
+    // Generate HMAC using WebCrypto
+    const hmacKey = "secret_key";  // Retrieved from backend
+    const hmac = await generateHMAC(hmacKey, ethAddress);
+
+    // Encrypt the HMAC using the ECC public key
+    const encryptedHMAC = await encryptHMACWithPublicKey(hmac, publicKey);
+
+    // Send the encrypted HMAC back to the server for verification
+    await sendEncryptedHMAC(encryptedHMAC, ethAddress);
+}
+
+// Function to encrypt HMAC with the public key using ECDH
+async function encryptHMACWithPublicKey(hmac, publicKey) {
+    // Encryption logic using WebCrypto with the public key
+    const encrypted = await crypto.subtle.encrypt(
+        { name: "ECDH", public: publicKey },
+        publicKey,  // Derived public key
+        new TextEncoder().encode(hmac)
+    );
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(encrypted)));
+}
+
+// Send the encrypted HMAC back to the server
+async function sendEncryptedHMAC(encryptedHMAC, ethAddress) {
+    await fetch('/verify', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ eth_address: ethAddress, encrypted_hmac: encryptedHMAC })
+    });
+}
+
+function ensureCommentsSectionExists() {
+    let container = document.getElementById("commentsSection");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "commentsSection";
+        container.className = "comments-container";
+        document.body.appendChild(container); // Or a specific parent element
+    }
+    return container;
+}
+
+
+function calculateCosineSimilarity(tfidf1, tfidf2) {
+    const commonTerms = Object.keys(tfidf1).filter(term => term in tfidf2);
+
+    const dotProduct = commonTerms.reduce((sum, term) => sum + (tfidf1[term] * tfidf2[term]), 0);
+    const magnitude1 = Math.sqrt(Object.values(tfidf1).reduce((sum, val) => sum + val * val, 0));
+    const magnitude2 = Math.sqrt(Object.values(tfidf2).reduce((sum, val) => sum + val * val, 0));
+
+    return dotProduct / (magnitude1 * magnitude2);
+}
+
+
+
+function showImageOverlay(imageUrl) {
+    // Create the overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = '1000';
+
+    const overlayContent = document.createElement('div');
+    overlayContent.id = 'overlayContent';
+
+    // Create the image element
+    const image = document.createElement('img');
+    image.src = imageUrl;
+    image.style.maxWidth = '25%';
+    image.style.maxHeight = '25%';
+
+    // Create the close button
+    const closeButton = document.createElement('button');
+    closeButton.id = 'closeOverlayBtn';
+    closeButton.innerText = 'Close';
+    closeButton.style.marginTop = '10px';
+
+    // Add a click event to close the overlay
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+    });
+
+    // Append elements to the overlay content
+    overlayContent.appendChild(image);
+    overlayContent.appendChild(closeButton);
+
+    // Append the overlay content to the overlay
+    overlay.appendChild(overlayContent);
+
+    // Append the overlay to the body
+    document.body.appendChild(overlay);
+}
