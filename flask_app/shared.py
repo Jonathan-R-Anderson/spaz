@@ -3062,7 +3062,7 @@ gremlinJournalABI = [
 			}
 		]
 
-FILE_DIR = 'static'
+FILE_DIR = 'hosted'
 #TORRENT_DIR = 'torrents'
 TRACKER_PORT = 5000
 BLACKLIST_FILE = 'blacklist.json'
@@ -3075,10 +3075,6 @@ DB_API_URL = "http://127.0.0.1:5003"
 #seeded_files = {}
 #THREADS = []
 client = docker.from_env()
-VPN_CONFIG_DIR = "/vpn-configs"  # Directory where VPN configs are stored
-VPN_TEMPLATE_PATH = "/static/template.ovpn"  # Path to a base .ovpn template file
-CERT_DIR = "/etc/openvpn"
-EASYRSA_DIR = "/etc/openvpn/easy-rsa"
 def load_blacklist():
     if not os.path.exists(BLACKLIST_FILE):
         return []  # Return empty list if file does not exist

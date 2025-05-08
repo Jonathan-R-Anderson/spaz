@@ -115,9 +115,9 @@ def upload_file():
 #    """Serve the uploaded image."""
 #    return send_from_directory(FILE_DIR, filename)
 
-@app.route('/styles/<filename>', methods=['GET'])
+@app.route('/css/<filename>', methods=['GET'])
 def styles(filename):
-    return send_from_directory(os.path.join('hosted', 'styles'), filename)
+    return send_from_directory(os.path.join('hosted', 'css'), filename)
 
 @app.route('/js/<filename>', methods=['GET'])
 def js(filename):
