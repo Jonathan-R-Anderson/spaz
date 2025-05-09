@@ -145,39 +145,32 @@ def generate_and_store_secret():
 
 
 # API to verify the secret for RTMP URL
-@app.route('/verify_secret', methods=['POST'])
+@app.route('/verify_secret', methods=['GET', 'POST'])
 def verify_secret():
-    eth_address = request.json.get('eth_address')
-    secret = request.json.get('secret')
+    if request.method == 'POST':
+        eth_address = request.json.get('eth_address')
+        secret = request.json.get('secret')
+    else:  # For GET requests, such as from NGINX RTMP on_publish
+        eth_address = request.args.get('name')
+        secret = request.args.get('secret')
 
-    # Log the incoming request
-    logging.info(f"Received request to verify secret for Ethereum address: {eth_address}")
+    ip_address = request.remote_addr
+    logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip={ip_address}")
 
     if not eth_address or not secret:
-        logging.error(f"Missing Ethereum address or secret. Provided eth_address: {eth_address}, secret: {secret}")
         return jsonify({"error": "Missing Ethereum address or secret"}), 400
 
-    # Attempt to retrieve the stored hashed secret
     stored_hashed_secret = get_hashed_secret(eth_address)
     if not stored_hashed_secret:
-        logging.error(f"No stored hashed secret found for Ethereum address: {eth_address}")
         return jsonify({"error": "Secret not found"}), 404
 
-    # Log the retrieved hashed secret
-    logging.info(f"Stored hashed secret retrieved for eth_address {eth_address}: {stored_hashed_secret}")
-
-    # Hash the provided secret and compare with the stored hash
-    provided_hashed_secret = hash_secret(secret)
-    logging.info(f"Hashed provided secret: {provided_hashed_secret}")
-
-    # Compare secrets using hmac to prevent timing attacks
-    if hmac.compare_digest(provided_hashed_secret, stored_hashed_secret):
-        logging.info(f"Secret verified successfully for eth_address {eth_address}")
-        return jsonify({"message": "Secret verified successfully"}), 200
+    if hmac.compare_digest(hash_secret(secret), stored_hashed_secret):
+        logging.info(f"✅ Verified stream key for {eth_address}")
+        return '', 204  # RTMP expects no content on success
     else:
-        logging.warning(f"Secret verification failed for eth_address {eth_address}. Provided secret does not match stored secret.")
-        return jsonify({"error": "Invalid secret"}), 401
-    
+        logging.warning(f"❌ Invalid stream key for {eth_address}")
+        return '', 403
+
 # API to retrieve the RTMP URL for a user
 @app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
