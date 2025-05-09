@@ -35,46 +35,41 @@ def generate_secret():
     return jsonify(response.json()), response.status_code
 
 
-@app.route('/verify_secret', methods=['GET', 'POST'])
+@app.route('/verify_secret', methods=['GET'])
 def verify_secret():
-    # Support both GET and POST (Nginx RTMP uses GET by default)
-    eth_address = request.values.get("name")   # Works with both form and query params
-    secret = request.values.get("secret")
+    eth_address = request.args.get("name")
+    secret = request.args.get("secret")
     ip_address = request.remote_addr
 
     logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
-    if not eth_address or not secret:
-        logging.warning("[verify_secret] Missing eth_address or secret.")
-        return '', 403
+    try:
+        # Call the DB API with GET and query params
+        verify_response = requests.get(
+            f"{DB_API_URL}/verify_secret",
+            params={"eth_address": eth_address, "secret": secret}
+        )
 
-    # First verify the secret using your /verify_secret API
-    verify_response = requests.post(f"{DB_API_URL}/verify_secret", json={
-        "eth_address": eth_address,
-        "secret": secret
-    })
+        if verify_response.status_code == 200:
+            logging.info(f"✅ Secret verified for {eth_address}, storing IP {ip_address}")
 
-    logging.info(f"[verify_secret] Verification API responded: {verify_response.status_code}")
+            # Store IP address
+            store_response = requests.post(f"{DB_API_URL}/store_streamer_info", json={
+                "eth_address": eth_address,
+                "hashed_secret": secret,
+                "ip_address": ip_address
+            })
 
-    if verify_response.status_code != 200:
-        logging.warning(f"[verify_secret] Secret verification failed for {eth_address}")
-        return '', 403
+            logging.info(f"[store_streamer_info] status: {store_response.status_code}, response: {store_response.text}")
+            return '', 204
 
-    # Then store the IP address
-    store_response = requests.post(f"{DB_API_URL}/store_streamer_info", json={
-        "eth_address": eth_address,
-        "hashed_secret": secret,
-        "ip_address": ip_address
-    })
+        else:
+            logging.warning(f"❌ Verification failed for {eth_address}: {verify_response.text}")
+            return '', 403
+    except Exception as e:
+        logging.exception("Error during /verify_secret")
+        return '', 500
 
-    logging.info(f"[verify_secret] Store IP API responded: {store_response.status_code}")
-
-    if store_response.status_code == 200:
-        logging.info(f"[verify_secret] Verified and stored IP for {eth_address}")
-        return '', 204
-    else:
-        logging.error(f"[verify_secret] Failed to store IP for {eth_address}")
-        return '', 403
 
 
 # Get the RTMP URL for an Ethereum address
