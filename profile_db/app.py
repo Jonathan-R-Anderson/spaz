@@ -111,8 +111,8 @@ def generate_and_store_secret():
         data = request.get_json()
         logging.info(f"Incoming JSON payload: {data}")
 
-        eth_address = data.json.get('eth_address') if data else None
-        ip_address = data.json.get('ip_address') if data else None
+        eth_address = data.get('eth_address') if data else None
+        ip_address = data.get('ip_address') if data else None
 
         if not eth_address:
             logging.warning("Missing Ethereum address in request.")
