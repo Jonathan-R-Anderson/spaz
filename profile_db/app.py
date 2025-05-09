@@ -29,9 +29,10 @@ class User(db.Model):
     rtmp_secret = db.Column(db.String(64), nullable=False)
     ip_address = db.Column(db.String(45), nullable=False)  # Ensure this field is added
 
-    def __init__(self, eth_address, rtmp_secret):
+    def __init__(self, eth_address, rtmp_secret, ip_address):
         self.eth_address = eth_address
         self.rtmp_secret = rtmp_secret
+        self.ip_address = ip_address
 
 # Define a model for storing magnet URLs
 class MagnetURL(db.Model):
@@ -110,8 +111,8 @@ def generate_and_store_secret():
         data = request.get_json()
         logging.info(f"Incoming JSON payload: {data}")
 
-        eth_address = data.get('eth_address') if data else None
-        ip_address = data.get('ip_address') if data else None
+        eth_address = data.json.get('eth_address') if data else None
+        ip_address = data.json.get('ip_address') if data else None
 
         if not eth_address:
             logging.warning("Missing Ethereum address in request.")
