@@ -49,8 +49,8 @@ def home(eth_address):
                            gremlinJournalAddress=gremlinJournalAddress,
                            gremlinJournalABI=json.dumps(gremlinJournalABI, ensure_ascii=False))
 
-@app.route('/proxy_get_rtmp_url/<eth_address>', methods=['GET'])
-def proxy_get_rtmp_url(eth_address):
+@app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
+def get_rtmp_url(eth_address):
     from shared import DB_API_URL  # Make sure DB_API_URL is set correctly (e.g., https://psichos.is:5003)
 
     logging.info(f"[proxy_get_rtmp_url] Incoming request for eth_address: {eth_address}")
