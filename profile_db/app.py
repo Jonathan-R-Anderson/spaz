@@ -10,6 +10,8 @@ import logging
 
 # Initialize Flask app
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app)
 
 # Redis client to store secrets (NoSQL key-value store)
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
