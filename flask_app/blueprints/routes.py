@@ -226,7 +226,7 @@ def generate_rtmp_url():
         return jsonify({"error": "Failed to retrieve secret"}), 500
     
     # Create a new unique RTMP URL for the user with the secret embedded in it
-    new_rtmp_url = f"rtmp://gremlin.codes:1935/live/{eth_address}?secret={new_secret}"
+    new_rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={new_secret}"
     logging.info(f"Generated new RTMP URL: {new_rtmp_url}")
 
     # Return the RTMP URL immediately so the stream can start
