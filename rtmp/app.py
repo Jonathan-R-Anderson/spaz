@@ -17,11 +17,12 @@ logging.basicConfig(level=logging.INFO)
 @app.route('/generate_secret', methods=['POST'])
 def generate_secret():
     eth_address = request.json.get('eth_address')
+    ip_address = request.json.get('ip_address')
     if not eth_address:
         return jsonify({"error": "Ethereum address is required"}), 400
 
     # Call the database container to generate the secret
-    response = requests.post(f"{DB_API_URL}/generate_secret", json={"eth_address": eth_address})
+    response = requests.post(f"{DB_API_URL}/generate_secret", json={"eth_address": eth_address, "ip_address": ip_address})
     return jsonify(response.json()), response.status_code
 
 # Verify the secret provided by the RTMP server before starting the stream
