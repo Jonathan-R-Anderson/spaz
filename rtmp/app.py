@@ -124,4 +124,4 @@ def clear_eth_address_files(eth_address):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5004)
+    app.run(host='0.0.0.0', port=5004, debug=True, ssl_context=('/certs/fullchain.pem', '/certs/privkey.pem'))
