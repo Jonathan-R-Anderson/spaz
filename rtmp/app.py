@@ -37,38 +37,34 @@ def generate_secret():
 
 @app.route('/verify_secret', methods=['POST'])
 def verify_secret():
-    eth_address = request.args.get("name")
-    secret = request.args.get("secret")
+    eth_address = request.form.get("name")
+    secret = request.form.get("secret")
     ip_address = request.remote_addr
 
     logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
+    if not eth_address or not secret:
+        logging.warning("Missing eth_address or secret.")
+        return '', 403
+
     try:
-        # Call the DB API with GET and query params
-        verify_response = requests.get(
+        verify_response = requests.post(
             f"{DB_API_URL}/verify_secret",
-            params={"eth_address": eth_address, "secret": secret}
-        )
-
-        if verify_response.status_code == 200:
-            logging.info(f"✅ Secret verified for {eth_address}, storing IP {ip_address}")
-
-            # Store IP address
-            store_response = requests.post(f"{DB_API_URL}/store_streamer_info", json={
+            json={
                 "eth_address": eth_address,
-                "hashed_secret": secret,
-                "ip_address": ip_address
-            })
-
-            logging.info(f"[store_streamer_info] status: {store_response.status_code}, response: {store_response.text}")
+                "secret": secret
+            },
+            timeout=3
+        )
+        logging.info(f"[verify_secret] DB responded: {verify_response.status_code} - {verify_response.text}")
+        if verify_response.status_code == 200:
             return '', 204
-
         else:
-            logging.warning(f"❌ Verification failed for {eth_address}: {verify_response.text}")
             return '', 403
     except Exception as e:
-        logging.exception("Error during /verify_secret")
+        logging.error("Error during /verify_secret", exc_info=True)
         return '', 500
+
 
 
 
