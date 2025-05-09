@@ -47,7 +47,7 @@ seeded_files = {}
 # Function to store a magnet URL using the profile_db API
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
     logging.debug(f"Storing magnet URL for {eth_address}, snapshot {snapshot_index}")
-    url = "http://127.0.0.1:5003/store_magnet_url"
+    url = "http://psichos.is:5003/store_magnet_url"
     payload = {
         "eth_address": eth_address,
         "magnet_url": magnet_url,
@@ -67,7 +67,7 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
 # Function to retrieve magnet URLs from profile_db
 def retrieve_magnet_urls(eth_address):
     logging.debug(f"Retrieving magnet URLs for {eth_address}")
-    url = f"http://127.0.0.1:5003/get_magnet_urls/{eth_address}"
+    url = f"http://psichos.is:5003/get_magnet_urls/{eth_address}"
     
     try:
         logging.info(f"Sending GET request to retrieve magnet URLs for {eth_address}")

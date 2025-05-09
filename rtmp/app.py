@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # Database API URL
-DB_API_URL = "http://127.0.0.1:5003"
+DB_API_URL = "http://psichos.is:5003"
 HLS_FOLDER = '/app/static/hls'
 
 # Configure logging to output to the console
