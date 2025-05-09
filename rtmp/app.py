@@ -35,7 +35,7 @@ def generate_secret():
     return jsonify(response.json()), response.status_code
 
 
-@app.route('/verify_secret', methods=['GET'])
+@app.route('/verify_secret', methods=['POST'])
 def verify_secret():
     eth_address = request.args.get("name")
     secret = request.args.get("secret")
