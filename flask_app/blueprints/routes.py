@@ -199,6 +199,8 @@ def generate_rtmp_url():
 
     # Extract the eth_address from the request
     eth_address = request.json.get('eth_address')
+    ip_address = request.json.get('ip_address')
+
     logging.info(f"Extracted eth_address: {eth_address}")
     
     if not eth_address:
@@ -207,7 +209,7 @@ def generate_rtmp_url():
     
     # Call the API to generate and store a new secret for the eth_address
     logging.info(f"Calling API to generate secret for eth_address: {eth_address}")
-    secret_response = requests.post(f"{DB_API_URL}/generate_secret", json={"eth_address": eth_address}, timeout=30)
+    secret_response = requests.post(f"{DB_API_URL}/generate_secret", json={"eth_address": eth_address, "ip_address": ip_address}, timeout=30)
     logging.info(f"Secret generation API responded with status code: {secret_response.status_code}")
     
     if secret_response.status_code != 200:
