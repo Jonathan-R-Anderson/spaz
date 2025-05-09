@@ -181,7 +181,7 @@ def user_profile(eth_address):
         # Return JSON response with ownership and RTMP URL (if applicable)
         return jsonify({
             'is_owner': is_owner,
-            'rtmp_stream_url': rtmp_stream_url if is_owner else '127.0.0.1'
+            'rtmp_stream_url': rtmp_stream_url if is_owner else 'psichos.is'
         })
 
     # For GET requests, just render the template

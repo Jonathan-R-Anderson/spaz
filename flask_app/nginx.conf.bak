@@ -13,7 +13,7 @@ events {
 http {
 
     upstream flask {
-        server 127.0.0.1:5000;  # Flask app on localhost
+        server psichos.is:5000;  # Flask app on localhost
     }
 
     include       /etc/nginx/mime.types;
@@ -46,7 +46,7 @@ http {
     server {
         listen 443 ssl;
         listen [::]:443 ssl;  # Support for IPv6
-        server_name 127.0.0.1;
+        server_name psichos.is;
 
         # Self-signed SSL certificates
         ssl_certificate /etc/nginx/ssl/self-signed.crt;
@@ -65,7 +65,7 @@ http {
 
         # Proxy to Flask app
         location / {
-            proxy_pass https://127.0.0.1:5000;
+            proxy_pass https://psichos.is:5000;
             proxy_ssl_verify off;               # Disable SSL verification for self-signed cert
             proxy_ssl_protocols TLSv1.2 TLSv1.3; # Match Flask's SSL protocols
             proxy_ssl_ciphers HIGH:!aNULL:!MD5; # High-strength ciphers
