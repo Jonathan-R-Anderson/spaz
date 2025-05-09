@@ -27,3 +27,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 
 # Create directories if they don't exist
 os.makedirs(FILE_DIR, exist_ok=True)
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

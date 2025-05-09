@@ -116,12 +116,12 @@ def upload_file():
 #    return send_from_directory(FILE_DIR, filename)
 
 @app.route('/css/<filename>', methods=['GET'])
-def css(filename):
+def serve_css(filename):
     logging.info(f"Serving from: {os.path.join('hosted', 'css')}, file: {filename}")
     return send_from_directory(os.path.join('hosted', 'css'), filename)
 
 @app.route('/js/<filename>', methods=['GET'])
-def js(filename):
+def serve_js(filename):
     logging.info(f"Serving from: {os.path.join('hosted', 'css')}, file: {filename}")
     return send_from_directory(os.path.join('hosted', 'js'), filename)
 

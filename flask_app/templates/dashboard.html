@@ -1,54 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Streamer Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('css', filename='dashboard.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
 
+        body {
+            background-color: #18181b;
+            color: #e5e5e5;
+            display: flex;
+            height: 100vh;
+        }
 
+        .sidebar {
+            width: 240px;
+            background-color: #1f1f23;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #adadb8;
+        }
+
+        .sidebar a {
+            display: block;
+            color: #e5e5e5;
+            padding: 8px 0;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .sidebar a:hover {
+            color: #9147ff;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .panel {
+            background-color: #2c2c34;
+            border-radius: 6px;
+            padding: 16px;
+            flex: 1 1 300px;
+            min-height: 200px;
+        }
+
+        .panel h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .panel input,
+        .panel select,
+        .panel button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .panel button {
+            background-color: #9147ff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .panel button:hover {
+            background-color: #772ce8;
+        }
+
+        .chat-box {
+            flex: 1 1 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-box .messages {
+            background-color: #18181b;
+            flex: 1;
+            border: 1px solid #333;
+            border-radius: 6px 6px 0 0;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .chat-box .input {
+            display: flex;
+            border: 1px solid #333;
+            border-top: none;
+        }
+
+        .chat-box .input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background-color: #2c2c34;
+            color: white;
+        }
+
+        .chat-box .input button {
+            background-color: #9147ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+        }
+
+        .rtmp-output {
+            word-break: break-all;
+            background-color: #1f1f23;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
+    <div class="sidebar">
+        <h2>DASHBOARD</h2>
+        <a href="#">Live</a>
+        <a href="#">Extensions</a>
+        <a href="#">Achievements</a>
+        <a href="#">Events</a>
+        <a href="#">Activity</a>
+        <a href="#">Streaming Tools</a>
+        <h2>ANALYTICS</h2>
+        <a href="#">Channel</a>
+        <a href="#">Stream Summary</a>
+        <h2>VIDEOS</h2>
+        <a href="#">Video Producer</a>
+        <a href="#">Video Moderation</a>
+        <a href="#">Collections</a>
+        <a href="#">Clips</a>
+        <h2>SETTINGS</h2>
+        <a href="#">Channel</a>
+        <a href="#">Permissions</a>
+        <a href="#">Moderation</a>
+    </div>
+    <div class="main">
+        <div class="panel">
+            <h3>Stream Information</h3>
+            <input type="text" placeholder="Title">
+            <input type="text" placeholder="Go Live Notification">
+            <input type="text" placeholder="Game/Category">
+            <input type="text" placeholder="Communities">
+            <select>
+                <option>English</option>
+                <option>Spanish</option>
+                <option>French</option>
+            </select>
+            <button>Update Information</button>
+        </div>
 
-<header>
-  <h1>Gremlin Codes Dashboard</h1>
-  <span id="username">User: 0x000...abcd</span>
-</header>
+        <div class="panel">
+            <h3>Generate RTMP Endpoint</h3>
+            <button onclick="generateRTMP()">Generate RTMP URL</button>
+            <div id="rtmp_result" class="rtmp-output"></div>
+        </div>
 
-<main>
+        <div class="panel">
+            <h3>Video Preview</h3>
+            <p>OFFLINE</p>
+        </div>
 
-  <!-- Stream Key Panel -->
-  <section class="panel">
-    <h2>Stream Key</h2>
-    <input type="text" id="streamKey" readonly value="sk_live_1234567890abcdef">
-    <button onclick="generateNewKey()">Generate New Key</button>
-    <button onclick="updateKey()">Update Key</button>
-  </section>
+        <div class="panel">
+            <h3>Stream Health</h3>
+            <p>You are currently not online.</p>
+        </div>
 
-  <!-- Stream Preview -->
-  <section class="panel">
-    <h2>Live Stream Preview</h2>
-    <iframe id="streamPreview" src="about:blank" title="Stream Preview"></iframe>
-    <div class="viewer-count">👀 Viewers: <span id="viewerCount">0</span></div>
-  </section>
+        <div class="panel">
+            <h3>Stats</h3>
+            <p>Offline<br>0 Views<br>0 Followers</p>
+        </div>
 
-  <!-- Chat Room -->
-  <section class="panel">
-    <h2>Chat Room</h2>
-    <div id="chatLog" style="height:150px; overflow-y:auto; background:#000; padding:0.5rem;"></div>
-    <input type="text" id="chatInput" placeholder="Type a message...">
-    <button onclick="sendChat()">Send</button>
-  </section>
+        <div class="chat-box">
+            <h3>Chat</h3>
+            <div class="messages">
+                <!-- Chat messages go here -->
+            </div>
+            <div class="input">
+                <input type="text" placeholder="Send a message">
+                <button>Chat</button>
+            </div>
+        </div>
+    </div>
 
-  <!-- Moderator Panel -->
-  <section class="panel">
-    <h2>Moderators</h2>
-    <input type="text" id="modInput" placeholder="Enter Ethereum address">
-    <button onclick="addModerator()">Add Moderator</button>
-    <ul id="modList"></ul>
-  </section>
+    <script>
+        async function generateRTMP() {
+            const output = document.getElementById('rtmp_result');
+            output.innerText = 'Connecting to MetaMask...';
 
-</main>
-<script src="{{ url_for('js', filename='dashboard.js') }}"></script>
+            if (!window.ethereum) {
+                output.innerText = 'MetaMask not detected. Please install MetaMask.';
+                return;
+            }
 
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                const ethAddress = accounts[0];
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const clientIp = ipData.ip;
+
+                output.innerText = 'Generating stream key for ' + ethAddress + '...';
+
+                const response = await fetch('http://localhost:5003/generate_rtmp_url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ eth_address: ethAddress, ip_address: clientIp })
+                });
+
+                const data = await response.json();
+
+                if (data.new_rtmp_url) {
+                    output.innerText = 'Your RTMP URL: ' + data.new_rtmp_url;
+                } else {
+                    output.innerText = 'Failed to generate RTMP URL: ' + (data.error || 'Unknown error');
+                }
+            } catch (error) {
+                output.innerText = 'Error: ' + error.message;
+            }
+        }
+    </script>
 </body>
 </html>

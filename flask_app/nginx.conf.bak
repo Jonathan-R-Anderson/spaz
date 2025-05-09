@@ -91,5 +91,12 @@ http {
             add_header Cache-Control no-cache;
         }
         
+        location /css/ {
+            alias /app/hosted/css/;
+        }
+
+        location /js/ {
+            alias /app/hosted/js/;
+        }
     }
 }

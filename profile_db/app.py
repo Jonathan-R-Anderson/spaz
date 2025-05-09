@@ -61,14 +61,15 @@ def hash_secret(secret):
     return hmac.new(HMAC_SECRET_KEY.encode(), secret.encode(), hashlib.sha256).hexdigest()
 
 # Store the hashed secret in PostgreSQL
-def store_hashed_secret(eth_address, hashed_secret):
-    user = User.query.filter_by(eth_address=eth_address).first()
-    if user:
-        user.rtmp_secret = hashed_secret
-    else:
-        user = User(eth_address, hashed_secret)
-    db.session.add(user)
+def store_hashed_secret(eth_address, hashed_secret, ip_address):
+    new_user = User(
+        eth_address=eth_address,
+        rtmp_secret=hashed_secret,
+        ip_address=ip_address
+    )
+    db.session.add(new_user)
     db.session.commit()
+
 
 # Retrieve the hashed secret from PostgreSQL
 def get_hashed_secret(eth_address):
@@ -104,17 +105,19 @@ def retrieve_magnet_urls(eth_address):
 @app.route('/generate_secret', methods=['POST'])
 def generate_and_store_secret():
     eth_address = request.json.get('eth_address')
-    logging.info(f"Secret generated for {eth_address}")
-    if not eth_address:
-        return jsonify({"error": "Missing Ethereum address"}), 400
+    ip_address = request.json.get('ip_address')
+    logging.info(f"Secret generated for {eth_address} from IP {ip_address}")
+
+    if not eth_address or not ip_address:
+        return jsonify({"error": "Missing Ethereum address or IP"}), 400
 
     new_secret = generate_secret()
     hashed_secret = hash_secret(new_secret)
 
-    # Store the hashed secret associated with the Ethereum address
-    store_hashed_secret(eth_address, hashed_secret)
+    store_hashed_secret(eth_address, hashed_secret, ip_address)  # ✅ Pass IP here
 
     return jsonify({"eth_address": eth_address, "secret": new_secret}), 200
+
 
 # API to verify the secret for RTMP URL
 @app.route('/verify_secret', methods=['POST'])
@@ -158,7 +161,7 @@ def get_rtmp_url(eth_address):
 
     if hashed_secret:
         # Construct RTMP URL with the secret
-        rtmp_url = f"rtmp://gremlin.codes:1935/live/{eth_address}?secret={hashed_secret}"
+        rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={hashed_secret}"
         return jsonify({"rtmp_url": rtmp_url}), 200
     else:
         return jsonify({"error": "Secret not found"}), 404
