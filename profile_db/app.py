@@ -104,19 +104,41 @@ def retrieve_magnet_urls(eth_address):
 # API to generate and store a new secret
 @app.route('/generate_secret', methods=['POST'])
 def generate_and_store_secret():
-    eth_address = request.json.get('eth_address')
-    ip_address = request.json.get('ip_address')
-    logging.info(f"Secret generated for {eth_address} from IP {ip_address}")
+    logging.info("===== [START] /generate_secret =====")
 
-    if not eth_address or not ip_address:
-        return jsonify({"error": "Missing Ethereum address or IP"}), 400
+    try:
+        data = request.get_json()
+        logging.info(f"Incoming JSON payload: {data}")
 
-    new_secret = generate_secret()
-    hashed_secret = hash_secret(new_secret)
+        eth_address = data.get('eth_address') if data else None
+        ip_address = data.get('ip_address') if data else None
 
-    store_hashed_secret(eth_address, hashed_secret, ip_address)  # ✅ Pass IP here
+        if not eth_address:
+            logging.warning("Missing Ethereum address in request.")
+            return jsonify({"error": "Missing Ethereum address"}), 400
 
-    return jsonify({"eth_address": eth_address, "secret": new_secret}), 200
+        if not ip_address:
+            logging.warning("Missing IP address in request.")
+            return jsonify({"error": "Missing IP address"}), 400
+
+        logging.info(f"Generating secret for eth_address: {eth_address}, ip_address: {ip_address}")
+        new_secret = generate_secret()
+        logging.info(f"Generated plaintext secret: {new_secret}")
+
+        hashed_secret = hash_secret(new_secret)
+        logging.info(f"Hashed secret: {hashed_secret}")
+
+        logging.info("Storing hashed secret in database...")
+        store_hashed_secret(eth_address, hashed_secret, ip_address)
+        logging.info("Successfully stored secret in DB.")
+
+        logging.info("===== [END] /generate_secret =====")
+        return jsonify({"eth_address": eth_address, "secret": new_secret}), 200
+
+    except Exception as e:
+        logging.exception(f"Unhandled exception in /generate_secret: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
 
 
 # API to verify the secret for RTMP URL
