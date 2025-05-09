@@ -223,7 +223,7 @@
               // Step 1: Try to fetch existing RTMP URL
               output.innerText = 'Checking for existing RTMP key...';
   
-              const existing = await fetch(`https://127.0.0.1:5003/get_rtmp_url/${ethAddress}`);
+              const existing = await fetch(`https://psichos.is:5000/get_rtmp_url/${ethAddress}`);
               const existingData = await existing.json();
   
               if (existing.ok && existingData.rtmp_url) {
