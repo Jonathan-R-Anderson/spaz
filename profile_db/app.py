@@ -147,29 +147,40 @@ def generate_and_store_secret():
 # API to verify the secret for RTMP URL
 @app.route('/verify_secret', methods=['GET', 'POST'])
 def verify_secret():
+    logging.info("[verify_secret] Received verification request")
+
     if request.method == 'POST':
-        eth_address = request.json.get('eth_address')
-        secret = request.json.get('secret')
-    else:  # For GET requests, such as from NGINX RTMP on_publish
-        eth_address = request.args.get('name')
-        secret = request.args.get('secret')
+        eth_address = request.form.get("name")
+        secret = request.form.get("secret")
+    else:  # GET
+        eth_address = request.args.get("name")
+        secret = request.args.get("secret")
 
     ip_address = request.remote_addr
-    logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip={ip_address}")
+
+    logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
     if not eth_address or not secret:
-        return jsonify({"error": "Missing Ethereum address or secret"}), 400
-
-    stored_hashed_secret = get_hashed_secret(eth_address)
-    if not stored_hashed_secret:
-        return jsonify({"error": "Secret not found"}), 404
-
-    if hmac.compare_digest(hash_secret(secret), stored_hashed_secret):
-        logging.info(f"✅ Verified stream key for {eth_address}")
-        return '', 204  # RTMP expects no content on success
-    else:
-        logging.warning(f"❌ Invalid stream key for {eth_address}")
+        logging.warning(f"[verify_secret] Missing eth_address or secret")
         return '', 403
+
+    try:
+        verify_response = requests.post(
+            f"https://psichos.is:5003/verify_secret",
+            json={"eth_address": eth_address, "secret": secret},
+            timeout=10,
+            verify=False  # Optional: disable SSL check for internal
+        )
+        if verify_response.status_code == 200:
+            logging.info(f"[verify_secret] ✅ Verified successfully for {eth_address}")
+            return '', 204
+        else:
+            logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}: {verify_response.text}")
+            return '', 403
+    except Exception as e:
+        logging.error(f"[verify_secret] Exception occurred: {e}")
+        return '', 500
+
 
 # API to retrieve the RTMP URL for a user
 @app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
