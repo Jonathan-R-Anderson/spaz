@@ -77,29 +77,28 @@ def retrieve_magnet_urls(eth_address):
         logging.error(f"Error calling profile_db API to retrieve magnet URLs: {e}")
         return None
 
-# Function to stream and log output from the subprocess and store the magnet URL in the database
 def stream_output(process, eth_address, snapshot_number):
-    logging.debug(f"Started streaming output from subprocess for {eth_address}, snapshot {snapshot_number}")
+    logging.debug(f"[stream_output] Started for {eth_address}, snapshot {snapshot_number}")
     magnet_url = None
-    
+
     while True:
-        logging.debug("Reading output from subprocess")
-        output = process.stdout.readline()  # Read line from stdout
+        output = process.stdout.readline()
+        if output == '':
+            output = process.stderr.readline()
         if output == '' and process.poll() is not None:
-            logging.debug(f"No more output from subprocess for {eth_address}, snapshot {snapshot_number}, process may have finished.")
+            logging.debug(f"[stream_output] No more output; process ended for {eth_address}")
             break
         if output:
-            logging.info(f"Subprocess output: {output.strip()}")
+            logging.info(f"[stream_output] Raw line: {output.strip()}")
             if 'Magnet:' in output:
                 magnet_url = output.split("Magnet: ")[1].strip()
-                logging.info(f"Magnet URL found: {magnet_url}")
-                
-                # Store the magnet URL in the database by calling the profile_db API
-                logging.info(f"Storing magnet URL {magnet_url} for {eth_address}, snapshot {snapshot_number}")
+                logging.info(f"[stream_output] Found magnet URL: {magnet_url}")
                 store_magnet_url(eth_address, magnet_url, snapshot_number)
                 break
-    logging.debug(f"Magnet URL streaming complete for {eth_address}, snapshot {snapshot_number}: {magnet_url}")
+
+    logging.debug(f"[stream_output] Completed for {eth_address}: {magnet_url}")
     return magnet_url
+
 
 def monitor_static_directory(eth_address):
     if is_monitoring_static.get(eth_address):
@@ -406,20 +405,10 @@ def seed_file():
     )
     seed_processes[eth_address] = process  # ✅ Save process reference for stopping
 
-    def seed_stream_output(process, file_path):
-        magnet_url = None
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                logging.info(f"Seeding output: {output.strip()}")
-                if 'Magnet:' in output:
-                    magnet_url = output.split("Magnet: ")[1].strip()
-                    seeded_files[file_path] = magnet_url
-                    return magnet_url
+    
 
-    magnet_url = seed_stream_output(process, file_path)
+    magnet_url = stream_output(process, eth_address, snapshot_index=0)
+
 
     if magnet_url:
         return jsonify({"magnet_url": magnet_url}), 200
