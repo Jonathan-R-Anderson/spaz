@@ -229,23 +229,25 @@ def get_streamer_ip(ip_address):
         logging.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
-
 @app.route('/verify_secret', methods=['POST'])
 def verify_secret():
-    stream_key = request.form.get('name')
-    if not stream_key or '&' not in stream_key:
+    data = request.get_json()
+    eth_address = data.get("eth_address")
+    secret = data.get("secret")
+
+    if not eth_address or not secret:
         return '', 403
 
-    try:
-        eth_address, secret = stream_key.split('&secret=')
-    except Exception:
+    stored_hashed_secret = get_secret(eth_address)
+    if not stored_hashed_secret:
         return '', 403
 
-    stored_secret = get_secret(eth_address)
-    if not stored_secret:
-        return '', 403
+    # Re-hash the provided secret before comparing
+    incoming_hashed_secret = hmac.new(
+        HMAC_SECRET_KEY.encode(), secret.encode(), hashlib.sha256
+    ).hexdigest()
 
-    if hmac.compare_digest(secret, stored_secret):
+    if hmac.compare_digest(incoming_hashed_secret, stored_hashed_secret):
         return '', 204
     else:
         return '', 403

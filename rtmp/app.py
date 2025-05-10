@@ -313,7 +313,7 @@ def verify_secret():
 
     stream_key = request.form.get("name")  # full key like "0xABC&secret=XYZ"
 
-    ip_address = request.remote_addr
+    ip_address = request.addr
     if not stream_key or '&' not in stream_key:
         logging.warning("[verify_secret] Missing or malformed stream_key")
         return '', 403
