@@ -6,6 +6,7 @@ from multiprocessing import Process
 from flask import Flask, request, jsonify
 from threading import Lock
 import requests
+from threading import Thread
 
 # Configure logging
 logging.basicConfig(
@@ -244,7 +245,7 @@ def convert_to_mp4():
     data = request.get_json()
     eth_address = data.get("eth_address")
     snapshot_index = data.get("snapshot_index", 0)
-    m3u8_path = data.get("m3u8_path")  # e.g. "/app/static/hls/0xABC.m3u8"
+    m3u8_path = data.get("m3u8_path")
 
     if not all([eth_address, m3u8_path]):
         return jsonify({"error": "eth_address and m3u8_path are required"}), 400
@@ -259,7 +260,7 @@ def convert_to_mp4():
         cmd = [
             'ffmpeg', '-i', m3u8_path,
             '-c', 'copy', '-bsf:a', 'aac_adtstoasc',
-            '-t', '15',  # optional trim time
+            '-t', '15',
             output_mp4
         ]
         subprocess.run(cmd, check=True)
@@ -271,23 +272,25 @@ def convert_to_mp4():
         )
 
         magnet_url = stream_output(process, eth_address, snapshot_index)
-
         if not magnet_url:
             return jsonify({"error": "Failed to retrieve magnet URL"}), 500
 
-        # Optional: monitor peer count
-        while True:
-            peer_resp = requests.post("http://localhost:5002/peer_count", json={"magnet_url": magnet_url})
-            if peer_resp.ok:
-                peer_count = peer_resp.json().get("peer_count", 0)
-                logging.info(f"[convert_to_mp4] Magnet {magnet_url} has {peer_count} peers")
+        def monitor_peers_later(magnet_url, eth_address):
+            while True:
+                try:
+                    peer_resp = requests.post("http://localhost:5002/peer_count", json={"magnet_url": magnet_url})
+                    if peer_resp.ok:
+                        peer_count = peer_resp.json().get("peer_count", 0)
+                        logging.info(f"[peer_monitor] {magnet_url} has {peer_count} peers")
+                        if peer_count > 10:
+                            logging.info(f"[peer_monitor] Stopping seeding for {eth_address}")
+                            requests.post("http://localhost:5002/stop_seeding", json={"eth_address": eth_address})
+                            break
+                except Exception as e:
+                    logging.error(f"[peer_monitor] Error: {e}")
+                time.sleep(10)
 
-                if peer_count > 10:
-                    logging.info(f"[convert_to_mp4] Peer count exceeded, stopping seeding for {eth_address}")
-                    requests.post("http://localhost:5002/stop_seeding", json={"eth_address": eth_address})
-                    break
-
-            time.sleep(10)
+        Thread(target=monitor_peers_later, args=(magnet_url, eth_address), daemon=True).start()
 
         return jsonify({"output_path": output_mp4, "magnet_url": magnet_url}), 200
 
@@ -297,8 +300,7 @@ def convert_to_mp4():
     except Exception as e:
         logging.error(f"[convert_to_mp4] Unexpected error: {e}")
         return jsonify({"error": str(e)}), 500
-
-
+    
 @app.route('/peer_count', methods=['POST'])
 def peer_count():
     data = request.get_json()
