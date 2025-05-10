@@ -19,7 +19,7 @@ app = Flask(__name__)
 # Directories for static files and HLS files
 STATIC_FOLDER = '/app/static'
 HLS_FOLDER = os.path.join(STATIC_FOLDER, 'hls')
-
+seed_processes = {}
 logging.info("Creating necessary directories if they don't exist.")
 
 # Create directories if they don't exist
@@ -101,114 +101,54 @@ def stream_output(process, eth_address, snapshot_number):
     logging.debug(f"Magnet URL streaming complete for {eth_address}, snapshot {snapshot_number}: {magnet_url}")
     return magnet_url
 
-# Function to convert a snapshot of HLS (.ts and .m3u8) files to a single .mp4 file using ffmpeg
-def convert_hls_to_mp4(eth_address, snapshot_number):
-    logging.info(f"Converting HLS snapshot {snapshot_number} to mp4 for {eth_address}")
-    
-    # Path to the m3u8 file for the eth_address
-    m3u8_file = os.path.join(HLS_FOLDER, f"{eth_address}.m3u8")
-    logging.debug(f"Looking for m3u8 file at {m3u8_file}")
-    
-    if not os.path.exists(m3u8_file):
-        logging.error(f".m3u8 file not found for {eth_address}: {m3u8_file}")
-        return None
-    
-    # Output mp4 file with an incrementing snapshot number
-    output_mp4 = os.path.join(HLS_FOLDER, f"{eth_address}_snapshot_{snapshot_number}.mp4")
-    logging.debug(f"Output MP4 will be saved to: {output_mp4}")
-    
-    # Use ffmpeg to convert the current snapshot of HLS (.ts) files and .m3u8 playlist to .mp4
-    ffmpeg_cmd = [
-        'ffmpeg', '-i', m3u8_file, '-c', 'copy', '-bsf:a', 'aac_adtstoasc', '-t', '15', output_mp4
-    ]
-    
-    logging.debug(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
-    process = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
-    if process.returncode == 0:
-        logging.info(f"Successfully converted HLS snapshot to mp4: {output_mp4}")
-        return output_mp4
-    else:
-        logging.error(f"Error converting HLS to mp4: {process.stderr}")
-        return None
+@app.route('/convert_to_mp4', methods=['POST'])
+def convert_to_mp4():
+    data = request.get_json()
+    input_path = data.get("file_path")
+    output_path = input_path.rsplit('.', 1)[0] + '.mp4'
 
-# Function to monitor the HLS directory, convert .ts and .m3u8 to .mp4 in snapshots, and seed each snapshot
-def monitor_hls_directory(eth_address):
-    logging.info(f"Monitoring HLS directory for {eth_address}")
-    snapshot_number = 0  # Start with snapshot 0
+    if not os.path.exists(input_path):
+        return jsonify({"error": f"File not found: {input_path}"}), 404
 
-    while True:
-        try:
-            logging.debug(f"Checking for .ts files in the HLS folder for {eth_address}")
-            ts_files = sorted(
-                [f for f in os.listdir(HLS_FOLDER) if f.startswith(eth_address) and f.endswith('.ts')],
-                key=lambda f: os.path.getmtime(os.path.join(HLS_FOLDER, f))
-            )
+    try:
+        cmd = [
+            'ffmpeg', '-i', input_path,
+            '-c', 'copy', '-bsf:a', 'aac_adtstoasc',
+            output_path
+        ]
+        subprocess.run(cmd, check=True)
+        return jsonify({"output_path": output_path}), 200
+    except subprocess.CalledProcessError as e:
+        return jsonify({"error": f"FFmpeg failed: {e}"}), 500
 
-            if not ts_files:
-                logging.info(f"No .ts files found for {eth_address}, waiting for stream to start...")
-                time.sleep(5)
-                continue
 
-            logging.info(f"Found {len(ts_files)} .ts files for {eth_address}. Preparing to create a new MP4 snapshot.")
 
-            snapshot_number += 1
-            logging.debug(f"Incremented snapshot number: {snapshot_number}")
+@app.route('/peer_count', methods=['POST'])
+def peer_count():
+    data = request.get_json()
+    magnet_url = data.get("magnet_url")
 
-            mp4_file = convert_hls_to_mp4(eth_address, snapshot_number)
+    if not magnet_url:
+        return jsonify({"error": "magnet_url is required"}), 400
 
-            if mp4_file:
-                logging.info(f"MP4 file {mp4_file} ready, starting to seed using webtorrent")
+    try:
+        cmd = ['/usr/bin/webtorrent', 'info', magnet_url]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        output = result.stdout
 
-                process = subprocess.Popen(
-                    ['/usr/bin/webtorrent', 'seed', mp4_file, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
+        for line in output.splitlines():
+            if "Connected to" in line and "peers" in line:
+                words = line.split()
+                for i, word in enumerate(words):
+                    if word == "to" and words[i + 1].isdigit():
+                        return jsonify({"peer_count": int(words[i + 1])}), 200
 
-                # Retrieve the magnet URL for the new snapshot, pass eth_address and snapshot_number
-                magnet_url = stream_output(process, eth_address, snapshot_number)
+        return jsonify({"peer_count": 0}), 200
 
-                if magnet_url:
-                    logging.info(f"Stored magnet URL for {eth_address} snapshot {snapshot_number}: {magnet_url}")
-                else:
-                    logging.error(f"Failed to generate magnet URL for {eth_address} snapshot {snapshot_number}")
+    except Exception as e:
+        logging.error(f"Failed to get peer count: {e}")
+        return jsonify({"error": str(e)}), 500
 
-            time.sleep(30)  # Take a new snapshot every 30 seconds
-
-        except Exception as e:
-            logging.error(f"Error monitoring HLS directory for {eth_address}: {e}")
-            break
-
-# Function to monitor the static directory for new files (excluding HLS) and update the magnet URL
-def monitor_static_directory(eth_address):
-    logging.info(f"Monitoring static directory for {eth_address}")
-    latest_file = None
-
-    while True:
-        try:
-            logging.debug(f"Checking for static files related to {eth_address} in {STATIC_FOLDER}")
-            static_files = sorted([f for f in os.listdir(STATIC_FOLDER) if f.startswith(eth_address) and not f.endswith('.ts')],
-                                  key=lambda f: os.path.getmtime(os.path.join(STATIC_FOLDER, f)))
-
-            if static_files and static_files[-1] != latest_file:
-                latest_file = static_files[-1]
-                file_path = os.path.join(STATIC_FOLDER, latest_file)
-                logging.info(f"Seeding static file for {eth_address}: {file_path}")
-
-                process = subprocess.Popen(
-                    ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
-
-                magnet_url = stream_output(process, eth_address, 0)
-
-                if magnet_url:
-                    logging.info(f"Stored magnet URL for static {eth_address}: {magnet_url}")
-
-            time.sleep(5)
-        except Exception as e:
-            logging.error(f"Error monitoring static directory for {eth_address}: {e}")
-            break
 
 @app.route('/magnet_urls/<eth_address>', methods=['GET'])
 def magnet_url(eth_address):
@@ -252,25 +192,31 @@ def magnet_url(eth_address):
 @app.route('/seed', methods=['POST'])
 def seed_file():
     logging.info("Received request to seed a file.")
-    
+
     if 'file' not in request.files:
         logging.error("File not provided in the request.")
         return jsonify({"error": "File is required"}), 400
-    
+
+    eth_address = request.form.get('eth_address')
+    if not eth_address or not eth_address.startswith('0x') or len(eth_address) != 42:
+        logging.error("Invalid or missing eth_address.")
+        return jsonify({"error": "Valid eth_address is required"}), 400
+
     file = request.files['file']
-    
+
     if file.filename == '':
         logging.error("No file selected in the request.")
         return jsonify({"error": "No file selected"}), 400
-    
+
     file_name = file.filename
     file_path = os.path.join(STATIC_FOLDER, file_name)
 
-    logging.debug(f"Looking for the file {file_name} in static folder at {file_path}.")
-    
+    # Save the file to disk if not already saved
     if not os.path.exists(file_path):
-        logging.error(f"File {file_name} not found in static folder.")
-        return jsonify({"error": f"File {file_name} not found in static folder"}), 404
+        file.save(file_path)
+        logging.info(f"Saved uploaded file to {file_path}")
+    else:
+        logging.info(f"File {file_path} already exists on disk.")
 
     if file_path in seeded_files:
         logging.info(f"File {file_name} is already seeded.")
@@ -283,20 +229,19 @@ def seed_file():
         ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
+    seed_processes[eth_address] = process  # ✅ Save process reference for stopping
 
     def seed_stream_output(process, file_path):
         magnet_url = None
         while True:
-            output = process.stdout.readline()  # Read line from stdout
+            output = process.stdout.readline()
             if output == '' and process.poll() is not None:
-                logging.debug("No more output from subprocess, process may have finished.")
                 break
             if output:
                 logging.info(f"Seeding output: {output.strip()}")
                 if 'Magnet:' in output:
                     magnet_url = output.split("Magnet: ")[1].strip()
-                    logging.info(f"Magnet URL found for {file_path}: {magnet_url}")
-                    seeded_files[file_path] = magnet_url  # Mark the file as seeded
+                    seeded_files[file_path] = magnet_url
                     return magnet_url
 
     magnet_url = seed_stream_output(process, file_path)
@@ -306,34 +251,30 @@ def seed_file():
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
-# Function to automatically seed all files in the STATIC_FOLDER
-def seed_all_static_files():
-    logging.info(f"Seeding all files in {HLS_FOLDER} at startup...")
-    while(1):
-        for file_name in os.listdir(HLS_FOLDER):
-            file_path = os.path.join(HLS_FOLDER, file_name)
-            if os.path.isfile(file_path) and not file_name.endswith('.ts'):
-                logging.info(f"Seeding file {file_path}...")
+@app.route('/stop_seeding', methods=['POST'])
+def stop_seeding():
+    data = request.get_json()
+    eth_address = data.get("eth_address")
 
-                if file_path in seeded_files:
-                    logging.info(f"File {file_path} is already seeded with magnet URL: {seeded_files[file_path]}")
-                    continue
+    if not eth_address:
+        return jsonify({"error": "eth_address is required"}), 400
 
-                process = subprocess.Popen(
-                    ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
+    process = seed_processes.get(eth_address)
+    if not process:
+        return jsonify({"error": f"No seeding process found for {eth_address}"}), 404
 
-                magnet_url = stream_output(process, file_path, 0)
+    try:
+        process.terminate()
+        process.wait(timeout=5)
+        del seed_processes[eth_address]
+        logging.info(f"Seeding process for {eth_address} has been stopped.")
+        return jsonify({"message": f"Seeding stopped for {eth_address}"}), 200
+    except Exception as e:
+        logging.error(f"Failed to stop seeding for {eth_address}: {e}")
+        return jsonify({"error": str(e)}), 500
 
-                if magnet_url:
-                    logging.info(f"File {file_path} is seeded with magnet URL: {magnet_url}")
-                    seeded_files[file_path] = magnet_url  # Mark the file as seeded
-                else:
-                    logging.error(f"Failed to seed file {file_path}")
-        time.sleep(3)
 
 if __name__ == '__main__':
     logging.info("Starting Flask server...")
-    seed_all_static_files()
+    #seed_all_static_files()
     app.run(host='0.0.0.0', port=5002, debug=True, ssl_context=('/certs/fullchain.pem', '/certs/privkey.pem'))

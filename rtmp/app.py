@@ -19,7 +19,8 @@ app = Flask(__name__)
 # Directories for static files and HLS files
 STATIC_FOLDER = '/app/static'
 HLS_FOLDER = os.path.join(STATIC_FOLDER, 'hls')
-
+is_seeding_static = {}
+snapshot_indices = {}
 logging.info("Creating necessary directories if they don't exist.")
 
 # Create directories if they don't exist
@@ -334,6 +335,14 @@ def verify_secret():
         )
         if verify_response.status_code == 204:
             logging.info(f"[verify_secret] ✅ Verified successfully for {eth_address}")
+            if not is_seeding_static.get(eth_address):
+                try:
+                    logging.info(f"[verify_secret] Starting static seeding for {eth_address}")
+                    static_process = Process(target=seed_all_static_files_for_user, args=(eth_address,))
+                    static_process.start()
+                    is_seeding_static[eth_address] = True
+                except Exception as e:
+                    logging.error(f"[verify_secret] Failed to start static seeding for {eth_address}: {e}")
             return '', 204
         else:
             logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}: {verify_response.text}")
@@ -342,37 +351,106 @@ def verify_secret():
         logging.error(f"[verify_secret] Exception occurred: {e}")
         return '', 500
 
+def get_peer_count(magnet_url):
+    try:
+        response = requests.post("http://webtorrent_seeder:5002/peer_count", json={"magnet_url": magnet_url}, timeout=10)
+        if response.status_code == 200:
+            return response.json().get("peer_count", 0)
+        else:
+            logging.error(f"Error from peer_count endpoint: {response.text}")
+    except Exception as e:
+        logging.error(f"Exception while contacting webtorrent_seeder: {e}")
+    return 0
 
 
-# Function to automatically seed all files in the STATIC_FOLDER
-def seed_all_static_files():
-    logging.info(f"Seeding all files in {STATIC_FOLDER} at startup...")
+def seed_all_static_files_for_user():
+    logging.info(f"Seeding all files in {STATIC_FOLDER} every 30 seconds...")
 
-    for file_name in os.listdir(STATIC_FOLDER):
-        file_path = os.path.join(STATIC_FOLDER, file_name)
+    while True:
+        for file_name in os.listdir(STATIC_FOLDER):
+            original_path = os.path.join(STATIC_FOLDER, file_name)
 
-        if os.path.isfile(file_path) and not file_name.endswith('.ts'):
-            logging.info(f"Checking file: {file_path}")
+            if not os.path.isfile(original_path) or file_name.endswith('.ts'):
+                continue
 
-            if file_path in seeded_files:
-                logging.info(f"File {file_path} already seeded: {seeded_files[file_path]}")
+            eth_address = file_name.split('_')[0]
+            if not eth_address.startswith('0x') or len(eth_address) != 42:
+                logging.warning(f"Skipping unrecognized filename: {file_name}")
+                continue
+
+            # Ask conversion service to convert to mp4
+            try:
+                logging.info(f"Requesting MP4 conversion for {original_path}")
+                resp = requests.post("http://webtorrent_seeder:5002/convert_to_mp4", json={"file_path": original_path})
+                if resp.status_code != 200:
+                    logging.error(f"Failed to convert {original_path} to MP4: {resp.text}")
+                    continue
+                mp4_path = resp.json().get("output_path")
+                logging.info(f"Conversion successful: {mp4_path}")
+            except Exception as e:
+                logging.error(f"Exception during MP4 conversion: {e}")
+                continue
+
+            # Assign snapshot number
+            snapshot_indices.setdefault(eth_address, 0)
+            snapshot_indices[eth_address] += 1
+            index = snapshot_indices[eth_address]
+
+            # Rename output MP4 to include snapshot
+            new_file_name = f"{eth_address}_snapshot_{index}.mp4"
+            new_file_path = os.path.join(STATIC_FOLDER, new_file_name)
+
+            try:
+                os.rename(mp4_path, new_file_path)
+                logging.info(f"Renamed converted file to {new_file_name}")
+            except Exception as e:
+                logging.warning(f"Skipping rename (already exists?): {e}")
+                if not os.path.exists(new_file_path):
+                    continue  # Skip if it doesn't exist
+                else:
+                    logging.info(f"Using existing file: {new_file_path}")
+
+            if new_file_path in seeded_files:
+                logging.info(f"File {new_file_path} already seeded")
                 continue
 
             try:
-                # Send the seed request to the other container
-                files = {'file': (file_name, open(file_path, 'rb'))}
-                response = requests.post("http://webtorrent_seeder:5002/seed", files=files)
+                with open(new_file_path, 'rb') as f:
+                    files = {'file': (new_file_name, f)}
+                    data = {'eth_address': eth_address}
+                    response = requests.post("http://webtorrent_seeder:5002/seed", files=files, data=data)
 
-                if response.status_code == 200:
-                    magnet_url = response.json().get('magnet_url')
-                    logging.info(f"File {file_path} is seeded with magnet URL: {magnet_url}")
-                    seeded_files[file_path] = magnet_url
-                else:
-                    logging.error(f"Failed to seed file {file_path}, response: {response.text}")
+                if response.status_code != 200:
+                    logging.error(f"Failed to seed {new_file_name}: {response.text}")
+                    continue
+
+                magnet_url = response.json().get('magnet_url')
+                seeded_files[new_file_path] = magnet_url
+                logging.info(f"Seeded {new_file_name} with magnet URL: {magnet_url}")
+
+                # Start monitoring peer count
+                while True:
+                    peer_response = requests.post("http://webtorrent_seeder:5002/peer_count", json={"magnet_url": magnet_url})
+                    if peer_response.status_code != 200:
+                        logging.warning(f"Could not get peer count for {magnet_url}: {peer_response.text}")
+                        break
+
+                    peer_count = peer_response.json().get("peer_count", 0)
+                    logging.info(f"{magnet_url} has {peer_count} peers")
+
+                    if peer_count > 10:
+                        logging.info(f"{magnet_url} reached >10 peers. Seeding complete.")
+                        requests.post("http://webtorrent_seeder:5002/stop_seeding", json={"eth_address": eth_address})
+                        break
+
+                    time.sleep(10)
+
             except Exception as e:
-                logging.error(f"Exception while seeding file {file_path}: {e}")
+                logging.error(f"Exception while seeding {new_file_name}: {e}")
+
+        time.sleep(30)
+
 
 if __name__ == '__main__':
     logging.info("Starting Flask server...")
-    seed_all_static_files()
     app.run(host='0.0.0.0', port=5004, debug=True)
