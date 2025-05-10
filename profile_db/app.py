@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import redis
 import random
+import requests
 import string
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -166,7 +167,7 @@ def verify_secret():
 
     try:
         verify_response = requests.post(
-            f"https://psichos.is:5003/verify_secret",
+            f"https://127.0.0.1:5003/verify_secret",
             json={"eth_address": eth_address, "secret": secret},
             timeout=10,
             verify=False  # Optional: disable SSL check for internal
