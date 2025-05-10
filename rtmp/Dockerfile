@@ -47,7 +47,7 @@ RUN pip3 install -r requirements.txt
 
 # Copy the Flask API app file
 COPY app.py /app/app.py
-
+COPY test.py /app/test.py
 COPY stat.xsl /usr/local/nginx/html/stat.xsl
 
 # Expose RTMP and Flask API ports
