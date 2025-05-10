@@ -62,7 +62,7 @@ services:
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=rtmp_db
     expose:
-      - "5003"  # Only accessible to other services
+      - "5003"  # Internal-only access; don't use `ports` to keep it private
     volumes:
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
