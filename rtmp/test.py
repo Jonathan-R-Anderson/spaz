@@ -6,6 +6,7 @@ from multiprocessing import Process
 from flask import Flask, request, jsonify
 from threading import Lock
 import requests
+import hmac
 
 # Configure logging
 logging.basicConfig(
@@ -45,28 +46,24 @@ is_monitoring_static = {}
 is_monitoring_hls = {}
 seeded_files = {}
 
+def get_secret(eth_address):
+    try:
+        response = requests.get(f"http://profile_db:5003/get_secret/{eth_address}", timeout=5)
+        if response.status_code == 200:
+            return response.json().get("secret")
+        else:
+            logging.warning(f"[get_secret] Failed to get secret for {eth_address}: {response.status_code}")
+    except Exception as e:
+        logging.error(f"[get_secret] Exception while fetching secret: {e}")
+    return None
+
+
 @app.route('/verify_secret', methods=['POST'])
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
 
-    if request.is_json:
-        logging.debug("[verify_secret] Request detected as JSON")
-        eth_address = request.json.get('eth_address')
-        secret = request.json.get('secret')
-    else:
-        logging.debug("[verify_secret] Request detected as form/url-encoded")
-        stream_key = request.args.get('name') or request.form.get('name')
-        logging.debug(f"[verify_secret] Raw stream_key: {stream_key}")
-
-        if not stream_key or '&' not in stream_key:
-            logging.warning("[verify_secret] Missing or malformed stream_key")
-            return '', 403
-        try:
-            eth_address, secret = stream_key.split('&secret=')
-            logging.debug(f"[verify_secret] Parsed eth_address: {eth_address}, secret: {secret}")
-        except Exception as e:
-            logging.error(f"[verify_secret] Error splitting stream_key: {e}")
-            return '', 403
+    eth_address = request.json.get('eth_address')
+    secret = request.json.get('secret')
 
     if not eth_address or not secret:
         logging.warning(f"[verify_secret] Missing eth_address or secret. eth_address={eth_address}, secret={secret}")

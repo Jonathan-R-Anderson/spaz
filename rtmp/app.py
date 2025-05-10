@@ -6,6 +6,7 @@ from multiprocessing import Process
 from flask import Flask, request, jsonify
 from threading import Lock
 import requests
+import hmac
 
 # Configure logging
 logging.basicConfig(
@@ -44,6 +45,18 @@ magnet_url_lock = Lock()
 is_monitoring_static = {}
 is_monitoring_hls = {}
 seeded_files = {}
+
+def get_secret(eth_address):
+    try:
+        response = requests.get(f"http://profile_db:5003/get_secret/{eth_address}", timeout=5)
+        if response.status_code == 200:
+            return response.json().get("secret")
+        else:
+            logging.warning(f"[get_secret] Failed to get secret for {eth_address}: {response.status_code}")
+    except Exception as e:
+        logging.error(f"[get_secret] Exception while fetching secret: {e}")
+    return None
+
 
 # Function to store a magnet URL using the profile_db API
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
