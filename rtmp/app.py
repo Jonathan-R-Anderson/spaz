@@ -394,11 +394,11 @@ def get_peer_count(magnet_url):
 
 
 def seed_all_static_files_for_user():
-    logging.info(f"Seeding all files in {STATIC_FOLDER} every 30 seconds...")
+    logging.info(f"Seeding all files in {HLS_FOLDER} every 30 seconds...")
 
     while True:
-        for file_name in os.listdir(STATIC_FOLDER):
-            original_path = os.path.join(STATIC_FOLDER, file_name)
+        for file_name in os.listdir(HLS_FOLDER):
+            original_path = os.path.join(HLS_FOLDER, file_name)
 
             if not os.path.isfile(original_path) or file_name.endswith('.ts'):
                 continue
@@ -428,7 +428,7 @@ def seed_all_static_files_for_user():
 
             # Rename output MP4 to include snapshot
             new_file_name = f"{eth_address}_snapshot_{index}.mp4"
-            new_file_path = os.path.join(STATIC_FOLDER, new_file_name)
+            new_file_path = os.path.join(HLS_FOLDER, new_file_name)
 
             try:
                 os.rename(mp4_path, new_file_path)
