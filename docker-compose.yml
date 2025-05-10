@@ -30,6 +30,8 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
+    env_file:
+      - .env
 
   webtorrent_seeder:
     build:
@@ -51,6 +53,8 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
+    env_file:
+      - .env
 
   profile_db:
     build:
@@ -73,6 +77,8 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
+    env_file:
+      - .env
 
   rtmp:
     build:
@@ -96,7 +102,9 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
-
+    env_file:
+      - .env
+      
 volumes:
   hls_data:
     driver: local
