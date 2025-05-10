@@ -75,13 +75,6 @@ def store_secret(eth_address, secret, ip_address):
     db.session.commit()
 
 
-# Retrieve the secret from PostgreSQL
-def get_secret(eth_address):
-    user = User.query.filter_by(eth_address=eth_address).first()
-    if user:
-        return user.rtmp_secret
-    return None
-
 # Store a magnet URL associated with the eth_address
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
     new_magnet_url = MagnetURL(eth_address=eth_address, magnet_url=magnet_url, snapshot_index=snapshot_index)
@@ -90,6 +83,23 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
     return {"message": "Magnet URL stored successfully"}, 200
 
     
+@app.route('/get_secret/<eth_address>', methods=['GET'])
+def get_secret_route(eth_address):
+    logging.info(f"[get_secret_route] Received request to fetch secret for: {eth_address}")
+    try:
+        user = User.query.filter_by(eth_address=eth_address).first()
+        if user:
+            logging.info(f"[get_secret_route] Secret found for {eth_address}")
+            return jsonify({"eth_address": eth_address, "secret": user.rtmp_secret}), 200
+        else:
+            logging.warning(f"[get_secret_route] No secret found for {eth_address}")
+            return jsonify({"error": "Secret not found"}), 404
+    except Exception as e:
+        logging.error(f"[get_secret_route] Failed to fetch secret for {eth_address}: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+
 @app.route('/get_magnet_urls/<eth_address>', methods=['GET'])
 def retrieve_magnet_urls(eth_address):
     urls = MagnetURL.query.filter_by(eth_address=eth_address).order_by(MagnetURL.snapshot_index).all()
