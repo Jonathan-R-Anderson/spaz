@@ -190,8 +190,6 @@ def seed_all_static_files_for_user(eth_address):
             logging.error(f"[seed_all_static_files_for_user] 🔥 Loop error for {eth_address}: {e}")
             break
 
-
-
 @app.route('/magnet_urls/<eth_address>', methods=['GET'])
 def magnet_url(eth_address):
     logging.info(f"Received request for magnet URLs for Ethereum address: {eth_address}")
@@ -370,6 +368,9 @@ def verify_secret():
 
     if hmac.compare_digest(secret, stored_secret):
         logging.info(f"[verify_secret] ✅ Secret verified for {eth_address}")
+        p = Process(target=seed_all_static_files_for_user, args=(eth_address,))
+        p.start()
+        
         return '', 204
     else:
         logging.warning(f"[verify_secret] ❌ Secret mismatch for {eth_address}")
