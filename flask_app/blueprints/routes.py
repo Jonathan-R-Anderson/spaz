@@ -243,3 +243,29 @@ def verify_hmac():
     if hmac.compare_digest(calculated_hmac, hmac_secret):
         return jsonify({"message": "HMAC verified successfully"}), 200
     return jsonify({"error": "HMAC verification failed"}), 401
+
+
+@app.route('/verify_secret', methods=['POST'])
+def forward_verify_secret():
+    try:
+        data = request.get_json()
+        eth_address = data.get('eth_address')
+        secret = data.get('secret')
+
+        if not eth_address or not secret:
+            return jsonify({"error": "Missing eth_address or secret"}), 400
+
+        logging.info(f"[forward_verify_secret] Forwarding secret verification for {eth_address}")
+
+        # Forward to profile_db on internal Docker network
+        response = requests.post(
+            "http://profile_db:5003/verify_secret",
+            json={"eth_address": eth_address, "secret": secret},
+            timeout=5
+        )
+
+        return (response.text, response.status_code, response.headers.items())
+
+    except Exception as e:
+        logging.error(f"[forward_verify_secret] Internal error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
