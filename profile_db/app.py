@@ -247,7 +247,7 @@ def verify_secret():
 
     hashed_secret = hash_secret(secret)
 
-    if hmac.compare_digest(hashed_secret, stored_hashed_secret)        
+    if hmac.compare_digest(hashed_secret, stored_hashed_secret):
         return jsonify({"message": "Secret verified successfully"}), 200
     else:
         return jsonify({"error": f"Invalid secret: stored={stored_hashed_secret}, provided={secret}"}), 403
