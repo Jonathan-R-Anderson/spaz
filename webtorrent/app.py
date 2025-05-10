@@ -116,14 +116,14 @@ def monitor_static_directory(eth_address):
         try:
             logging.debug(f"[monitor_static_directory] Scanning static folder for {eth_address}")
             static_files = sorted(
-                [f for f in os.listdir(STATIC_FOLDER)
+                [f for f in os.listdir(HLS_FOLDER)
                  if f.startswith(eth_address) and f.endswith('.mp4')],
                 key=lambda f: os.path.getmtime(os.path.join(STATIC_FOLDER, f))
             )
 
             if static_files and static_files[-1] != latest_file:
                 latest_file = static_files[-1]
-                file_path = os.path.join(STATIC_FOLDER, latest_file)
+                file_path = os.path.join(HLS_FOLDER, latest_file)
                 snapshot_number = extract_snapshot_number(latest_file)
 
                 logging.info(f"[monitor_static_directory] Detected new file: {file_path}")
