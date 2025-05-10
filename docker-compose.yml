@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
 
@@ -6,10 +6,10 @@ services:
     build:
       context: ./flask_app
       args:
-        - DOCKER_BUILDKIT=0  # Disables BuildKit
+        - DOCKER_BUILDKIT=0
     volumes:
-      - hls_data:/app/static  # Shared volume
-      - /var/run/docker.sock:/var/run/docker.sock  # Allow Docker management
+      - hls_data:/app/static
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
     environment:
@@ -19,9 +19,12 @@ services:
       - "443:443"
       - "80:80"
       - "3000:3000"
-    network_mode: host  # Use host network
-    command: > 
+    command: >
       supervisord -c /app/supervisord.conf
+    networks:
+      - gremlin_net
+    depends_on:
+      - profile_db
     logging:
       driver: "json-file"
       options:
@@ -32,16 +35,17 @@ services:
     build:
       context: ./webtorrent
       args:
-        - DOCKER_BUILDKIT=0  # Disables BuildKit
+        - DOCKER_BUILDKIT=0
     ports:
       - "5002:5002"
     depends_on:
       - profile_db
     volumes:
-      - hls_data:/app/static  # Shared volume
+      - hls_data:/app/static
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
-    network_mode: host  # Use host network
+    networks:
+      - gremlin_net
     logging:
       driver: "json-file"
       options:
@@ -52,38 +56,41 @@ services:
     build:
       context: ./profile_db
       args:
-        - DOCKER_BUILDKIT=0  # Disables BuildKit
-    ports:
-      - "5003:5003"
+        - DOCKER_BUILDKIT=0
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=rtmp_db
-    network_mode: host  # Use host network
+    expose:
+      - "5003"  # Only accessible to other services
+    volumes:
+      - ./logs:/app/logs
+      - /opt/ssl/psychos.is:/certs:ro
+    networks:
+      - gremlin_net
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "10"
-    volumes:
-      - ./logs:/app/logs
-      - /opt/ssl/psychos.is:/certs:ro
+
   rtmp:
     build:
       context: ./rtmp
       args:
-        - DOCKER_BUILDKIT=0  # Disables BuildKit
+        - DOCKER_BUILDKIT=0
     ports:
       - "1935:1935"
       - "5004:5004"
       - "8080:8080"
     volumes:
       - hls_data:/app/static
-      - ./logs:/app/logs- 
+      - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
     depends_on:
       - profile_db
-    network_mode: host  # Use host network
+    networks:
+      - gremlin_net
     logging:
       driver: "json-file"
       options:
@@ -93,3 +100,7 @@ services:
 volumes:
   hls_data:
     driver: local
+
+networks:
+  gremlin_net:
+    driver: bridge
