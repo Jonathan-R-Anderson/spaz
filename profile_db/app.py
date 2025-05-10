@@ -233,6 +233,25 @@ def get_streamer_ip(ip_address):
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
 
+@app.route('/verify_secret', methods=['POST'])
+def verify_secret():
+    eth_address = request.json.get('eth_address')
+    secret = request.json.get('secret')
+
+    if not eth_address or not secret:
+        return jsonify({"error": "Missing Ethereum address or secret"}), 400
+
+    stored_hashed_secret = get_hashed_secret(eth_address)
+    if not stored_hashed_secret:
+        return jsonify({"error": "Secret not found"}), 404
+
+    provided_hashed_secret = hash_secret(secret)
+    if hmac.compare_digest(provided_hashed_secret, stored_hashed_secret):
+        return jsonify({"message": "Secret verified successfully"}), 200
+    else:
+        return jsonify({"error": "Invalid secret"}), 403
+
+
 if __name__ == '__main__':
     # Create database tables if they don't exist
     with app.app_context():
