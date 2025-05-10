@@ -101,6 +101,142 @@ def stream_output(process, eth_address, snapshot_number):
     logging.debug(f"Magnet URL streaming complete for {eth_address}, snapshot {snapshot_number}: {magnet_url}")
     return magnet_url
 
+def monitor_static_directory(eth_address):
+    if is_monitoring_static.get(eth_address):
+        logging.info(f"[monitor_static_directory] Already monitoring for {eth_address}")
+        return
+    is_monitoring_static[eth_address] = True
+    logging.info(f"[monitor_static_directory] Starting monitor for {eth_address}")
+
+    latest_file = None
+
+    while True:
+        try:
+            logging.debug(f"[monitor_static_directory] Scanning static folder for {eth_address}")
+            static_files = sorted(
+                [f for f in os.listdir(STATIC_FOLDER)
+                 if f.startswith(eth_address) and f.endswith('.mp4')],
+                key=lambda f: os.path.getmtime(os.path.join(STATIC_FOLDER, f))
+            )
+
+            if static_files and static_files[-1] != latest_file:
+                latest_file = static_files[-1]
+                file_path = os.path.join(STATIC_FOLDER, latest_file)
+                snapshot_number = extract_snapshot_number(latest_file)
+
+                logging.info(f"[monitor_static_directory] Detected new file: {file_path}")
+
+                process = subprocess.Popen(
+                    ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
+
+                magnet_url = stream_output(process, eth_address, snapshot_number)
+
+                if magnet_url:
+                    logging.info(f"[monitor_static_directory] File {file_path} seeded with magnet: {magnet_url}")
+                    while True:
+                        try:
+                            response = requests.post(
+                                "http://localhost:5002/peer_count",
+                                json={"magnet_url": magnet_url}
+                            )
+                            if response.status_code == 200:
+                                peer_count = response.json().get("peer_count", 0)
+                                logging.info(f"[monitor_static_directory] {magnet_url} has {peer_count} peers")
+
+                                if peer_count > 10:
+                                    logging.info(f"[monitor_static_directory] Peer count exceeded. Stopping seeding.")
+                                    requests.post(
+                                        "http://localhost:5002/stop_seeding",
+                                        json={"eth_address": eth_address}
+                                    )
+                                    break
+                        except Exception as e:
+                            logging.error(f"[monitor_static_directory] Peer check failed: {e}")
+                        time.sleep(10)
+                else:
+                    logging.error(f"[monitor_static_directory] Failed to generate magnet for {file_path}")
+
+            time.sleep(5)
+
+        except Exception as e:
+            logging.error(f"[monitor_static_directory] Error: {e}")
+            break
+
+def monitor_hls_directory(eth_address):
+    if is_monitoring_hls.get(eth_address):
+        logging.info(f"[monitor_hls_directory] Already monitoring HLS for {eth_address}")
+        return
+    is_monitoring_hls[eth_address] = True
+    logging.info(f"[monitor_hls_directory] Starting HLS monitor for {eth_address}")
+
+    latest_file = None
+
+    while True:
+        try:
+            logging.debug(f"[monitor_hls_directory] Scanning HLS folder for {eth_address}")
+            mp4_files = sorted(
+                [f for f in os.listdir(HLS_FOLDER)
+                 if f.startswith(eth_address) and f.endswith('.mp4')],
+                key=lambda f: os.path.getmtime(os.path.join(HLS_FOLDER, f))
+            )
+
+            if mp4_files and mp4_files[-1] != latest_file:
+                latest_file = mp4_files[-1]
+                file_path = os.path.join(HLS_FOLDER, latest_file)
+                snapshot_number = extract_snapshot_number(latest_file)
+
+                logging.info(f"[monitor_hls_directory] Detected new snapshot file: {file_path}")
+
+                process = subprocess.Popen(
+                    ['/usr/bin/webtorrent', 'seed', file_path,
+                     '--announce=wss://tracker.openwebtorrent.com',
+                     '--keep-seeding'],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
+
+                magnet_url = stream_output(process, eth_address, snapshot_number)
+
+                if magnet_url:
+                    logging.info(f"[monitor_hls_directory] File {file_path} seeded with magnet: {magnet_url}")
+                    while True:
+                        try:
+                            response = requests.post(
+                                "http://localhost:5002/peer_count",
+                                json={"magnet_url": magnet_url}
+                            )
+                            if response.status_code == 200:
+                                peer_count = response.json().get("peer_count", 0)
+                                logging.info(f"[monitor_hls_directory] {magnet_url} has {peer_count} peers")
+
+                                if peer_count > 10:
+                                    logging.info(f"[monitor_hls_directory] Peer threshold exceeded, stopping seeding.")
+                                    requests.post(
+                                        "http://localhost:5002/stop_seeding",
+                                        json={"eth_address": eth_address}
+                                    )
+                                    break
+                        except Exception as e:
+                            logging.error(f"[monitor_hls_directory] Peer count check failed: {e}")
+                        time.sleep(10)
+                else:
+                    logging.error(f"[monitor_hls_directory] Failed to seed {file_path}")
+
+            time.sleep(5)
+
+        except Exception as e:
+            logging.error(f"[monitor_hls_directory] Error: {e}")
+            break
+
+
+def extract_snapshot_number(filename):
+    try:
+        parts = filename.split('_snapshot_')
+        return int(parts[1].split('.')[0])
+    except Exception:
+        return 0
+
 
 @app.route('/convert_to_mp4', methods=['POST'])
 def convert_to_mp4():
