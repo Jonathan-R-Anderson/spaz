@@ -7,6 +7,8 @@ from flask import Flask, request, jsonify
 from threading import Lock
 import requests
 from threading import Thread
+import re
+from urllib.parse import unquote
 
 # Configure logging
 logging.basicConfig(
@@ -238,19 +240,70 @@ def extract_snapshot_number(filename):
         return 0
 
 
+@app.route('/start_static_monitor', methods=['POST'])
+def start_static_monitor():
+    data = request.get_json()
+    eth_address = data.get('eth_address')
+
+    if not eth_address:
+        return jsonify({"error": "eth_address is required"}), 400
+
+    if is_monitoring_static.get(eth_address):
+        logging.info(f"[API] Static monitor already running for {eth_address}")
+        return jsonify({"message": "Static monitor already running"}), 200
+
+    logging.info(f"[API] Starting static monitor for {eth_address}")
+    try:
+        process = Process(target=monitor_static_directory, args=(eth_address,))
+        process.start()
+        return jsonify({"message": "Static monitor started"}), 200
+    except Exception as e:
+        logging.error(f"[API] Failed to start static monitor: {e}")
+        return jsonify({"error": "Failed to start static monitor"}), 500
+
+@app.route('/start_hls_monitor', methods=['POST'])
+def start_hls_monitor():
+    data = request.get_json()
+    eth_address = data.get('eth_address')
+
+    if not eth_address:
+        return jsonify({"error": "eth_address is required"}), 400
+
+    if is_monitoring_hls.get(eth_address):
+        logging.info(f"[API] HLS monitor already running for {eth_address}")
+        return jsonify({"message": "HLS monitor already running"}), 200
+
+    logging.info(f"[API] Starting HLS monitor for {eth_address}")
+    try:
+        process = Process(target=monitor_hls_directory, args=(eth_address,))
+        process.start()
+        return jsonify({"message": "HLS monitor started"}), 200
+    except Exception as e:
+        logging.error(f"[API] Failed to start HLS monitor: {e}")
+        return jsonify({"error": "Failed to start HLS monitor"}), 500
+
+
 @app.route('/convert_to_mp4', methods=['POST'])
 def convert_to_mp4():
-    logging.info(f"Received request to convert to mp4: {request.json}")
+    logging.info(f"[convert_to_mp4] Received request: {request.json}")
 
     data = request.get_json()
     eth_address = data.get("eth_address")
     snapshot_index = data.get("snapshot_index", 0)
-    m3u8_path = data.get("m3u8_path")
+    filename = data.get("filename")
 
-    if not all([eth_address, m3u8_path]):
-        return jsonify({"error": "eth_address and m3u8_path are required"}), 400
+    if not all([eth_address, filename]):
+        return jsonify({"error": "eth_address and filename are required"}), 400
+
+    # Decode and sanitize filename by removing &secret=...
+    decoded_filename = unquote(filename)
+    sanitized_filename = re.sub(r"&secret=.*", "", decoded_filename)
+
+    # Construct full path to .m3u8
+    m3u8_path = os.path.join(HLS_FOLDER, sanitized_filename)
 
     if not os.path.exists(m3u8_path):
+        logging.error(f"[convert_to_mp4] .m3u8 file not found at: {m3u8_path}")
         return jsonify({"error": f".m3u8 file not found at {m3u8_path}"}), 404
 
     output_mp4 = os.path.join(HLS_FOLDER, f"{eth_address}_snapshot_{snapshot_index}.mp4")
@@ -265,9 +318,10 @@ def convert_to_mp4():
         ]
         subprocess.run(cmd, check=True)
 
-        logging.info(f"[convert_to_mp4] Conversion successful, now seeding {output_mp4}")
+        logging.info(f"[convert_to_mp4] Conversion successful, seeding {output_mp4}")
         process = subprocess.Popen(
-            ['/usr/bin/webtorrent', 'seed', output_mp4, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
+            ['/usr/bin/webtorrent', 'seed', output_mp4,
+             '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
 
@@ -283,11 +337,11 @@ def convert_to_mp4():
                         peer_count = peer_resp.json().get("peer_count", 0)
                         logging.info(f"[peer_monitor] {magnet_url} has {peer_count} peers")
                         if peer_count > 10:
-                            logging.info(f"[peer_monitor] Stopping seeding for {eth_address}")
+                            logging.info(f"[peer_monitor] Peer threshold reached, stopping seeding.")
                             requests.post("http://localhost:5002/stop_seeding", json={"eth_address": eth_address})
                             break
                 except Exception as e:
-                    logging.error(f"[peer_monitor] Error: {e}")
+                    logging.error(f"[peer_monitor] Error monitoring peers: {e}")
                 time.sleep(10)
 
         Thread(target=monitor_peers_later, args=(magnet_url, eth_address), daemon=True).start()

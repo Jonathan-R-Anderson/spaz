@@ -119,113 +119,7 @@ def stream_output(process, eth_address, snapshot_number):
     logging.debug(f"Magnet URL streaming complete for {eth_address}, snapshot {snapshot_number}: {magnet_url}")
     return magnet_url
 
-# Function to convert a snapshot of HLS (.ts and .m3u8) files to a single .mp4 file using ffmpeg
-def convert_hls_to_mp4(eth_address, snapshot_number):
-    base_eth_address = sanitize_eth_address(eth_address)
-    logging.info(f"Converting HLS snapshot {snapshot_number} to mp4 for {base_eth_address}")
-
-    m3u8_file = os.path.join(HLS_FOLDER, f"{base_eth_address}.m3u8")
-    logging.debug(f"Looking for m3u8 file at {m3u8_file}")
-
-    if not os.path.exists(m3u8_file):
-        logging.error(f".m3u8 file not found for {base_eth_address}: {m3u8_file}")
-        return None
-
-    output_mp4 = os.path.join(HLS_FOLDER, f"{base_eth_address}_snapshot_{snapshot_number}.mp4")
-    logging.debug(f"Output MP4 will be saved to: {output_mp4}")
-
-    ffmpeg_cmd = [
-        'ffmpeg', '-i', m3u8_file, '-c', 'copy', '-bsf:a', 'aac_adtstoasc', '-t', '15', output_mp4
-    ]
-
-    logging.debug(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
-    process = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-    if process.returncode == 0:
-        logging.info(f"Successfully converted HLS snapshot to mp4: {output_mp4}")
-        return output_mp4
-    else:
-        logging.error(f"Error converting HLS to mp4: {process.stderr}")
-        return None
     
-# Function to monitor the HLS directory, convert .ts and .m3u8 to .mp4 in snapshots, and seed each snapshot
-def monitor_hls_directory(eth_address):
-    logging.info(f"Monitoring HLS directory for {eth_address}")
-    snapshot_number = 0  # Start with snapshot 0
-
-    while True:
-        try:
-            logging.debug(f"Checking for .ts files in the HLS folder for {eth_address}")
-            ts_files = sorted(
-                [f for f in os.listdir(HLS_FOLDER) if f.startswith(eth_address) and f.endswith('.ts')],
-                key=lambda f: os.path.getmtime(os.path.join(HLS_FOLDER, f))
-            )
-
-            if not ts_files:
-                logging.info(f"No .ts files found for {eth_address}, waiting for stream to start...")
-                time.sleep(5)
-                continue
-
-            logging.info(f"Found {len(ts_files)} .ts files for {eth_address}. Preparing to create a new MP4 snapshot.")
-
-            snapshot_number += 1
-            logging.debug(f"Incremented snapshot number: {snapshot_number}")
-
-            mp4_file = convert_hls_to_mp4(eth_address, snapshot_number)
-
-            if mp4_file:
-                logging.info(f"MP4 file {mp4_file} ready, starting to seed using webtorrent")
-
-                process = subprocess.Popen(
-                    ['/usr/bin/webtorrent', 'seed', mp4_file, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
-
-                # Retrieve the magnet URL for the new snapshot, pass eth_address and snapshot_number
-                magnet_url = stream_output(process, eth_address, snapshot_number)
-
-                if magnet_url:
-                    logging.info(f"Stored magnet URL for {eth_address} snapshot {snapshot_number}: {magnet_url}")
-                else:
-                    logging.error(f"Failed to generate magnet URL for {eth_address} snapshot {snapshot_number}")
-
-            time.sleep(30)  # Take a new snapshot every 30 seconds
-
-        except Exception as e:
-            logging.error(f"Error monitoring HLS directory for {eth_address}: {e}")
-            break
-
-# Function to monitor the static directory for new files (excluding HLS) and update the magnet URL
-def monitor_static_directory(eth_address):
-    logging.info(f"Monitoring static directory for {eth_address}")
-    latest_file = None
-
-    while True:
-        try:
-            logging.debug(f"Checking for static files related to {eth_address} in {STATIC_FOLDER}")
-            static_files = sorted([f for f in os.listdir(STATIC_FOLDER) if f.startswith(eth_address) and not f.endswith('.ts')],
-                                  key=lambda f: os.path.getmtime(os.path.join(STATIC_FOLDER, f)))
-
-            if static_files and static_files[-1] != latest_file:
-                latest_file = static_files[-1]
-                file_path = os.path.join(STATIC_FOLDER, latest_file)
-                logging.info(f"Seeding static file for {eth_address}: {file_path}")
-
-                process = subprocess.Popen(
-                    ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
-
-                magnet_url = stream_output(process, eth_address, 0)
-
-                if magnet_url:
-                    logging.info(f"Stored magnet URL for static {eth_address}: {magnet_url}")
-
-            time.sleep(5)
-        except Exception as e:
-            logging.error(f"Error monitoring static directory for {eth_address}: {e}")
-            break
-
 @app.route('/magnet_urls/<eth_address>', methods=['GET'])
 def magnet_url(eth_address):
     logging.info(f"Received request for magnet URLs for Ethereum address: {eth_address}")
@@ -238,31 +132,35 @@ def magnet_url(eth_address):
         logging.info(f"Successfully retrieved magnet URLs for {eth_address}. Returning URLs.")
         return jsonify({"magnet_urls": magnet_urls.get("magnet_urls")}), 200
     else:
-        logging.warning(f"Magnet URLs not found for {eth_address}. Initiating directory monitoring.")
+        logging.warning(f"Magnet URLs not found for {eth_address}. Attempting to start monitoring...")
 
-        if not is_monitoring_static.get(eth_address, None):
-            try:
-                logging.info(f"Starting process to monitor static directory for {eth_address}.")
-                static_process = Process(target=monitor_static_directory, args=(eth_address,))
-                static_process.start()
-                is_monitoring_static[eth_address] = True
-                logging.info(f"Successfully started monitoring static directory for {eth_address}.")
-            except Exception as e:
-                logging.error(f"Error starting static directory monitoring for {eth_address}: {e}")
-                return jsonify({"error": "Failed to monitor static directory"}), 500
+        try:
+            # Start static monitor
+            logging.info(f"Calling /start_static_monitor for {eth_address}")
+            static_resp = requests.post(
+                "http://webtorrent_seeder:5002/start_static_monitor",
+                json={"eth_address": eth_address},
+                timeout=5
+            )
+            logging.info(f"/start_static_monitor response: {static_resp.status_code} {static_resp.text}")
+        except Exception as e:
+            logging.error(f"Failed to start static monitor: {e}")
+            return jsonify({"error": "Failed to start static monitor"}), 500
 
-        if not is_monitoring_hls.get(eth_address, None):
-            try:
-                logging.info(f"Starting process to monitor HLS directory for {eth_address}.")
-                hls_process = Process(target=monitor_hls_directory, args=(eth_address,))
-                hls_process.start()
-                is_monitoring_hls[eth_address] = True
-                logging.info(f"Successfully started monitoring HLS directory for {eth_address}.")
-            except Exception as e:
-                logging.error(f"Error starting HLS directory monitoring for {eth_address}: {e}")
-                return jsonify({"error": "Failed to monitor HLS directory"}), 500
+        try:
+            # Start HLS monitor
+            logging.info(f"Calling /start_hls_monitor for {eth_address}")
+            hls_resp = requests.post(
+                "http://webtorrent_seeder:5002/start_hls_monitor",
+                json={"eth_address": eth_address},
+                timeout=5
+            )
+            logging.info(f"/start_hls_monitor response: {hls_resp.status_code} {hls_resp.text}")
+        except Exception as e:
+            logging.error(f"Failed to start HLS monitor: {e}")
+            return jsonify({"error": "Failed to start HLS monitor"}), 500
 
-        logging.error(f"Magnet URL not found for {eth_address} and monitoring started.")
+        logging.info(f"Started monitoring for {eth_address}, but no magnet URLs available yet.")
         return jsonify({"error": "Magnet URL not found and monitoring started"}), 404
 
 @app.route('/seed', methods=['POST'])
