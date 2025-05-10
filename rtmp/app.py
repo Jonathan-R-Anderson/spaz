@@ -253,25 +253,38 @@ def magnet_url(eth_address):
 @app.route('/seed', methods=['POST'])
 def seed_file():
     logging.info("Received request to seed a file.")
-    
+
+    eth_address = request.form.get('eth_address')
+    snapshot_index = request.form.get('snapshot_index', 0)
+
+    if not eth_address or not eth_address.startswith('0x') or len(eth_address) != 42:
+        logging.error("Invalid or missing eth_address.")
+        return jsonify({"error": "Valid eth_address is required"}), 400
+
+    try:
+        snapshot_index = int(snapshot_index)
+    except ValueError:
+        logging.error("Invalid snapshot_index, must be an integer.")
+        return jsonify({"error": "snapshot_index must be an integer"}), 400
+
     if 'file' not in request.files:
         logging.error("File not provided in the request.")
         return jsonify({"error": "File is required"}), 400
-    
+
     file = request.files['file']
-    
     if file.filename == '':
         logging.error("No file selected in the request.")
         return jsonify({"error": "No file selected"}), 400
-    
+
     file_name = file.filename
     file_path = os.path.join(STATIC_FOLDER, file_name)
 
-    logging.debug(f"Looking for the file {file_name} in static folder at {file_path}.")
-    
+    # Save file if it doesn't already exist
     if not os.path.exists(file_path):
-        logging.error(f"File {file_name} not found in static folder.")
-        return jsonify({"error": f"File {file_name} not found in static folder"}), 404
+        file.save(file_path)
+        logging.info(f"Saved uploaded file to {file_path}")
+    else:
+        logging.info(f"File {file_path} already exists on disk.")
 
     if file_path in seeded_files:
         logging.info(f"File {file_name} is already seeded.")
@@ -288,21 +301,38 @@ def seed_file():
     def seed_stream_output(process, file_path):
         magnet_url = None
         while True:
-            output = process.stdout.readline()  # Read line from stdout
+            output = process.stdout.readline()
             if output == '' and process.poll() is not None:
-                logging.debug("No more output from subprocess, process may have finished.")
                 break
             if output:
                 logging.info(f"Seeding output: {output.strip()}")
                 if 'Magnet:' in output:
                     magnet_url = output.split("Magnet: ")[1].strip()
                     logging.info(f"Magnet URL found for {file_path}: {magnet_url}")
-                    seeded_files[file_path] = magnet_url  # Mark the file as seeded
+                    seeded_files[file_path] = magnet_url
                     return magnet_url
+        return None
 
     magnet_url = seed_stream_output(process, file_path)
 
     if magnet_url:
+        # Send POST request to store magnet URL in profile_db
+        try:
+            response = requests.post(
+                "http://profile_db:5003/store_magnet_url",
+                json={
+                    "eth_address": eth_address,
+                    "magnet_url": magnet_url,
+                    "snapshot_index": snapshot_index
+                }
+            )
+            if response.status_code == 200:
+                logging.info("Successfully stored magnet URL via profile_db API.")
+            else:
+                logging.warning(f"Failed to store magnet URL: {response.json()}")
+        except Exception as e:
+            logging.error(f"Error while storing magnet URL: {e}")
+
         return jsonify({"magnet_url": magnet_url}), 200
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
