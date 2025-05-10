@@ -93,7 +93,7 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
 @app.route('/get_magnet_urls/<eth_address>', methods=['GET'])
 def retrieve_magnet_urls(eth_address):
     urls = MagnetURL.query.filter_by(eth_address=eth_address).order_by(MagnetURL.snapshot_index).all()
-    print(urls)
+    logging.info(f"data from db {urls}")
     if urls:
         return jsonify({
             "message": "success",
@@ -104,7 +104,7 @@ def retrieve_magnet_urls(eth_address):
             ]
         }), 200
     else:
-        return jsonify({"message": "failure"}), 404
+        return jsonify({"message": "failure"}), 500 
 
 # API to generate and store a new secret
 @app.route('/generate_secret', methods=['POST'])
