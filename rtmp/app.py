@@ -306,6 +306,44 @@ def seed_file():
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
+@app.route('/verify_secret', methods=['GET', 'POST'])
+def verify_secret():
+    logging.info("[verify_secret] Received verification request")
+
+    if request.method == 'POST':
+        eth_address = request.form.get("name")
+        secret = request.form.get("secret")
+    else:  # GET
+        eth_address = request.args.get("name")
+        secret = request.args.get("secret")
+
+    ip_address = request.remote_addr
+
+    logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
+
+    if not eth_address or not secret:
+        logging.warning(f"[verify_secret] Missing eth_address or secret")
+        return '', 403
+
+    try:
+        verify_response = requests.post(
+            f"https://psichos.is:5003/verify_secret",
+            json={"eth_address": eth_address, "secret": secret},
+            timeout=10,
+            verify=False  # Optional: disable SSL check for internal
+        )
+        if verify_response.status_code == 200:
+            logging.info(f"[verify_secret] ✅ Verified successfully for {eth_address}")
+            return '', 204
+        else:
+            logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}: {verify_response.text}")
+            return '', 403
+    except Exception as e:
+        logging.error(f"[verify_secret] Exception occurred: {e}")
+        return '', 500
+
+
+
 # Function to automatically seed all files in the STATIC_FOLDER
 def seed_all_static_files():
     logging.info(f"Seeding all files in {STATIC_FOLDER} at startup...")

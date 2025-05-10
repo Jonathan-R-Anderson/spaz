@@ -21,3 +21,4 @@ if [ $? -eq 0 ]; then
 else
     echo "$(date) - Failed to call /on_publish_done for ${eth_address}" >> /var/log/nginx/rtmp_cleanup.log
 fi
+X
