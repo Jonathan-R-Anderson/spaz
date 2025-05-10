@@ -67,7 +67,7 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
 # Function to retrieve magnet URLs from profile_db
 def retrieve_magnet_urls(eth_address):
     logging.debug(f"Retrieving magnet URLs for {eth_address}")
-    url = f"http://127.0.0.1:5003/get_magnet_urls/{eth_address}"
+    url = f"http://profile_db:5003/get_magnet_urls/{eth_address}"
     
     try:
         logging.info(f"Sending GET request to retrieve magnet URLs for {eth_address}")
