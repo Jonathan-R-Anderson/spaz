@@ -249,7 +249,7 @@ def verify_secret():
     if hmac.compare_digest(provided_hashed_secret, stored_hashed_secret):
         return jsonify({"message": "Secret verified successfully"}), 200
     else:
-        return jsonify({"error": "Invalid secret"}), 403
+        return jsonify({f"error": "Invalid secret {stored_hashed_secret} {provided_hashed_secret}"}), 403
 
 
 if __name__ == '__main__':
