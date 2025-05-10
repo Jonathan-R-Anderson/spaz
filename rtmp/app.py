@@ -340,42 +340,42 @@ def seed_file():
 @app.route('/verify_secret', methods=['POST'])
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
-    logging.info(f"[verify_secret] {request.form}")
 
+    if request.is_json:
+        logging.debug("[verify_secret] Request detected as JSON")
+        eth_address = request.json.get('eth_address')
+        secret = request.json.get('secret')
+    else:
+        logging.debug("[verify_secret] Request detected as form/url-encoded")
+        stream_key = request.args.get('name') or request.form.get('name')
+        logging.debug(f"[verify_secret] Raw stream_key: {stream_key}")
 
-    eth_address = request.form.get("name")
-    secret = request.form.get("secret")
-    ip_address = request.remote_addr
+        if not stream_key or '&' not in stream_key:
+            logging.warning("[verify_secret] Missing or malformed stream_key")
+            return '', 403
+        try:
+            eth_address, secret = stream_key.split('&secret=')
+            logging.debug(f"[verify_secret] Parsed eth_address: {eth_address}, secret: {secret}")
+        except Exception as e:
+            logging.error(f"[verify_secret] Error splitting stream_key: {e}")
+            return '', 403
 
     if not eth_address or not secret:
-        logging.warning("[verify_secret] Missing eth_address or secret")
+        logging.warning(f"[verify_secret] Missing eth_address or secret. eth_address={eth_address}, secret={secret}")
         return '', 403
 
-    logging.info(f"[verify_secret] Parsed: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
+    logging.debug(f"[verify_secret] Looking up stored secret for {eth_address}")
+    stored_secret = get_secret(eth_address)
+    if not stored_secret:
+        logging.warning(f"[verify_secret] No stored secret found for {eth_address}")
+        return '', 403
 
-    try:
-        verify_response = requests.post(
-            "http://profile_db:5003/verify_secret",
-            json={"eth_address": eth_address, "secret": secret},
-            timeout=10,
-        )
-        if verify_response.status_code == 204:
-            logging.info(f"[verify_secret] ✅ Verified successfully for {eth_address}")
-            if not is_seeding_static.get(eth_address):
-                try:
-                    logging.info(f"[verify_secret] Starting static seeding for {eth_address}")
-                    static_process = Process(target=seed_all_static_files_for_user, args=(eth_address,))
-                    static_process.start()
-                    is_seeding_static[eth_address] = True
-                except Exception as e:
-                    logging.error(f"[verify_secret] Failed to start static seeding for {eth_address}: {e}")
-            return '', 204
-        else:
-            logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}: {verify_response.text}")
-            return '', 403
-    except Exception as e:
-        logging.error(f"[verify_secret] Exception occurred: {e}")
-        return '', 500
+    if hmac.compare_digest(secret, stored_secret):
+        logging.info(f"[verify_secret] ✅ Secret verified for {eth_address}")
+        return '', 204
+    else:
+        logging.warning(f"[verify_secret] ❌ Secret mismatch for {eth_address}")
+        return '', 403
 
 def get_peer_count(magnet_url):
     try:
