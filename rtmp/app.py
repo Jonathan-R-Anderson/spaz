@@ -310,12 +310,8 @@ def seed_file():
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
 
-    if request.method == 'POST':
-        eth_address = request.form.get("name")
-        secret = request.form.get("secret")
-    else:  # GET
-        eth_address = request.args.get("name")
-        secret = request.args.get("secret")
+    eth_address = request.args.get("name")
+    secret = request.args.get("secret")
 
     ip_address = request.remote_addr
 
