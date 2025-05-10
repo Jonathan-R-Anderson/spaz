@@ -367,4 +367,4 @@ def seed_all_static_files():
 if __name__ == '__main__':
     logging.info("Starting Flask server...")
     seed_all_static_files()
-    app.run(host='0.0.0.0', port=5004, debug=True, ssl_context=('/certs/fullchain.pem', '/certs/privkey.pem'))
+    app.run(host='0.0.0.0', port=5004, debug=True)
