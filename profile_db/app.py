@@ -84,7 +84,7 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
 
     
 @app.route('/get_secret/<eth_address>', methods=['GET'])
-def get_secret_route(eth_address):
+def get_secret(eth_address):
     logging.info(f"[get_secret_route] Received request to fetch secret for: {eth_address}")
     try:
         user = User.query.filter_by(eth_address=eth_address).first()
