@@ -156,7 +156,7 @@ def generate_and_store_secret():
 @app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
     # Retrieve the secret from PostgreSQL
-    secret = get_secret(eth_address)
+    secret = get_secret(eth_address)["secret"] 
 
     if secret:
         # Construct RTMP URL with the secret
