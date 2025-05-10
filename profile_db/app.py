@@ -232,22 +232,21 @@ def get_streamer_ip(ip_address):
 
 @app.route('/verify_secret', methods=['GET', 'POST'])
 def verify_secret():
-    if request.method == 'POST':
-        eth_address = request.json.get('eth_address')
-        secret = request.json.get('secret')
-    else:
-        eth_address = request.args.get('name')
-        secret = request.args.get('secret')
+    stream_key = request.args.get('name')
+    if not stream_key or '&' not in stream_key:
+        return '', 403  # malformed
 
-    if not eth_address or not secret:
-        return '', 403
+    try:
+        eth_address, secret = stream_key.split('&secret=')
+    except Exception:
+        return '', 403  # malformed
 
     stored_secret = get_secret(eth_address)
     if not stored_secret:
         return '', 403
 
     if hmac.compare_digest(secret, stored_secret):
-        return '', 204  # required by nginx-rtmp
+        return '', 204
     else:
         return '', 403
 
