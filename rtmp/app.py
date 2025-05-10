@@ -332,7 +332,7 @@ def verify_secret():
             json={"eth_address": eth_address, "secret": secret},
             timeout=10,
         )
-        if verify_response.status_code == 200:
+        if verify_response.status_code == 204:
             logging.info(f"[verify_secret] ✅ Verified successfully for {eth_address}")
             return '', 204
         else:
