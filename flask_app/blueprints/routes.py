@@ -277,7 +277,7 @@ def verify_secret():
         timeout=10,
     )
 
-    if verify_response.status_code == 200:
+    if verify_response.status_code == 204:
         logging.info(f"[verify_secret] ✅ Verified {eth_address}")
         return '', 204
     else:
