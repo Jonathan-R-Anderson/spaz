@@ -351,6 +351,7 @@ def verify_secret():
 
     try:
         eth_address, secret = stream_key.split('&secret=')
+        
     except Exception:
         logging.warning("[verify_secret] Failed to parse stream_key")
         return '', 403
@@ -393,92 +394,83 @@ def get_peer_count(magnet_url):
     return 0
 
 
-def seed_all_static_files_for_user():
-    logging.info(f"Seeding all files in {HLS_FOLDER} every 30 seconds...")
+def seed_all_static_files_for_user(eth_address):
+    logging.info(f"Seeding all HLS MP4 files for {eth_address} every 30 seconds...")
+
+    snapshot_indices.setdefault(eth_address, 0)
 
     while True:
-        for file_name in os.listdir(HLS_FOLDER):
-            original_path = os.path.join(HLS_FOLDER, file_name)
-
-            if not os.path.isfile(original_path) or file_name.endswith('.ts'):
-                continue
-
-            eth_address = file_name.split('_')[0]
-            if not eth_address.startswith('0x') or len(eth_address) != 42:
-                logging.warning(f"Skipping unrecognized filename: {file_name}")
-                continue
-
-            # Ask conversion service to convert to mp4
-            try:
-                logging.info(f"Requesting MP4 conversion for {original_path}")
-                resp = requests.post("http://webtorrent_seeder:5002/convert_to_mp4", json={"file_path": original_path})
-                if resp.status_code != 200:
-                    logging.error(f"Failed to convert {original_path} to MP4: {resp.text}")
-                    continue
-                mp4_path = resp.json().get("output_path")
-                logging.info(f"Conversion successful: {mp4_path}")
-            except Exception as e:
-                logging.error(f"Exception during MP4 conversion: {e}")
-                continue
-
-            # Assign snapshot number
-            snapshot_indices.setdefault(eth_address, 0)
-            snapshot_indices[eth_address] += 1
-            index = snapshot_indices[eth_address]
-
-            # Rename output MP4 to include snapshot
-            new_file_name = f"{eth_address}_snapshot_{index}.mp4"
-            new_file_path = os.path.join(HLS_FOLDER, new_file_name)
-
-            try:
-                os.rename(mp4_path, new_file_path)
-                logging.info(f"Renamed converted file to {new_file_name}")
-            except Exception as e:
-                logging.warning(f"Skipping rename (already exists?): {e}")
-                if not os.path.exists(new_file_path):
-                    continue  # Skip if it doesn't exist
-                else:
-                    logging.info(f"Using existing file: {new_file_path}")
-
-            if new_file_path in seeded_files:
-                logging.info(f"File {new_file_path} already seeded")
-                continue
-
-            try:
-                with open(new_file_path, 'rb') as f:
-                    files = {'file': (new_file_name, f)}
-                    data = {'eth_address': eth_address}
-                    response = requests.post("http://webtorrent_seeder:5002/seed", files=files, data=data)
-
-                if response.status_code != 200:
-                    logging.error(f"Failed to seed {new_file_name}: {response.text}")
+        try:
+            for file_name in os.listdir(HLS_FOLDER):
+                if not file_name.startswith(eth_address) or not file_name.endswith('.mp4'):
                     continue
 
-                magnet_url = response.json().get('magnet_url')
-                seeded_files[new_file_path] = magnet_url
-                logging.info(f"Seeded {new_file_name} with magnet URL: {magnet_url}")
+                original_path = os.path.join(HLS_FOLDER, file_name)
 
-                # Start monitoring peer count
-                while True:
-                    peer_response = requests.post("http://webtorrent_seeder:5002/peer_count", json={"magnet_url": magnet_url})
-                    if peer_response.status_code != 200:
-                        logging.warning(f"Could not get peer count for {magnet_url}: {peer_response.text}")
-                        break
+                # Skip .ts or misnamed files
+                if not os.path.isfile(original_path) or '.snapshot_' in file_name:
+                    continue
 
-                    peer_count = peer_response.json().get("peer_count", 0)
-                    logging.info(f"{magnet_url} has {peer_count} peers")
+                # Assign and increment snapshot index
+                snapshot_indices[eth_address] += 1
+                index = snapshot_indices[eth_address]
+                new_file_name = f"{eth_address}_snapshot_{index}.mp4"
+                new_file_path = os.path.join(HLS_FOLDER, new_file_name)
 
-                    if peer_count > 10:
-                        logging.info(f"{magnet_url} reached >10 peers. Seeding complete.")
-                        requests.post("http://webtorrent_seeder:5002/stop_seeding", json={"eth_address": eth_address})
-                        break
+                # Rename file if needed
+                try:
+                    os.rename(original_path, new_file_path)
+                    logging.info(f"Renamed {original_path} -> {new_file_name}")
+                except Exception as e:
+                    logging.warning(f"Rename failed for {file_name}: {e}")
+                    if not os.path.exists(new_file_path):
+                        continue  # Skip if still not found
+                    logging.info(f"Using existing snapshot file: {new_file_path}")
 
-                    time.sleep(10)
+                if new_file_path in seeded_files:
+                    logging.info(f"{new_file_name} already seeded.")
+                    continue
 
-            except Exception as e:
-                logging.error(f"Exception while seeding {new_file_name}: {e}")
+                # Seed the file
+                try:
+                    with open(new_file_path, 'rb') as f:
+                        files = {'file': (new_file_name, f)}
+                        data = {'eth_address': eth_address, 'snapshot_index': index}
+                        response = requests.post("http://webtorrent_seeder:5002/seed", files=files, data=data)
 
-        time.sleep(30)
+                    if response.status_code != 200:
+                        logging.error(f"Failed to seed {new_file_name}: {response.text}")
+                        continue
+
+                    magnet_url = response.json().get('magnet_url')
+                    seeded_files[new_file_path] = magnet_url
+                    logging.info(f"Seeded {new_file_name} with magnet: {magnet_url}")
+
+                    # Monitor peer count
+                    while True:
+                        peer_response = requests.post("http://webtorrent_seeder:5002/peer_count", json={"magnet_url": magnet_url})
+                        if peer_response.status_code != 200:
+                            logging.warning(f"Peer count check failed: {peer_response.text}")
+                            break
+
+                        peer_count = peer_response.json().get("peer_count", 0)
+                        logging.info(f"{magnet_url} has {peer_count} peers")
+
+                        if peer_count > 10:
+                            logging.info(f"{magnet_url} reached >10 peers. Stopping seeding.")
+                            requests.post("http://webtorrent_seeder:5002/stop_seeding", json={"eth_address": eth_address})
+                            break
+
+                        time.sleep(10)
+
+                except Exception as e:
+                    logging.error(f"Error during seeding loop for {new_file_name}: {e}")
+
+            time.sleep(30)
+
+        except Exception as loop_error:
+            logging.error(f"[seed_all_static_files_for_user] Loop error for {eth_address}: {loop_error}")
+            break
 
 
 if __name__ == '__main__':
