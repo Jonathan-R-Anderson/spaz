@@ -245,27 +245,41 @@ def verify_hmac():
     return jsonify({"error": "HMAC verification failed"}), 401
 
 
-@app.route('/verify_secret', methods=['POST'])
-def forward_verify_secret():
+@app.route('/verify_secret', methods=['GET'])
+def verify_secret():
+    logging.info("[verify_secret] Received verification request")
+
+    stream_key = request.args.get("name")  # whole string: 0xabc...&secret=xyz
+    ip_address = request.remote_addr
+
+    logging.info(f"[verify_secret] Incoming raw stream_key: {stream_key} from {ip_address}")
+
+    if not stream_key or '&' not in stream_key:
+        logging.warning("[verify_secret] Malformed stream key")
+        return '', 403
+
     try:
-        data = request.get_json()
-        eth_address = data.get('eth_address')
-        secret = data.get('secret')
-
-        if not eth_address or not secret:
-            return jsonify({"error": "Missing eth_address or secret"}), 400
-
-        logging.info(f"[forward_verify_secret] Forwarding secret verification for {eth_address}")
-
-        # Forward to profile_db on internal Docker network
-        response = requests.post(
-            "http://profile_db:5003/verify_secret",
-            json={"eth_address": eth_address, "secret": secret},
-            timeout=5
-        )
-
-        return (response.text, response.status_code, response.headers.items())
-
+        parts = dict(q.split('=') for q in stream_key.split('&'))
+        eth_address = next(k for k in parts if k.startswith("0x"))
+        secret = parts.get('secret')
     except Exception as e:
-        logging.error(f"[forward_verify_secret] Internal error: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        logging.error(f"[verify_secret] Failed to parse stream key: {e}")
+        return '', 403
+
+    if not eth_address or not secret:
+        logging.warning("[verify_secret] Missing eth_address or secret after parsing")
+        return '', 403
+
+    # Call internal verification
+    verify_response = requests.post(
+        f"http://profile_db:5003/verify_secret",
+        json={"eth_address": eth_address, "secret": secret},
+        timeout=10,
+    )
+
+    if verify_response.status_code == 200:
+        logging.info(f"[verify_secret] ✅ Verified {eth_address}")
+        return '', 204
+    else:
+        logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}")
+        return '', 403
