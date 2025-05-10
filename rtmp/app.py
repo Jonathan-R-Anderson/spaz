@@ -395,20 +395,29 @@ def get_peer_count(magnet_url):
 
 
 def seed_all_static_files_for_user(eth_address):
-    logging.info(f"Seeding all HLS MP4 files for {eth_address} every 30 seconds...")
-
+    logging.info(f"[seed_all_static_files_for_user] Starting seeding process for {eth_address}")
     snapshot_indices.setdefault(eth_address, 0)
 
     while True:
         try:
+            logging.debug(f"[{eth_address}] Listing files in HLS_FOLDER: {HLS_FOLDER}")
             for file_name in os.listdir(HLS_FOLDER):
-                if not file_name.startswith(eth_address) or not file_name.endswith('.mp4'):
+                logging.debug(f"[{eth_address}] Inspecting file: {file_name}")
+
+                if not file_name.startswith(eth_address):
+                    logging.debug(f"[{eth_address}] Skipping file (wrong prefix): {file_name}")
+                    continue
+                if not file_name.endswith('.mp4'):
+                    logging.debug(f"[{eth_address}] Skipping file (not mp4): {file_name}")
                     continue
 
                 original_path = os.path.join(HLS_FOLDER, file_name)
 
-                # Skip .ts or misnamed files
-                if not os.path.isfile(original_path) or '.snapshot_' in file_name:
+                if not os.path.isfile(original_path):
+                    logging.debug(f"[{eth_address}] Skipping (not a file): {original_path}")
+                    continue
+                if '.snapshot_' in file_name:
+                    logging.debug(f"[{eth_address}] Skipping file (already snapshot): {file_name}")
                     continue
 
                 # Assign and increment snapshot index
@@ -419,58 +428,63 @@ def seed_all_static_files_for_user(eth_address):
 
                 # Rename file if needed
                 try:
+                    logging.info(f"[{eth_address}] Renaming {original_path} -> {new_file_name}")
                     os.rename(original_path, new_file_path)
-                    logging.info(f"Renamed {original_path} -> {new_file_name}")
                 except Exception as e:
-                    logging.warning(f"Rename failed for {file_name}: {e}")
+                    logging.warning(f"[{eth_address}] Rename failed for {file_name}: {e}")
                     if not os.path.exists(new_file_path):
-                        continue  # Skip if still not found
-                    logging.info(f"Using existing snapshot file: {new_file_path}")
+                        logging.debug(f"[{eth_address}] File not found after failed rename: {new_file_path}")
+                        continue
+                    logging.info(f"[{eth_address}] Using already renamed file: {new_file_path}")
 
                 if new_file_path in seeded_files:
-                    logging.info(f"{new_file_name} already seeded.")
+                    logging.debug(f"[{eth_address}] Already seeded: {new_file_path}")
                     continue
 
-                # Seed the file
+                # Begin seeding
                 try:
+                    logging.info(f"[{eth_address}] Starting seeding for: {new_file_path}")
                     with open(new_file_path, 'rb') as f:
                         files = {'file': (new_file_name, f)}
                         data = {'eth_address': eth_address, 'snapshot_index': index}
                         response = requests.post("http://webtorrent_seeder:5002/seed", files=files, data=data)
 
                     if response.status_code != 200:
-                        logging.error(f"Failed to seed {new_file_name}: {response.text}")
+                        logging.error(f"[{eth_address}] Seeding failed for {new_file_name}: {response.text}")
                         continue
 
                     magnet_url = response.json().get('magnet_url')
                     seeded_files[new_file_path] = magnet_url
-                    logging.info(f"Seeded {new_file_name} with magnet: {magnet_url}")
+                    logging.info(f"[{eth_address}] ✅ Seeded {new_file_name} with magnet: {magnet_url}")
 
-                    # Monitor peer count
+                    # Monitor peer count in a loop
+                    logging.debug(f"[{eth_address}] Monitoring peers for magnet: {magnet_url}")
                     while True:
                         peer_response = requests.post("http://webtorrent_seeder:5002/peer_count", json={"magnet_url": magnet_url})
                         if peer_response.status_code != 200:
-                            logging.warning(f"Peer count check failed: {peer_response.text}")
+                            logging.warning(f"[{eth_address}] Peer count check failed for {magnet_url}: {peer_response.text}")
                             break
 
                         peer_count = peer_response.json().get("peer_count", 0)
-                        logging.info(f"{magnet_url} has {peer_count} peers")
+                        logging.info(f"[{eth_address}] Peer count for {magnet_url}: {peer_count}")
 
                         if peer_count > 10:
-                            logging.info(f"{magnet_url} reached >10 peers. Stopping seeding.")
+                            logging.info(f"[{eth_address}] Peer threshold reached. Stopping seeding for {magnet_url}")
                             requests.post("http://webtorrent_seeder:5002/stop_seeding", json={"eth_address": eth_address})
                             break
 
                         time.sleep(10)
 
                 except Exception as e:
-                    logging.error(f"Error during seeding loop for {new_file_name}: {e}")
+                    logging.error(f"[{eth_address}] ❌ Exception during seeding for {new_file_name}: {e}")
 
+            logging.debug(f"[{eth_address}] Sleeping for 30 seconds before next pass...")
             time.sleep(30)
 
         except Exception as loop_error:
-            logging.error(f"[seed_all_static_files_for_user] Loop error for {eth_address}: {loop_error}")
+            logging.error(f"[seed_all_static_files_for_user] 🔥 Loop crashed for {eth_address}: {loop_error}")
             break
+
 
 
 if __name__ == '__main__':
