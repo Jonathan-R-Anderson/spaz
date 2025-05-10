@@ -342,18 +342,13 @@ def verify_secret():
     logging.info("[verify_secret] Received verification request")
     logging.info(f"[verify_secret] {request.form}")
 
-    stream_key = request.form.get("name")  # full key like "0xABC&secret=XYZ"
 
+    eth_address = request.form.get("name")
+    secret = request.form.get("secret")
     ip_address = request.remote_addr
-    if not stream_key or '&' not in stream_key:
-        logging.warning("[verify_secret] Missing or malformed stream_key")
-        return '', 403
 
-    try:
-        eth_address, secret = stream_key.split('&secret=')
-        
-    except Exception:
-        logging.warning("[verify_secret] Failed to parse stream_key")
+    if not eth_address or not secret:
+        logging.warning("[verify_secret] Missing eth_address or secret")
         return '', 403
 
     logging.info(f"[verify_secret] Parsed: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
