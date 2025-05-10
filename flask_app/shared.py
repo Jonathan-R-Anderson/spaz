@@ -3072,7 +3072,7 @@ BLACKLIST_FILE = 'blacklist.json'
 WHITELIST_FILE = 'whitelist.json'
 
 #ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-WEBTORRENT_CONTAINER_URL = 'https://psichos.is:5002'  # URL to the WebTorrent Docker container
+WEBTORRENT_CONTAINER_URL = 'https://webtorrent_seeder:5002'  # URL to the WebTorrent Docker container
 RTMP_URLS = {}
 DB_API_URL = "http://profile_db:5003"
 #seeded_files = {}
