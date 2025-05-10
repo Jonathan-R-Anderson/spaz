@@ -82,20 +82,32 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
     db.session.commit()
     return {"message": "Magnet URL stored successfully"}, 200
 
-    
+def fetch_secret_from_api(eth_address):
+    try:
+        response = requests.get(f"http://localhost:5003/get_secret/{eth_address}", timeout=5)
+        if response.status_code == 200:
+            secret = response.json().get('secret')
+            return secret
+        else:
+            logging.warning(f"[fetch_secret_from_api] Failed to get secret for {eth_address}: {response.status_code}")
+            return None
+    except Exception as e:
+        logging.error(f"[fetch_secret_from_api] Exception fetching secret for {eth_address}: {e}")
+        return None
+
 @app.route('/get_secret/<eth_address>', methods=['GET'])
 def get_secret(eth_address):
-    logging.info(f"[get_secret_route] Received request to fetch secret for: {eth_address}")
+    logging.info(f"[get_secret] Received request to fetch secret for: {eth_address}")
     try:
         user = User.query.filter_by(eth_address=eth_address).first()
         if user:
-            logging.info(f"[get_secret_route] Secret found for {eth_address}")
+            logging.info(f"[get_secret] Secret found for {eth_address}")
             return jsonify({"eth_address": eth_address, "secret": user.rtmp_secret}), 200
         else:
-            logging.warning(f"[get_secret_route] No secret found for {eth_address}")
+            logging.warning(f"[get_secret] No secret found for {eth_address}")
             return jsonify({"error": "Secret not found"}), 404
     except Exception as e:
-        logging.error(f"[get_secret_route] Failed to fetch secret for {eth_address}: {e}")
+        logging.error(f"[get_secret] Failed to fetch secret for {eth_address}: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -262,7 +274,7 @@ def verify_secret():
     if not eth_address or not secret:
         return '', 403
 
-    stored_secret = get_secret(eth_address)
+    stored_secret = fetch_secret_from_api(eth_address)
     if not stored_secret:
         return '', 403
 
