@@ -347,27 +347,30 @@ def verify_secret():
 # Function to automatically seed all files in the STATIC_FOLDER
 def seed_all_static_files():
     logging.info(f"Seeding all files in {STATIC_FOLDER} at startup...")
+
     for file_name in os.listdir(STATIC_FOLDER):
         file_path = os.path.join(STATIC_FOLDER, file_name)
+
         if os.path.isfile(file_path) and not file_name.endswith('.ts'):
-            logging.info(f"Seeding file {file_path}...")
+            logging.info(f"Checking file: {file_path}")
 
             if file_path in seeded_files:
-                logging.info(f"File {file_path} is already seeded with magnet URL: {seeded_files[file_path]}")
+                logging.info(f"File {file_path} already seeded: {seeded_files[file_path]}")
                 continue
 
-            process = subprocess.Popen(
-                ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
+            try:
+                # Send the seed request to the other container
+                files = {'file': (file_name, open(file_path, 'rb'))}
+                response = requests.post("http://webtorrent:5002/seed", files=files)
 
-            magnet_url = stream_output(process, file_path, 0)
-
-            if magnet_url:
-                logging.info(f"File {file_path} is seeded with magnet URL: {magnet_url}")
-                seeded_files[file_path] = magnet_url  # Mark the file as seeded
-            else:
-                logging.error(f"Failed to seed file {file_path}")
+                if response.status_code == 200:
+                    magnet_url = response.json().get('magnet_url')
+                    logging.info(f"File {file_path} is seeded with magnet URL: {magnet_url}")
+                    seeded_files[file_path] = magnet_url
+                else:
+                    logging.error(f"Failed to seed file {file_path}, response: {response.text}")
+            except Exception as e:
+                logging.error(f"Exception while seeding file {file_path}: {e}")
 
 if __name__ == '__main__':
     logging.info("Starting Flask server...")
