@@ -101,6 +101,39 @@ def stream_output(process, eth_address, snapshot_number):
     logging.debug(f"Magnet URL streaming complete for {eth_address}, snapshot {snapshot_number}: {magnet_url}")
     return magnet_url
 
+# Function to monitor the static directory for new files (excluding HLS) and update the magnet URL
+def monitor_static_directory(eth_address):
+    logging.info(f"Monitoring static directory for {eth_address}")
+    latest_file = None
+
+    while True:
+        try:
+            logging.debug(f"Checking for static files related to {eth_address} in {STATIC_FOLDER}")
+            static_files = sorted([f for f in os.listdir(HLS_FOLDER) if f.startswith(eth_address) and not f.endswith('.ts')],
+                                  key=lambda f: os.path.getmtime(os.path.join(STATIC_FOLDER, f)))
+
+            if static_files and static_files[-1] != latest_file:
+                latest_file = static_files[-1]
+                file_path = os.path.join(HLS_FOLDER, latest_file)
+                logging.info(f"Seeding static file for {eth_address}: {file_path}")
+
+                process = subprocess.Popen(
+                    ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
+
+                magnet_url = stream_output(process, eth_address, 0)
+
+                if magnet_url:
+                    logging.info(f"Stored magnet URL for static {eth_address}: {magnet_url}")
+
+            time.sleep(5)
+        except Exception as e:
+            logging.error(f"Error monitoring static directory for {eth_address}: {e}")
+            break
+
+
+
 @app.route('/convert_to_mp4', methods=['POST'])
 def convert_to_mp4():
     data = request.get_json()
