@@ -64,19 +64,19 @@ def generate_secret():
 def hash_secret(secret):
     return hmac.new(HMAC_SECRET_KEY.encode(), secret.encode(), hashlib.sha256).hexdigest()
 
-# Store the hashed secret in PostgreSQL
-def store_hashed_secret(eth_address, hashed_secret, ip_address):
+# Store the secret in PostgreSQL
+def store_secret(eth_address, secret, ip_address):
     new_user = User(
         eth_address=eth_address,
-        rtmp_secret=hashed_secret,
+        rtmp_secret=secret,
         ip_address=ip_address
     )
     db.session.add(new_user)
     db.session.commit()
 
 
-# Retrieve the hashed secret from PostgreSQL
-def get_hashed_secret(eth_address):
+# Retrieve the secret from PostgreSQL
+def get_secret(eth_address):
     user = User.query.filter_by(eth_address=eth_address).first()
     if user:
         return user.rtmp_secret
@@ -126,18 +126,15 @@ def generate_and_store_secret():
             return jsonify({"error": "Missing IP address"}), 400
 
         logging.info(f"Generating secret for eth_address: {eth_address}, ip_address: {ip_address}")
-        new_secret = generate_secret()
-        logging.info(f"Generated plaintext secret: {new_secret}")
+        secret = generate_secret()
+        logging.info(f"Generated plaintext secret: {secret}")
 
-        hashed_secret = hash_secret(new_secret)
-        logging.info(f"Hashed secret: {hashed_secret}")
-
-        logging.info("Storing hashed secret in database...")
-        store_hashed_secret(eth_address, hashed_secret, ip_address)
+        logging.info("Storing secret in database...")
+        store_secret(eth_address, secret, ip_address)
         logging.info("Successfully stored secret in DB.")
 
         logging.info("===== [END] /generate_secret =====")
-        return jsonify({"eth_address": eth_address, "secret": new_secret}), 200
+        return jsonify({"eth_address": eth_address, "secret": secret}), 200
 
     except Exception as e:
         logging.exception(f"Unhandled exception in /generate_secret: {e}")
@@ -147,12 +144,12 @@ def generate_and_store_secret():
 # API to retrieve the RTMP URL for a user
 @app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
-    # Retrieve the hashed secret from PostgreSQL
-    hashed_secret = get_hashed_secret(eth_address)
+    # Retrieve the secret from PostgreSQL
+    secret = get_secret(eth_address)
 
-    if hashed_secret:
+    if secret:
         # Construct RTMP URL with the secret
-        rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={hashed_secret}"
+        rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={secret}"
         return jsonify({"rtmp_url": rtmp_url}), 200
     else:
         return jsonify({"error": "Secret not found"}), 404
@@ -179,18 +176,18 @@ def clear_magnet_urls_route(eth_address):
     return clear_magnet_urls(eth_address)
 
 
-# API to store streamer information (eth_address, hashed_secret, and IP address)
+# API to store streamer information (eth_address, secret, and IP address)
 @app.route('/store_streamer_info', methods=['POST'])
 def store_streamer_info():
     data = request.json
     eth_address = data.get('eth_address')
-    hashed_secret = data.get('hashed_secret')
+    secret = data.get('secret')
     ip_address = data.get('ip_address')
 
-    logging.info(f"Storing streamer info: eth_address={eth_address}, hashed_secret={hashed_secret}, ip_address={ip_address}")
+    logging.info(f"Storing streamer info: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
 
-    if not eth_address or not hashed_secret or not ip_address:
+    if not eth_address or not secret or not ip_address:
         return jsonify({"error": "Missing required fields"}), 400
 
 
@@ -198,13 +195,13 @@ def store_streamer_info():
         # Store or update the streamer information in the PostgreSQL database
         user = User.query.filter_by(eth_address=eth_address).first()
         if user:
-            # Update the existing record with the new hashed_secret and ip_address
-            user.rtmp_secret = hashed_secret
+            # Update the existing record with the new secret and ip_address
+            user.rtmp_secret = secret
             # Assuming you have an IP column in the database
             user.ip_address = ip_address  # You would need to add this field in the model
         else:
             # Create a new user record if it doesn't exist
-            user = User(eth_address, hashed_secret)
+            user = User(eth_address, secret)
             user.ip_address = ip_address  # Set the IP address
 
         db.session.add(user)
@@ -241,16 +238,16 @@ def verify_secret():
     if not eth_address or not secret:
         return jsonify({"error": "Missing Ethereum address or secret"}), 400
 
-    stored_hashed_secret = get_hashed_secret(eth_address)
-    if not stored_hashed_secret:
+    stored_secret = get_secret(eth_address)
+    if not stored_secret:
         return jsonify({"error": "Secret not found"}), 404
 
-    hashed_secret = hash_secret(secret)
+    secret = hash_secret(secret)
 
-    if hmac.compare_digest(hashed_secret, stored_hashed_secret):
+    if hmac.compare_digest(secret, stored_secret):
         return jsonify({"message": "Secret verified successfully"}), 200
     else:
-        return jsonify({"error": f"Invalid secret: stored={stored_hashed_secret}, provided={secret}"}), 403
+        return jsonify({"error": f"Invalid secret: stored={stored_secret}, provided={secret}"}), 403
 
 
 if __name__ == '__main__':
