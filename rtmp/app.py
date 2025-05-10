@@ -327,7 +327,7 @@ def verify_secret():
 
     try:
         verify_response = requests.post(
-            f"https://profile_db:5003/verify_secret",
+            f"http://profile_db:5003/verify_secret",
             json={"eth_address": eth_address, "secret": secret},
             timeout=10,
             verify=False  # Optional: disable SSL check for internal
