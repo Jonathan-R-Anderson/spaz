@@ -152,18 +152,23 @@ def generate_and_store_secret():
         return jsonify({"error": "Internal server error"}), 500
 
 
-# API to retrieve the RTMP URL for a user
 @app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
-    # Retrieve the secret from PostgreSQL
-    secret = get_secret(eth_address)["secret"] 
+    logging.info(f"[get_rtmp_url] Received request to build RTMP URL for: {eth_address}")
+    try:
+        user = User.query.filter_by(eth_address=eth_address).first()
+        if user:
+            secret = user.rtmp_secret
+            rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={secret}"
+            logging.info(f"[get_rtmp_url] Returning RTMP URL: {rtmp_url}")
+            return jsonify({"rtmp_url": rtmp_url}), 200
+        else:
+            logging.warning(f"[get_rtmp_url] No user found for {eth_address}")
+            return jsonify({"error": "Secret not found"}), 404
+    except Exception as e:
+        logging.error(f"[get_rtmp_url] Exception while fetching RTMP URL: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-    if secret:
-        # Construct RTMP URL with the secret
-        rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={secret}"
-        return jsonify({"rtmp_url": rtmp_url}), 200
-    else:
-        return jsonify({"error": "Secret not found"}), 404
 
 # API to store a magnet URL
 @app.route('/store_magnet_url', methods=['POST'])
