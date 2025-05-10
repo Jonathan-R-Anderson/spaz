@@ -73,48 +73,6 @@ def get_rtmp_url(eth_address):
         logging.error(f"[proxy_get_rtmp_url] Error while contacting DB: {str(e)}")
         return jsonify({"error": "Failed to contact DB"}), 500
 
-
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    logging.info("Handling file upload...")
-
-    if 'file' not in request.files:
-        logging.warning("No file part in request")
-        return jsonify({"error": "No file provided"}), 400
-
-    file = request.files['file']
-
-    if file.filename == '':
-        logging.warning("Empty file name submitted")
-        return jsonify({"error": "No selected file"}), 400
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(os.path.abspath("/app/static"), filename)
-        logging.debug(f"Saving file to {file_path}")
-
-        try:
-            file.save(file_path)
-            logging.info(f"Saved file: {file_path}")
-            with open(file_path, 'rb') as f:
-                response = requests.post(f"{WEBTORRENT_CONTAINER_URL}/seed", files={'file': (filename, f)}, timeout=30)
-
-            if response.status_code == 200:
-                magnet_url = response.json().get('magnet_url')
-                logging.info(f"Received magnet URL: {magnet_url}")
-                return jsonify({"magnet_url": magnet_url}), 200
-            else:
-                logging.error(f"WebTorrent error: {response.text}")
-                return jsonify({"error": response.text}), 500
-
-        except Exception as e:
-            logging.exception("Error processing upload")
-            return jsonify({"error": str(e)}), 500
-
-    logging.warning("File type not allowed")
-    return jsonify({"error": "Invalid file type"}), 400
-
 @app.route('/css/<filename>')
 def serve_css(filename):
     logging.debug(f"Serving CSS file: {filename}")

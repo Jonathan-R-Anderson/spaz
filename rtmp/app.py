@@ -46,6 +46,10 @@ is_monitoring_static = {}
 is_monitoring_hls = {}
 seeded_files = {}
 
+
+def sanitize_eth_address(eth_address):
+    return eth_address.split('&')[0] if '&' in eth_address else eth_address
+
 def get_secret(eth_address):
     try:
         response = requests.get(f"http://profile_db:5003/get_secret/{eth_address}", timeout=5)
@@ -117,35 +121,33 @@ def stream_output(process, eth_address, snapshot_number):
 
 # Function to convert a snapshot of HLS (.ts and .m3u8) files to a single .mp4 file using ffmpeg
 def convert_hls_to_mp4(eth_address, snapshot_number):
-    logging.info(f"Converting HLS snapshot {snapshot_number} to mp4 for {eth_address}")
-    
-    # Path to the m3u8 file for the eth_address
-    m3u8_file = os.path.join(HLS_FOLDER, f"{eth_address}.m3u8")
+    base_eth_address = sanitize_eth_address(eth_address)
+    logging.info(f"Converting HLS snapshot {snapshot_number} to mp4 for {base_eth_address}")
+
+    m3u8_file = os.path.join(HLS_FOLDER, f"{base_eth_address}.m3u8")
     logging.debug(f"Looking for m3u8 file at {m3u8_file}")
-    
+
     if not os.path.exists(m3u8_file):
-        logging.error(f".m3u8 file not found for {eth_address}: {m3u8_file}")
+        logging.error(f".m3u8 file not found for {base_eth_address}: {m3u8_file}")
         return None
-    
-    # Output mp4 file with an incrementing snapshot number
-    output_mp4 = os.path.join(HLS_FOLDER, f"{eth_address}_snapshot_{snapshot_number}.mp4")
+
+    output_mp4 = os.path.join(HLS_FOLDER, f"{base_eth_address}_snapshot_{snapshot_number}.mp4")
     logging.debug(f"Output MP4 will be saved to: {output_mp4}")
-    
-    # Use ffmpeg to convert the current snapshot of HLS (.ts) files and .m3u8 playlist to .mp4
+
     ffmpeg_cmd = [
         'ffmpeg', '-i', m3u8_file, '-c', 'copy', '-bsf:a', 'aac_adtstoasc', '-t', '15', output_mp4
     ]
-    
+
     logging.debug(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
     process = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
+
     if process.returncode == 0:
         logging.info(f"Successfully converted HLS snapshot to mp4: {output_mp4}")
         return output_mp4
     else:
         logging.error(f"Error converting HLS to mp4: {process.stderr}")
         return None
-
+    
 # Function to monitor the HLS directory, convert .ts and .m3u8 to .mp4 in snapshots, and seed each snapshot
 def monitor_hls_directory(eth_address):
     logging.info(f"Monitoring HLS directory for {eth_address}")
@@ -292,7 +294,6 @@ def seed_file():
     file_name = file.filename
     file_path = os.path.join(STATIC_FOLDER, file_name)
 
-    # Save file if it doesn't already exist
     if not os.path.exists(file_path):
         file.save(file_path)
         logging.info(f"Saved uploaded file to {file_path}")
@@ -304,51 +305,29 @@ def seed_file():
         magnet_url = seeded_files[file_path]
         return jsonify({"magnet_url": magnet_url}), 200
 
-    logging.info(f"Seeding file {file_path}...")
+    # Delegate seeding to webtorrent container via HTTP
+    try:
+        with open(file_path, 'rb') as f:
+            files = {'file': (file_name, f)}
+            data = {
+                'eth_address': eth_address,
+                'snapshot_index': snapshot_index
+            }
+            response = requests.post("http://webtorrent_seeder:5002/seed", files=files, data=data)
 
-    process = subprocess.Popen(
-        ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
+        if response.status_code == 200:
+            magnet_url = response.json().get('magnet_url')
+            logging.info(f"Magnet URL from webtorrent_seeder: {magnet_url}")
+            seeded_files[file_path] = magnet_url
+            return jsonify({"magnet_url": magnet_url}), 200
+        else:
+            logging.error(f"Seeding failed via webtorrent_seeder: {response.text}")
+            return jsonify({"error": "Seeding failed"}), 500
 
-    def seed_stream_output(process, file_path):
-        magnet_url = None
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                logging.info(f"Seeding output: {output.strip()}")
-                if 'Magnet:' in output:
-                    magnet_url = output.split("Magnet: ")[1].strip()
-                    logging.info(f"Magnet URL found for {file_path}: {magnet_url}")
-                    seeded_files[file_path] = magnet_url
-                    return magnet_url
-        return None
+    except Exception as e:
+        logging.error(f"Exception contacting webtorrent_seeder: {e}")
+        return jsonify({"error": "Failed to contact seeder"}), 500
 
-    magnet_url = seed_stream_output(process, file_path)
-
-    if magnet_url:
-        # Send POST request to store magnet URL in profile_db
-        try:
-            response = requests.post(
-                "http://profile_db:5003/store_magnet_url",
-                json={
-                    "eth_address": eth_address,
-                    "magnet_url": magnet_url,
-                    "snapshot_index": snapshot_index
-                }
-            )
-            if response.status_code == 200:
-                logging.info("Successfully stored magnet URL via profile_db API.")
-            else:
-                logging.warning(f"Failed to store magnet URL: {response.json()}")
-        except Exception as e:
-            logging.error(f"Error while storing magnet URL: {e}")
-
-        return jsonify({"magnet_url": magnet_url}), 200
-    else:
-        return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
 def get_peer_count(magnet_url):
     try:
