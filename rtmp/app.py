@@ -330,7 +330,6 @@ def verify_secret():
             f"http://profile_db:5003/verify_secret",
             json={"eth_address": eth_address, "secret": secret},
             timeout=10,
-            verify=False  # Optional: disable SSL check for internal
         )
         if verify_response.status_code == 200:
             logging.info(f"[verify_secret] ✅ Verified successfully for {eth_address}")
