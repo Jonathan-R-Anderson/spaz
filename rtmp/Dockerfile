@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libssl-dev \
     wget \
+    supervisor \
     git
 
 # Install Nginx with the RTMP module from source
@@ -27,6 +28,8 @@ RUN mkdir -p /usr/src/nginx \
 
 # Copy the custom Nginx configuration file (includes RTMP settings)
 COPY nginx.conf /usr/local/nginx/conf
+
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 COPY close_stream.sh /app/close_stream.sh
 RUN chmod +x /app/close_stream.sh
@@ -51,4 +54,5 @@ COPY stat.xsl /usr/local/nginx/html/stat.xsl
 EXPOSE 1935 5004 8080
 
 # Start both Nginx (RTMP) and the Flask API
-CMD /usr/src/nginx/nginx-1.21.1/objs/nginx -g 'daemon off;' & python3 /app/app.py
+# CMD /usr/src/nginx/nginx-1.21.1/objs/nginx -g 'daemon off;' & python3 /app/app.py
+CMD ["/usr/bin/supervisord"]
