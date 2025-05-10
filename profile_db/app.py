@@ -230,16 +230,16 @@ def get_streamer_ip(ip_address):
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
 
-@app.route('/verify_secret', methods=['GET', 'POST'])
+@app.route('/verify_secret', methods=['POST'])
 def verify_secret():
-    stream_key = request.args.get('name')
+    stream_key = request.form.get('name')
     if not stream_key or '&' not in stream_key:
-        return '', 403  # malformed
+        return '', 403
 
     try:
         eth_address, secret = stream_key.split('&secret=')
     except Exception:
-        return '', 403  # malformed
+        return '', 403
 
     stored_secret = get_secret(eth_address)
     if not stored_secret:
