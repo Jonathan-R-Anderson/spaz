@@ -331,6 +331,7 @@ def seed_all_static_files():
                     seeded_files[file_path] = magnet_url  # Mark the file as seeded
                 else:
                     logging.error(f"Failed to seed file {file_path}")
+        time.sleep(3)
 
 if __name__ == '__main__':
     logging.info("Starting Flask server...")
