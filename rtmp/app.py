@@ -361,7 +361,7 @@ def seed_all_static_files():
             try:
                 # Send the seed request to the other container
                 files = {'file': (file_name, open(file_path, 'rb'))}
-                response = requests.post("http://webtorrent:5002/seed", files=files)
+                response = requests.post("http://webtorrent_seeder:5002/seed", files=files)
 
                 if response.status_code == 200:
                     magnet_url = response.json().get('magnet_url')
