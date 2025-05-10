@@ -93,6 +93,7 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
 @app.route('/get_magnet_urls/<eth_address>', methods=['GET'])
 def retrieve_magnet_urls(eth_address):
     urls = MagnetURL.query.filter_by(eth_address=eth_address).order_by(MagnetURL.snapshot_index).all()
+    print(urls)
     if urls:
         return jsonify({
             "message": "success",
