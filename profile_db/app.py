@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import redis
 import random
-import requ
+import requests
 import string
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
