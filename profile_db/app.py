@@ -231,24 +231,40 @@ def get_streamer_ip(ip_address):
 
 @app.route('/verify_secret', methods=['GET', 'POST'])
 def verify_secret():
+    logging.info("[verify_secret] Received verification request")
+    logging.info(f"[verify_secret] Full request.args: {request.args}")
+
     stream_key = request.args.get('name')
+    logging.info(f"[verify_secret] Extracted stream_key: {stream_key}")
 
     if not stream_key or '&' not in stream_key:
+        logging.warning("[verify_secret] ❌ Missing or malformed stream_key")
         return '', 403
 
     try:
         eth_address, secret = stream_key.split('&secret=')
-    except Exception:
+        logging.info(f"[verify_secret] Parsed eth_address: {eth_address}")
+        logging.info(f"[verify_secret] Parsed secret: {secret}")
+    except Exception as e:
+        logging.error(f"[verify_secret] ❌ Failed to parse stream_key: {e}")
         return '', 403
 
     stored_secret = get_secret(eth_address)
+    logging.info(f"[verify_secret] Retrieved stored secret: {stored_secret}")
+
     if not stored_secret:
+        logging.warning(f"[verify_secret] ❌ No stored secret found for eth_address: {eth_address}")
         return '', 403
 
     if hmac.compare_digest(secret, stored_secret):
+        logging.info(f"[verify_secret] ✅ Secret matched for eth_address: {eth_address}")
         return '', 204
     else:
+        logging.warning(f"[verify_secret] ❌ Secret mismatch for eth_address: {eth_address}")
+        logging.debug(f"[verify_secret] Provided: {secret}")
+        logging.debug(f"[verify_secret] Stored: {stored_secret}")
         return '', 403
+
 
 
 
