@@ -239,6 +239,8 @@ def extract_snapshot_number(filename):
 
 @app.route('/convert_to_mp4', methods=['POST'])
 def convert_to_mp4():
+    logging.info(f"Received request to convert to mp4: {request.json}")
+
     data = request.get_json()
     eth_address = data.get("eth_address")
     snapshot_index = data.get("snapshot_index", 0)
