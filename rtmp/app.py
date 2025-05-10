@@ -310,11 +310,10 @@ def seed_file():
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
 
-    eth_address = request.args.get("name")
-    secret = request.args.get("secret")
+    eth_address = request.args.get("name")  # e.g., 0xABC...
+    secret = request.args.get("secret")     # e.g., the raw secret string
 
     ip_address = request.remote_addr
-
     logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
     if not eth_address or not secret:
@@ -323,7 +322,7 @@ def verify_secret():
 
     try:
         verify_response = requests.post(
-            f"http://profile_db:5003/verify_secret",
+            "http://profile_db:5003/verify_secret",
             json={"eth_address": eth_address, "secret": secret},
             timeout=10,
         )
@@ -336,6 +335,7 @@ def verify_secret():
     except Exception as e:
         logging.error(f"[verify_secret] Exception occurred: {e}")
         return '', 500
+
 
 
 
