@@ -350,46 +350,6 @@ def seed_file():
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
-@app.route('/verify_secret', methods=['POST'])
-def verify_secret():
-    logging.info("[verify_secret] Received verification request")
-
-    if request.is_json:
-        logging.debug("[verify_secret] Request detected as JSON")
-        eth_address = request.json.get('eth_address')
-        secret = request.json.get('secret')
-    else:
-        logging.debug("[verify_secret] Request detected as form/url-encoded")
-        stream_key = request.args.get('name') or request.form.get('name')
-        logging.debug(f"[verify_secret] Raw stream_key: {stream_key}")
-
-        if not stream_key or '&' not in stream_key:
-            logging.warning("[verify_secret] Missing or malformed stream_key")
-            return '', 403
-        try:
-            eth_address, secret = stream_key.split('&secret=')
-            logging.debug(f"[verify_secret] Parsed eth_address: {eth_address}, secret: {secret}")
-        except Exception as e:
-            logging.error(f"[verify_secret] Error splitting stream_key: {e}")
-            return '', 403
-
-    if not eth_address or not secret:
-        logging.warning(f"[verify_secret] Missing eth_address or secret. eth_address={eth_address}, secret={secret}")
-        return '', 403
-
-    logging.debug(f"[verify_secret] Looking up stored secret for {eth_address}")
-    stored_secret = get_secret(eth_address)
-    if not stored_secret:
-        logging.warning(f"[verify_secret] No stored secret found for {eth_address}")
-        return '', 403
-
-    if hmac.compare_digest(secret, stored_secret):
-        logging.info(f"[verify_secret] ✅ Secret verified for {eth_address}")
-        return '', 204
-    else:
-        logging.warning(f"[verify_secret] ❌ Secret mismatch for {eth_address}")
-        return '', 403
-
 def get_peer_count(magnet_url):
     try:
         response = requests.post("http://webtorrent_seeder:5002/peer_count", json={"magnet_url": magnet_url}, timeout=10)
@@ -493,6 +453,71 @@ def seed_all_static_files_for_user(eth_address):
             logging.error(f"[seed_all_static_files_for_user] 🔥 Loop crashed for {eth_address}: {loop_error}")
             break
 
+
+@app.route('/verify_secret', methods=['POST'])
+def verify_secret():
+    logging.info("[verify_secret] Received verification request")
+
+    if request.is_json:
+        logging.debug("[verify_secret] Request detected as JSON")
+        eth_address = request.json.get('eth_address')
+        secret = request.json.get('secret')
+        ip_address = request.remote_addr
+    else:
+        logging.debug("[verify_secret] Request detected as form/url-encoded")
+        stream_key = request.args.get('name') or request.form.get('name')
+        logging.debug(f"[verify_secret] Raw stream_key: {stream_key}")
+
+        if not stream_key or '&' not in stream_key:
+            logging.warning("[verify_secret] Missing or malformed stream_key")
+            return '', 403
+
+        try:
+            eth_address, secret = stream_key.split('&secret=')
+            ip_address = request.remote_addr
+            logging.debug(f"[verify_secret] Parsed eth_address: {eth_address}, secret: {secret}, ip: {ip_address}")
+        except Exception as e:
+            logging.error(f"[verify_secret] Error splitting stream_key: {e}")
+            return '', 403
+
+    if not eth_address or not secret:
+        logging.warning(f"[verify_secret] Missing eth_address or secret. eth_address={eth_address}, secret={secret}")
+        return '', 403
+
+    # Store the streamer info before verifying
+    try:
+        logging.debug(f"[verify_secret] Attempting to store streamer info for {eth_address}")
+        store_response = requests.post(
+            "http://profile_db:5003/store_streamer_info",
+            json={"eth_address": eth_address, "secret": secret, "ip_address": ip_address},
+            timeout=5
+        )
+        if store_response.status_code != 200:
+            logging.warning(f"[verify_secret] Failed to store streamer info: {store_response.text}")
+            return '', 403
+    except Exception as e:
+        logging.error(f"[verify_secret] Exception during streamer info store: {e}")
+        return '', 500
+
+    # Now verify secret
+    try:
+        logging.debug(f"[verify_secret] Looking up stored secret for {eth_address}")
+        secret_response = requests.get(f"http://profile_db:5003/get_secret/{eth_address}", timeout=5)
+        if secret_response.status_code != 200:
+            logging.warning(f"[verify_secret] No stored secret found for {eth_address}")
+            return '', 403
+
+        stored_secret = secret_response.json().get('secret')
+    except Exception as e:
+        logging.error(f"[verify_secret] Exception retrieving stored secret: {e}")
+        return '', 500
+
+    if hmac.compare_digest(secret, stored_secret):
+        logging.info(f"[verify_secret] ✅ Secret verified for {eth_address}")
+        return '', 204
+    else:
+        logging.warning(f"[verify_secret] ❌ Secret mismatch for {eth_address}")
+        return '', 403
 
 
 if __name__ == '__main__':
