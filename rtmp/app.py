@@ -309,6 +309,8 @@ def seed_file():
 @app.route('/verify_secret', methods=['GET', 'POST'])
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
+    logging.info(f"[verify_secret] {request.args}")
+
 
     eth_address = request.args.get("name")  # e.g., 0xABC...
     secret = request.args.get("secret")     # e.g., the raw secret string
