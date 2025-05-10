@@ -229,40 +229,30 @@ def get_streamer_ip(ip_address):
         logging.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
-@app.route('/verify_secret', methods=['GET', 'POST'])
+@app.route('/verify_secret', methods=['POST'])
 def verify_secret():
-    logging.info("[verify_secret] Received verification request")
-    logging.info(f"[verify_secret] Full request.args: {request.args}")
+    if request.is_json:
+        eth_address = request.json.get('eth_address')
+        secret = request.json.get('secret')
+    else:
+        stream_key = request.args.get('name') or request.form.get('name')
+        if not stream_key or '&' not in stream_key:
+            return '', 403
+        try:
+            eth_address, secret = stream_key.split('&secret=')
+        except Exception:
+            return '', 403
 
-    stream_key = request.args.get('name')
-    logging.info(f"[verify_secret] Extracted stream_key: {stream_key}")
-
-    if not stream_key or '&' not in stream_key:
-        logging.warning("[verify_secret] ❌ Missing or malformed stream_key")
-        return '', 403
-
-    try:
-        eth_address, secret = stream_key.split('&secret=')
-        logging.info(f"[verify_secret] Parsed eth_address: {eth_address}")
-        logging.info(f"[verify_secret] Parsed secret: {secret}")
-    except Exception as e:
-        logging.error(f"[verify_secret] ❌ Failed to parse stream_key: {e}")
+    if not eth_address or not secret:
         return '', 403
 
     stored_secret = get_secret(eth_address)
-    logging.info(f"[verify_secret] Retrieved stored secret: {stored_secret}")
-
     if not stored_secret:
-        logging.warning(f"[verify_secret] ❌ No stored secret found for eth_address: {eth_address}")
         return '', 403
 
     if hmac.compare_digest(secret, stored_secret):
-        logging.info(f"[verify_secret] ✅ Secret matched for eth_address: {eth_address}")
         return '', 204
     else:
-        logging.warning(f"[verify_secret] ❌ Secret mismatch for eth_address: {eth_address}")
-        logging.debug(f"[verify_secret] Provided: {secret}")
-        logging.debug(f"[verify_secret] Stored: {stored_secret}")
         return '', 403
 
 
