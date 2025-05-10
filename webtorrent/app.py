@@ -101,59 +101,65 @@ def stream_output(process, eth_address, snapshot_number):
     logging.debug(f"Magnet URL streaming complete for {eth_address}, snapshot {snapshot_number}: {magnet_url}")
     return magnet_url
 
-# Function to monitor the static directory for new files (excluding HLS) and update the magnet URL
-def monitor_static_directory(eth_address):
-    logging.info(f"Monitoring static directory for {eth_address}")
-    latest_file = None
-
-    while True:
-        try:
-            logging.debug(f"Checking for static files related to {eth_address} in {STATIC_FOLDER}")
-            static_files = sorted([f for f in os.listdir(HLS_FOLDER) if f.startswith(eth_address) and not f.endswith('.ts')],
-                                  key=lambda f: os.path.getmtime(os.path.join(STATIC_FOLDER, f)))
-
-            if static_files and static_files[-1] != latest_file:
-                latest_file = static_files[-1]
-                file_path = os.path.join(HLS_FOLDER, latest_file)
-                logging.info(f"Seeding static file for {eth_address}: {file_path}")
-
-                process = subprocess.Popen(
-                    ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                )
-
-                magnet_url = stream_output(process, eth_address, 0)
-
-                if magnet_url:
-                    logging.info(f"Stored magnet URL for static {eth_address}: {magnet_url}")
-
-            time.sleep(5)
-        except Exception as e:
-            logging.error(f"Error monitoring static directory for {eth_address}: {e}")
-            break
-
-
 
 @app.route('/convert_to_mp4', methods=['POST'])
 def convert_to_mp4():
     data = request.get_json()
-    input_path = data.get("file_path")
-    output_path = input_path.rsplit('.', 1)[0] + '.mp4'
+    eth_address = data.get("eth_address")
+    snapshot_index = data.get("snapshot_index", 0)
+    m3u8_path = data.get("m3u8_path")  # e.g. "/app/static/hls/0xABC.m3u8"
 
-    if not os.path.exists(input_path):
-        return jsonify({"error": f"File not found: {input_path}"}), 404
+    if not all([eth_address, m3u8_path]):
+        return jsonify({"error": "eth_address and m3u8_path are required"}), 400
+
+    if not os.path.exists(m3u8_path):
+        return jsonify({"error": f".m3u8 file not found at {m3u8_path}"}), 404
+
+    output_mp4 = os.path.join(HLS_FOLDER, f"{eth_address}_snapshot_{snapshot_index}.mp4")
+    logging.info(f"[convert_to_mp4] Converting {m3u8_path} to {output_mp4}")
 
     try:
         cmd = [
-            'ffmpeg', '-i', input_path,
+            'ffmpeg', '-i', m3u8_path,
             '-c', 'copy', '-bsf:a', 'aac_adtstoasc',
-            output_path
+            '-t', '15',  # optional trim time
+            output_mp4
         ]
         subprocess.run(cmd, check=True)
-        return jsonify({"output_path": output_path}), 200
-    except subprocess.CalledProcessError as e:
-        return jsonify({"error": f"FFmpeg failed: {e}"}), 500
 
+        logging.info(f"[convert_to_mp4] Conversion successful, now seeding {output_mp4}")
+        process = subprocess.Popen(
+            ['/usr/bin/webtorrent', 'seed', output_mp4, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+
+        magnet_url = stream_output(process, eth_address, snapshot_index)
+
+        if not magnet_url:
+            return jsonify({"error": "Failed to retrieve magnet URL"}), 500
+
+        # Optional: monitor peer count
+        while True:
+            peer_resp = requests.post("http://localhost:5002/peer_count", json={"magnet_url": magnet_url})
+            if peer_resp.ok:
+                peer_count = peer_resp.json().get("peer_count", 0)
+                logging.info(f"[convert_to_mp4] Magnet {magnet_url} has {peer_count} peers")
+
+                if peer_count > 10:
+                    logging.info(f"[convert_to_mp4] Peer count exceeded, stopping seeding for {eth_address}")
+                    requests.post("http://localhost:5002/stop_seeding", json={"eth_address": eth_address})
+                    break
+
+            time.sleep(10)
+
+        return jsonify({"output_path": output_mp4, "magnet_url": magnet_url}), 200
+
+    except subprocess.CalledProcessError as e:
+        logging.error(f"[convert_to_mp4] FFmpeg failed: {e}")
+        return jsonify({"error": "FFmpeg conversion failed"}), 500
+    except Exception as e:
+        logging.error(f"[convert_to_mp4] Unexpected error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/peer_count', methods=['POST'])
