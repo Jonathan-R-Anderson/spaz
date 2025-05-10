@@ -236,19 +236,21 @@ def get_streamer_ip(ip_address):
 @app.route('/verify_secret', methods=['POST'])
 def verify_secret():
     eth_address = request.json.get('eth_address')
-    hashed_secret = request.json.get('hashed_secret')
+    secret = request.json.get('secret')
 
-    if not eth_address or not hashed_secret:
+    if not eth_address or not secret:
         return jsonify({"error": "Missing Ethereum address or secret"}), 400
 
     stored_hashed_secret = get_hashed_secret(eth_address)
     if not stored_hashed_secret:
         return jsonify({"error": "Secret not found"}), 404
 
-    if hmac.compare_digest(hashed_secret, stored_hashed_secret):
+    hashed_secret = hash_secret(secret)
+
+    if hmac.compare_digest(hashed_secret, stored_hashed_secret)        
         return jsonify({"message": "Secret verified successfully"}), 200
     else:
-        return jsonify({"error": f"Invalid secret: stored={stored_hashed_secret}, provided={hashed_secret}"}), 403
+        return jsonify({"error": f"Invalid secret: stored={stored_hashed_secret}, provided={secret}"}), 403
 
 
 if __name__ == '__main__':
