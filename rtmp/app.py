@@ -306,21 +306,25 @@ def seed_file():
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
-@app.route('/verify_secret', methods=['GET', 'POST'])
+@app.route('/verify_secret', methods=['POST'])
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
-    logging.info(f"[verify_secret] {request.args}")
+    logging.info(f"[verify_secret] {request.form}")
 
-
-    eth_address = request.args.get("name")  # e.g., 0xABC...
-    secret = request.args.get("secret")     # e.g., the raw secret string
+    stream_key = request.form.get("name")  # full key like "0xABC&secret=XYZ"
 
     ip_address = request.remote_addr
-    logging.info(f"[verify_secret] Incoming: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
-
-    if not eth_address or not secret:
-        logging.warning(f"[verify_secret] Missing eth_address or secret")
+    if not stream_key or '&' not in stream_key:
+        logging.warning("[verify_secret] Missing or malformed stream_key")
         return '', 403
+
+    try:
+        eth_address, secret = stream_key.split('&secret=')
+    except Exception:
+        logging.warning("[verify_secret] Failed to parse stream_key")
+        return '', 403
+
+    logging.info(f"[verify_secret] Parsed: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
     try:
         verify_response = requests.post(
@@ -337,7 +341,6 @@ def verify_secret():
     except Exception as e:
         logging.error(f"[verify_secret] Exception occurred: {e}")
         return '', 500
-
 
 
 
