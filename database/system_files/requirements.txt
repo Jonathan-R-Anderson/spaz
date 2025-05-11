@@ -8,3 +8,4 @@ Flask-RESTful
 web3
 docker
 cryptography
+python-dotenv
