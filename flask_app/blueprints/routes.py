@@ -1,4 +1,3 @@
-from flask import Blueprint, render_template, request, jsonify, send_from_directory
 from shared import (
     gremlinThreadABI, gremlinThreadAddress,
     gremlinAdminABI, gremlinAdminAddress,
@@ -12,12 +11,11 @@ from shared import (
     gremlinChallengeABI, gremlinChallengeAddress,
     gremlinDAOABI, gremlinDAOAddress,
     gremlinLeaderboardABI, gremlinLeaderboardAddress,
-    gremlinJournalABI, gremlinJournalAddress
+    gremlinJournalABI, gremlinJournalAddress,
+    Blueprint, logging, render_template, json, requests,
+    jsonify, send_from_directory, request, base64, hmac,
+    ec, hashlib
 )
-import json, os, logging, hmac, hashlib, base64, requests, subprocess
-from werkzeug.utils import secure_filename
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import hashes
 
 blueprint = Blueprint('blueprint', __name__)
 

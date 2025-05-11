@@ -20,6 +20,12 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import padding
 import base64
+import json, os, logging, hmac, hashlib, base64, requests, subprocess
+from werkzeug.utils import secure_filename
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes
+from flask import Blueprint, render_template, request, jsonify, send_from_directory
+
 
 LOG_FILE_PATH = os.path.join("logs", "app.log")
 
@@ -38,22 +44,12 @@ class ManiwaniApp(Flask):
     jinja_options = ImmutableDict()
 
 app = ManiwaniApp(__name__, static_url_path='')
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config["UPLOAD_FOLDER"] = Path("./uploads").resolve()
-app.config["THUMB_FOLDER"] = Path(os.path.join(app.config["UPLOAD_FOLDER"], "thumbs")).resolve()
-app.config["SERVE_STATIC"] = True
-app.config["SERVE_REST"] = True
-app.config["USE_RECAPTCHA"] = False
-app.config["FIREHOSE_LENGTH"] = 10
+app.config['TEMPLATES_AUTO_RELOAD'] = os.getenv('TEMPLATES_AUTO_RELOAD', True)
 HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
 session_store = {}
-
-if os.getenv("MANIWANI_CFG"):
-    app.config.from_envvar("MANIWANI_CFG")
     
 app.url_map.strict_slashes = False
 rest_api = Api(app)
-# Web3 connection to zkSync Era mainnet
 
 # Contract addresses
 gremlinThreadAddress = '0x713e6c01A9B3E60790dAFBbc22c5F43556fF0Df1'
@@ -3065,52 +3061,15 @@ gremlinJournalABI = [
 			}
 		]
 
-FILE_DIR = 'hosted'
-#TORRENT_DIR = 'torrents'
-TRACKER_PORT = 5000
-BLACKLIST_FILE = 'blacklist.json'
-WHITELIST_FILE = 'whitelist.json'
+FILE_DIR = os.getenv('FILE_DIR', 'hosted')
+TRACKER_PORT = os.getenv('TRACKER_PORT', 5000)
 
-#ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-WEBTORRENT_CONTAINER_URL = 'https://webtorrent_seeder:5002'  # URL to the WebTorrent Docker container
+
+WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
+PROFILE_DB_URL = f"{os.getenv('PROFILE_DB_URL', 'http://profile_db')}:{os.getenv('PROFILE_DB_PORT', 5003)}"
+
 RTMP_URLS = {}
-DB_API_URL = "http://profile_db:5003"
-#seeded_files = {}
-#THREADS = []
 client = docker.from_env()
-def load_blacklist():
-    if not os.path.exists(BLACKLIST_FILE):
-        return []  # Return empty list if file does not exist
-    with open(BLACKLIST_FILE, 'r') as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []  # Return empty list if file is corrupt or empty
-
-# Load whitelist from file, if it exists, otherwise return an empty list
-def load_whitelist():
-    if not os.path.exists(WHITELIST_FILE):
-        return []  # Return empty list if file does not exist
-    with open(WHITELIST_FILE, 'r') as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []  # Retur
-
-
-
-blacklist = load_blacklist()
-whitelist = load_whitelist()
-
-
-def save_blacklist(data):
-    with open(BLACKLIST_FILE, 'w') as f:
-        json.dump(data, f)
-
-
-def save_whitelist(data):
-    with open(WHITELIST_FILE, 'w') as f:
-        json.dump(data, f)
 
 
 # Helper Functions

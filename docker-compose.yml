@@ -66,7 +66,7 @@ services:
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=rtmp_db
     expose:
-      - "5003"  # Internal-only access; don't use `ports` to keep it private
+      - "5003" 
     volumes:
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
@@ -104,7 +104,7 @@ services:
         max-file: "10"
     env_file:
       - .env
-      
+
 volumes:
   hls_data:
     driver: local

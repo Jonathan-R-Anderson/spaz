@@ -19,13 +19,10 @@ load_dotenv()
 
 # Constants from environment
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
-UPLOAD_FOLDER = Path(os.getenv("UPLOAD_FOLDER", "./uploads")).resolve()
-THUMB_FOLDER = Path(os.getenv("THUMB_FOLDER", UPLOAD_FOLDER / "thumbs")).resolve()
 HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
-WEBTORRENT_CONTAINER_URL = os.getenv("WEBTORRENT_CONTAINER_URL", "https://webtorrent_seeder:5002")
-DB_API_URL = os.getenv("DB_API_URL", "http://profile_db:5003")
-BLACKLIST_FILE = os.getenv("BLACKLIST_FILE", "blacklist.json")
-WHITELIST_FILE = os.getenv("WHITELIST_FILE", "whitelist.json")
+WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
+PROFILE_DB_URL = f"{os.getenv('PROFILE_DB_URL', 'http://profile_db')}:{os.getenv('PROFILE_DB_PORT', 5003)}"
+
 
 # Contract addresses
 gremlinThreadAddress = os.getenv("GREMLIN_THREAD_ADDRESS")
@@ -52,16 +49,8 @@ class ManiwaniApp(Flask):
     jinja_options = ImmutableDict()
 
 app = ManiwaniApp(__name__, static_url_path='')
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["THUMB_FOLDER"] = THUMB_FOLDER
 app.config["SERVE_STATIC"] = True
 app.config["SERVE_REST"] = True
-app.config["USE_RECAPTCHA"] = False
-app.config["FIREHOSE_LENGTH"] = 10
-
-if os.getenv("MANIWANI_CFG"):
-    app.config.from_envvar("MANIWANI_CFG")
 
 app.url_map.strict_slashes = False
 rest_api = Api(app)
@@ -82,14 +71,6 @@ def save_json_file(path, data):
     with open(path, 'w') as f:
         json.dump(data, f)
 
-blacklist = load_json_file(BLACKLIST_FILE)
-whitelist = load_json_file(WHITELIST_FILE)
-
-def save_blacklist(data):
-    save_json_file(BLACKLIST_FILE, data)
-
-def save_whitelist(data):
-    save_json_file(WHITELIST_FILE, data)
 
 def gen_poster_id():
     return '%04X' % random.randint(0, 0xffff)
