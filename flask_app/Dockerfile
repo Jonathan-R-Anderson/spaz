@@ -53,7 +53,8 @@ COPY . /app
 WORKDIR /app
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r ./system_files/requirements.txt
+COPY ./system_files/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Replace default nginx config
 COPY ./system_files/nginx.conf /etc/nginx/nginx.conf

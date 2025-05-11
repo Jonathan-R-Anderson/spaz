@@ -43,8 +43,8 @@ COPY ./system_files/stat.xsl /usr/local/nginx/html/stat.xsl
 COPY ./system_files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Flask API
-COPY ./system_files/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY ./system_files/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py /app/app.py
 

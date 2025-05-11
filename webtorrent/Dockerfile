@@ -25,9 +25,6 @@ RUN apk add --no-cache nodejs-current npm && \
 # Install WebTorrent CLI globally
 RUN npm install -g webtorrent-cli
 
-# Install Python dependencies
-RUN pip install --no-cache-dir flask requests
-
 # Set working directory
 WORKDIR /app
 
