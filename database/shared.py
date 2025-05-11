@@ -26,7 +26,7 @@ load_dotenv()
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
 HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
 WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
-PROFILE_DB_URL = f"{os.getenv('PROFILE_DB_URL', 'http://profile_db')}:{os.getenv('PROFILE_DB_PORT', 5003)}"
+DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 
 
 # Contract addresses
@@ -69,7 +69,7 @@ client = docker.from_env()
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # PostgreSQL configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:admin@localhost/profile_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:admin@localhost/DATABASE_URL'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 

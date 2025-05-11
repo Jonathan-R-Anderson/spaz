@@ -41,7 +41,7 @@ is_monitoring_hls = {}
 seeded_files = {}
 
 WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
-PROFILE_DB_URL = f"{os.getenv('PROFILE_DB_URL', 'http://profile_db')}:{os.getenv('PROFILE_DB_PORT', 5003)}"
+DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 HOSTNAME = f"{os.getenv('HOSTNAME', 'http://psichos.is')}"
 
 
@@ -50,7 +50,7 @@ def sanitize_eth_address(eth_address):
 
 def get_secret(eth_address):
     try:
-        response = requests.get(f"{PROFILE_DB_URL}/get_secret/{eth_address}", timeout=5)
+        response = requests.get(f"{DATABASE_URL}/get_secret/{eth_address}", timeout=5)
         if response.status_code == 200:
             return response.json().get("secret")
         else:
@@ -60,7 +60,7 @@ def get_secret(eth_address):
     return None
 
 
-# Function to store a magnet URL using the profile_db API
+# Function to store a magnet URL using the DATABASE_URL API
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
     logging.debug(f"Storing magnet URL for {eth_address}, snapshot {snapshot_index}")
     url = f"{HOSTNAME}/store_magnet_url"
@@ -78,19 +78,19 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
         else:
             logging.error(f"Failed to store magnet URL: {response.json()}")
     except Exception as e:
-        logging.error(f"Error calling profile_db API to store magnet URL: {e}")
+        logging.error(f"Error calling DATABASE_URL API to store magnet URL: {e}")
 
-# Function to retrieve magnet URLs from profile_db
+# Function to retrieve magnet URLs from DATABASE_URL
 def retrieve_magnet_urls(eth_address):
     logging.debug(f"Retrieving magnet URLs for {eth_address}")
-    url = f"{PROFILE_DB_URL}/get_magnet_urls/{eth_address}"
+    url = f"{DATABASE_URL}/get_magnet_urls/{eth_address}"
     
     try:
         logging.info(f"Sending GET request to retrieve magnet URLs for {eth_address}")
         response = requests.get(url)
         return response.json()
     except Exception as e:
-        logging.error(f"Error calling profile_db API to retrieve magnet URLs: {e}")
+        logging.error(f"Error calling DATABASE_URL API to retrieve magnet URLs: {e}")
         return None
 
 # Function to stream and log output from the subprocess and store the magnet URL in the database
@@ -110,7 +110,7 @@ def stream_output(process, eth_address, snapshot_number):
                 magnet_url = output.split("Magnet: ")[1].strip()
                 logging.info(f"Magnet URL found: {magnet_url}")
                 
-                # Store the magnet URL in the database by calling the profile_db API
+                # Store the magnet URL in the database by calling the DATABASE_URL API
                 logging.info(f"Storing magnet URL {magnet_url} for {eth_address}, snapshot {snapshot_number}")
                 store_magnet_url(eth_address, magnet_url, snapshot_number)
                 break

@@ -151,9 +151,9 @@ def peer_count():
 def magnet_url(eth_address):
     logging.info(f"Received request for magnet URLs for Ethereum address: {eth_address}")
 
-    logging.info(f"Attempting to retrieve magnet URLs for {eth_address} from profile_db API.")
+    logging.info(f"Attempting to retrieve magnet URLs for {eth_address} from DATABASE_URL API.")
     magnet_urls = retrieve_magnet_urls(eth_address)
-    logging.info(f"Response from profile_db for {eth_address}: {magnet_urls}")
+    logging.info(f"Response from DATABASE_URL for {eth_address}: {magnet_urls}")
     
     if magnet_urls.get("message") == "success":
         logging.info(f"Successfully retrieved magnet URLs for {eth_address}. Returning URLs.")

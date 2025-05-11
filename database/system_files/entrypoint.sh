@@ -12,14 +12,14 @@ until pg_isready -h localhost; do
   sleep 1
 done
 
-# Switch to the postgres user and create the 'admin' user and profile_db database
+# Switch to the postgres user and create the 'admin' user and DATABASE_URL database
 su - postgres -c "psql -c \"CREATE USER admin WITH PASSWORD 'admin';\""
 su - postgres -c "psql -c \"ALTER USER admin WITH SUPERUSER;\""
-su - postgres -c "psql -c \"CREATE DATABASE profile_db;\""
-su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE profile_db TO admin;\""
+su - postgres -c "psql -c \"CREATE DATABASE DATABASE_URL;\""
+su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE DATABASE_URL TO admin;\""
 
-# Create the magnet_urls table in profile_db
-su - postgres -c "psql -d profile_db -c \"
+# Create the magnet_urls table in DATABASE_URL
+su - postgres -c "psql -d DATABASE_URL -c \"
 CREATE TABLE IF NOT EXISTS magnet_urls (
     id SERIAL PRIMARY KEY,
     eth_address VARCHAR(255) NOT NULL,

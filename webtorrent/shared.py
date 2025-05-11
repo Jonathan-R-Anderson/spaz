@@ -25,6 +25,7 @@ STATIC_FOLDER = '/app/static'
 HLS_FOLDER = os.path.join(STATIC_FOLDER, 'hls')
 seed_processes = {}
 logging.info("Creating necessary directories if they don't exist.")
+DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 
 # Create directories if they don't exist
 for folder in [STATIC_FOLDER, HLS_FOLDER]:
@@ -48,10 +49,10 @@ is_monitoring_static = {}
 is_monitoring_hls = {}
 seeded_files = {}
 
-# Function to store a magnet URL using the profile_db API
+# Function to store a magnet URL using the DATABASE_URL API
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
     logging.debug(f"Storing magnet URL for {eth_address}, snapshot {snapshot_index}")
-    url = "http://profile_db:5003/store_magnet_url"
+    url = f"{DATABASE_URL}/store_magnet_url"
     payload = {
         "eth_address": eth_address,
         "magnet_url": magnet_url,
@@ -66,19 +67,19 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
         else:
             logging.error(f"Failed to store magnet URL: {response.json()}")
     except Exception as e:
-        logging.error(f"Error calling profile_db API to store magnet URL: {e}")
+        logging.error(f"Error calling DATABASE_URL API to store magnet URL: {e}")
 
-# Function to retrieve magnet URLs from profile_db
+# Function to retrieve magnet URLs from DATABASE_URL
 def retrieve_magnet_urls(eth_address):
     logging.debug(f"Retrieving magnet URLs for {eth_address}")
-    url = f"http://profile_db:5003/get_magnet_urls/{eth_address}"
+    url = f"{DATABASE_URL}/get_magnet_urls/{eth_address}"
     
     try:
         logging.info(f"Sending GET request to retrieve magnet URLs for {eth_address}")
         response = requests.get(url)
         return response.json()
     except Exception as e:
-        logging.error(f"Error calling profile_db API to retrieve magnet URLs: {e}")
+        logging.error(f"Error calling DATABASE_URL API to retrieve magnet URLs: {e}")
         return None
 
 def stream_output(process, eth_address, snapshot_number):

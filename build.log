@@ -4,17 +4,17 @@
 #1 transferring dockerfile: 2.06kB done
 #1 DONE 0.0s
 
-#2 [profile_db internal] load build definition from Dockerfile
+#2 [DATABASE_URL internal] load build definition from Dockerfile
 #2 transferring dockerfile: 950B done
 #2 DONE 0.0s
 
-#3 [profile_db internal] load metadata for docker.io/library/debian:bullseye-slim
+#3 [DATABASE_URL internal] load metadata for docker.io/library/debian:bullseye-slim
 #3 DONE 0.8s
 
 #4 [flask_app internal] load metadata for docker.io/library/ubuntu:20.04
 #4 DONE 0.9s
 
-#5 [profile_db internal] load .dockerignore
+#5 [DATABASE_URL internal] load .dockerignore
 #5 transferring context: 2B done
 #5 DONE 0.0s
 
@@ -22,13 +22,13 @@
 #6 transferring context: 2B done
 #6 DONE 0.0s
 
-#7 [profile_db  1/10] FROM docker.io/library/debian:bullseye-slim@sha256:fdd75562fdcde1039c2480a1ea1cd2cf03b18b6e4cb551cabb03bde66ade8a5d
+#7 [DATABASE_URL  1/10] FROM docker.io/library/debian:bullseye-slim@sha256:fdd75562fdcde1039c2480a1ea1cd2cf03b18b6e4cb551cabb03bde66ade8a5d
 #7 DONE 0.0s
 
 #8 [flask_app  1/10] FROM docker.io/library/ubuntu:20.04@sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
 #8 DONE 0.0s
 
-#9 [profile_db internal] load build context
+#9 [DATABASE_URL internal] load build context
 #9 transferring context: 157B done
 #9 DONE 0.0s
 
@@ -36,31 +36,31 @@
 #10 transferring context: 7.60kB done
 #10 DONE 0.0s
 
-#11 [profile_db  6/10] COPY . .
+#11 [DATABASE_URL  6/10] COPY . .
 #11 CACHED
 
-#12 [profile_db  9/10] COPY entrypoint.sh /entrypoint.sh
+#12 [DATABASE_URL  9/10] COPY entrypoint.sh /entrypoint.sh
 #12 CACHED
 
-#13 [profile_db  2/10] WORKDIR /app
+#13 [DATABASE_URL  2/10] WORKDIR /app
 #13 CACHED
 
-#14 [profile_db  8/10] RUN chown postgres:postgres /etc/postgresql/15/main/pg_hba.conf
+#14 [DATABASE_URL  8/10] RUN chown postgres:postgres /etc/postgresql/15/main/pg_hba.conf
 #14 CACHED
 
-#15 [profile_db  7/10] COPY pg_hba.conf /etc/postgresql/15/main/pg_hba.conf
+#15 [DATABASE_URL  7/10] COPY pg_hba.conf /etc/postgresql/15/main/pg_hba.conf
 #15 CACHED
 
-#16 [profile_db  4/10] COPY requirements.txt .
+#16 [DATABASE_URL  4/10] COPY requirements.txt .
 #16 CACHED
 
-#17 [profile_db  3/10] RUN apt-get update && apt-get install -y     postgresql     redis-server     gcc     python3     python3-pip     libpq-dev
+#17 [DATABASE_URL  3/10] RUN apt-get update && apt-get install -y     postgresql     redis-server     gcc     python3     python3-pip     libpq-dev
 #17 CACHED
 
-#18 [profile_db  5/10] RUN pip install --no-cache-dir -r requirements.txt
+#18 [DATABASE_URL  5/10] RUN pip install --no-cache-dir -r requirements.txt
 #18 CACHED
 
-#19 [profile_db 10/10] RUN chmod +x /entrypoint.sh
+#19 [DATABASE_URL 10/10] RUN chmod +x /entrypoint.sh
 #19 CACHED
 
 #20 [flask_app  5/10] RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
@@ -78,16 +78,16 @@
 #24 [flask_app  6/10] RUN mkdir -p /opt/mediamtx &&     cd /opt/mediamtx &&     wget --no-check-certificate https://github.com/bluenviron/mediamtx/releases/download/v1.9.1/mediamtx_v1.9.1_linux_amd64.tar.gz &&     tar -xvf mediamtx_v1.9.1_linux_amd64.tar.gz &&     chmod +x mediamtx
 #24 CACHED
 
-#25 [profile_db] exporting to image
+#25 [DATABASE_URL] exporting to image
 #25 exporting layers done
 #25 writing image sha256:3c321b2f0ed53e7c6af964cf0d271355e4a589378dd3b6b3ae8fab46ca24a712 done
-#25 naming to docker.io/library/spaz-profile_db done
+#25 naming to docker.io/library/spaz-DATABASE_URL done
 #25 DONE 0.0s
 
 #26 [flask_app  7/10] COPY . /app
 #26 DONE 0.0s
 
-#27 [profile_db] resolving provenance for metadata file
+#27 [DATABASE_URL] resolving provenance for metadata file
 #27 DONE 0.0s
 
 #28 [flask_app  8/10] WORKDIR /app

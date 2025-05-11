@@ -1,6 +1,6 @@
 from shared import (logging, retrieve_magnet_urls, requests, jsonify,
                     WEBTORRENT_CONTAINER_URL, request, STATIC_FOLDER,
-                    os, seeded_files, PROFILE_DB_URL, hmac, Process,
+                    os, seeded_files, DATABASE_URL, hmac, Process,
                     seed_all_static_files_for_user, app)
 
 
@@ -8,9 +8,9 @@ from shared import (logging, retrieve_magnet_urls, requests, jsonify,
 def magnet_url(eth_address):
     logging.info(f"Received request for magnet URLs for Ethereum address: {eth_address}")
 
-    logging.info(f"Attempting to retrieve magnet URLs for {eth_address} from profile_db API.")
+    logging.info(f"Attempting to retrieve magnet URLs for {eth_address} from DATABASE_URL API.")
     magnet_urls = retrieve_magnet_urls(eth_address)
-    logging.info(f"Response from profile_db for {eth_address}: {magnet_urls}")
+    logging.info(f"Response from DATABASE_URL for {eth_address}: {magnet_urls}")
     
     if magnet_urls.get("message") == "success":
         logging.info(f"Successfully retrieved magnet URLs for {eth_address}. Returning URLs.")
@@ -144,7 +144,7 @@ def verify_secret():
     try:
         logging.debug(f"[verify_secret] Attempting to store streamer info for {eth_address}")
         store_response = requests.post(
-            f"{PROFILE_DB_URL}/store_streamer_info",
+            f"{DATABASE_URL}/store_streamer_info",
             json={"eth_address": eth_address, "secret": secret, "ip_address": ip_address},
             timeout=5
         )
@@ -158,7 +158,7 @@ def verify_secret():
     # Now verify secret
     try:
         logging.debug(f"[verify_secret] Looking up stored secret for {eth_address}")
-        secret_response = requests.get(f"{PROFILE_DB_URL}/get_secret/{eth_address}", timeout=5)
+        secret_response = requests.get(f"{DATABASE_URL}/get_secret/{eth_address}", timeout=5)
         if secret_response.status_code != 200:
             logging.warning(f"[verify_secret] No stored secret found for {eth_address}")
             return '', 403
