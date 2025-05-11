@@ -4,3 +4,4 @@ psycopg2-binary
 Flask-SQLAlchemy
 flask-cors
 requests
+Flask-RESTful
