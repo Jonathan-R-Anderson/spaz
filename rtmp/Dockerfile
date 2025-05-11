@@ -27,10 +27,10 @@ RUN apk update && apk add --no-cache \
 # Build NGINX with RTMP module from source
 RUN mkdir -p /usr/src/nginx && \
     cd /usr/src/nginx && \
-    wget http://nginx.org/download/nginx-1.21.1.tar.gz && \
-    tar -zxvf nginx-1.21.1.tar.gz && \
+    wget http://nginx.org/download/nginx-1.25.3.tar.gz && \
+    tar -zxvf nginx-1.25.3.tar.gz && \
     git clone https://github.com/arut/nginx-rtmp-module.git && \
-    cd nginx-1.21.1 && \
+    cd nginx-1.25.3 && \
     ./configure --prefix=/usr/local/nginx \
                 --with-http_ssl_module \
                 --with-http_v2_module \
@@ -38,6 +38,7 @@ RUN mkdir -p /usr/src/nginx && \
                 --with-stream_ssl_module \
                 --add-module=../nginx-rtmp-module && \
     make && make install
+
 
 # Copy NGINX config and assets
 COPY ./system_files/nginx.conf /usr/local/nginx/conf/nginx.conf
