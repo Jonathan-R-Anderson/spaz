@@ -27,3 +27,9 @@
 
 ### Running
   - DOCKER_BUILDKIT=0 sudo docker compose build --progress=plain > build.log &&  sudo docker compose up
+
+
+### TO DO
+  - Refactor code to have global variables fetch back to env file
+  - possibly refactor structure to be like MTV
+  - Finish renaming containers to be more descriptive and accurate

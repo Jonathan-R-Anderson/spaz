@@ -2,9 +2,9 @@ version: '3.8'
 
 services:
 
-  flask_app:
+  front_end:
     build:
-      context: ./flask_app
+      context: ./front_end
       args:
         - DOCKER_BUILDKIT=0
     volumes:
@@ -22,9 +22,9 @@ services:
     command: >
       supervisord -c /app/supervisord.conf
     networks:
-      - gremlin_net
+      - spaz_net
     depends_on:
-      - profile_db
+      - database
     logging:
       driver: "json-file"
       options:
@@ -33,7 +33,7 @@ services:
     env_file:
       - .env
 
-  webtorrent_seeder:
+  webtorrent:
     build:
       context: ./webtorrent
       args:
@@ -41,13 +41,13 @@ services:
     ports:
       - "5002:5002"
     depends_on:
-      - profile_db
+      - database
     volumes:
       - hls_data:/app/static
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
     networks:
-      - gremlin_net
+      - spaz_net
     logging:
       driver: "json-file"
       options:
@@ -56,9 +56,9 @@ services:
     env_file:
       - .env
 
-  profile_db:
+  database:
     build:
-      context: ./profile_db
+      context: ./database
       args:
         - DOCKER_BUILDKIT=0
     environment:
@@ -71,7 +71,7 @@ services:
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
     networks:
-      - gremlin_net
+      - spaz_net
     logging:
       driver: "json-file"
       options:
@@ -94,9 +94,9 @@ services:
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
     depends_on:
-      - profile_db
+      - database
     networks:
-      - gremlin_net
+      - spaz_net
     logging:
       driver: "json-file"
       options:
@@ -110,5 +110,5 @@ volumes:
     driver: local
 
 networks:
-  gremlin_net:
+  spaz_net:
     driver: bridge
