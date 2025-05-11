@@ -11,12 +11,10 @@ from shared import (
     gremlinDAOABI, gremlinDAOAddress,
     gremlinLeaderboardABI, gremlinLeaderboardAddress,
     gremlinJournalABI, gremlinJournalAddress,
-    Blueprint, logging, render_template, json, requests,
+    blueprint, logging, render_template, json, requests,
     jsonify, send_from_directory, request, base64, hmac,
     ec, hashlib
 )
-
-blueprint = Blueprint('blueprint', __name__)
 
 # Logging configuration
 logging.basicConfig(
