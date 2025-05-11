@@ -22,6 +22,10 @@ RUN npm install -g webtorrent-cli
 
 WORKDIR /app
 
+COPY ./system_files/requirements.txt .
+RUN python3 -m venv $VIRTUAL_ENV && \
+    pip install --no-cache-dir -r requirements.txt
+
 COPY . /app/
 
 EXPOSE 5002
