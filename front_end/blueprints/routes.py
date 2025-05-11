@@ -46,7 +46,7 @@ def home(eth_address):
                            gremlinJournalAddress=gremlinJournalAddress,
                            gremlinJournalABI=json.dumps(gremlinJournalABI, ensure_ascii=False))
 
-@app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
+@blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
 
     logging.info(f"[proxy_get_rtmp_url] Incoming request for eth_address: {eth_address}")
@@ -69,17 +69,17 @@ def get_rtmp_url(eth_address):
         logging.error(f"[proxy_get_rtmp_url] Error while contacting DB: {str(e)}")
         return jsonify({"error": "Failed to contact DB"}), 500
 
-@app.route('/css/<filename>')
+@blueprint.route('/css/<filename>')
 def serve_css(filename):
     logging.debug(f"Serving CSS file: {filename}")
     return send_from_directory(os.path.join('hosted', 'css'), filename)
 
-@app.route('/js/<filename>')
+@blueprint.route('/js/<filename>')
 def serve_js(filename):
     logging.debug(f"Serving JS file: {filename}")
     return send_from_directory(os.path.join('hosted', 'js'), filename)
 
-@app.route('/users/<eth_address>', methods=['POST', 'GET'])
+@blueprint.route('/users/<eth_address>', methods=['POST', 'GET'])
 def user_profile(eth_address):
     if request.method == 'POST':
         current_user_eth_address = request.json.get('current_user_eth_address')
@@ -96,7 +96,7 @@ def user_profile(eth_address):
                            gremlinJournalAddress=gremlinJournalAddress,
                            gremlinJournalABI=json.dumps(gremlinJournalABI, ensure_ascii=False))
 
-@app.route('/generate_rtmp_url', methods=['POST'])
+@blueprint.route('/generate_rtmp_url', methods=['POST'])
 def generate_rtmp_url():
     logging.info("Generating RTMP URL")
     eth_address = request.json.get('eth_address')
@@ -116,7 +116,7 @@ def generate_rtmp_url():
         logging.exception("Error generating RTMP URL")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/magnet_urls/<eth_address>')
+@blueprint.route('/magnet_urls/<eth_address>')
 def get_magnet_url(eth_address):
     logging.info(f"Fetching magnet URLs for {eth_address}")
     try:
@@ -128,7 +128,7 @@ def get_magnet_url(eth_address):
         logging.exception("WebTorrent communication error")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/start_session', methods=['POST'])
+@blueprint.route('/start_session', methods=['POST'])
 def start_session():
     eth_address = request.json.get('eth_address')
     logging.debug(f"Starting session for {eth_address}")
@@ -138,7 +138,7 @@ def start_session():
     session_store[eth_address] = private_key
     return jsonify({"eth_address": eth_address, "public_key": serialize_public_key(public_key)}), 200
 
-@app.route('/verify', methods=['POST'])
+@blueprint.route('/verify', methods=['POST'])
 def verify_hmac():
     eth_address = request.json.get('eth_address')
     encrypted_hmac = request.json.get('encrypted_hmac')
@@ -161,7 +161,7 @@ def verify_hmac():
     return jsonify({"error": "HMAC verification failed"}), 401
 
 
-@app.route('/verify_secret', methods=['GET'])
+@blueprint.route('/verify_secret', methods=['GET'])
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
 
