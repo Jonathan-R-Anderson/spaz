@@ -180,42 +180,6 @@
         }
     });
 
-    // Thread and Reply Management
-    async function blacklistThread() {
-        const threadId = document.getElementById('thread-id').value;
-        await adminContract.methods.blacklistThread(threadId).send({ from: currentAccount });
-        alert('Thread blacklisted successfully!');
-    }
-
-    async function whitelistThread() {
-        const threadId = document.getElementById('thread-id').value;
-        await adminContract.methods.whitelistThread(threadId).send({ from: currentAccount });
-        alert('Thread whitelisted successfully!');
-    }
-
-    async function deleteThread() {
-        const threadId = document.getElementById('thread-id').value;
-        await adminContract.methods.deleteThread(threadId).send({ from: currentAccount });
-        alert('Thread deleted successfully!');
-    }
-
-    async function blacklistReply() {
-        const replyId = document.getElementById('reply-id').value;
-        await adminContract.methods.blacklistReply(replyId).send({ from: currentAccount });
-        alert('Reply blacklisted successfully!');
-    }
-
-    async function whitelistReply() {
-        const replyId = document.getElementById('reply-id').value;
-        await adminContract.methods.whitelistReply(replyId).send({ from: currentAccount });
-        alert('Reply whitelisted successfully!');
-    }
-
-    async function deleteReply() {
-        const replyId = document.getElementById('reply-id').value;
-        await adminContract.methods.deleteReply(replyId).send({ from: currentAccount });
-        alert('Reply deleted successfully!');
-    }
 
     // Initialize the page
     window.onload = function() {

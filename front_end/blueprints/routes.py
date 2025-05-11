@@ -2,8 +2,7 @@ from shared import (
     gremlinThreadABI, gremlinThreadAddress,
     gremlinAdminABI, gremlinAdminAddress,
     gremlinReplyABI, gremlinReplyAddress,
-    allowed_file, FILE_DIR, save_whitelist,
-    save_blacklist, blacklist, whitelist,
+    allowed_file, FILE_DIR,
     app, gremlinProfileAddress, gremlinProfileABI,
     client, WEBTORRENT_CONTAINER_URL,
     HMAC_SECRET_KEY, session_store, generate_ecc_key_pair,
@@ -80,44 +79,6 @@ def serve_css(filename):
 def serve_js(filename):
     logging.debug(f"Serving JS file: {filename}")
     return send_from_directory(os.path.join('hosted', 'js'), filename)
-
-@app.route('/admin/blacklist/<item_type>', methods=['POST'])
-def add_to_blacklist(item_type):
-    data = request.json
-    item_value = data.get(item_type)
-    logging.info(f"Adding {item_type}: {item_value} to blacklist")
-    if item_type in ['tag', 'magnet', 'user']:
-        key = f"{item_type}s"
-        if item_value not in blacklist[key]:
-            blacklist[key].append(item_value)
-            save_blacklist(blacklist)
-            return jsonify({"message": f"{item_type.capitalize()} '{item_value}' added to blacklist"}), 200
-        return jsonify({"error": f"{item_type.capitalize()} already blacklisted"}), 400
-    return jsonify({"error": "Invalid blacklist type"}), 400
-
-@app.route('/admin/whitelist/<item_type>', methods=['POST'])
-def add_to_whitelist(item_type):
-    data = request.json
-    item_value = data.get(item_type)
-    logging.info(f"Adding {item_type}: {item_value} to whitelist")
-    if item_type in ['tag', 'magnet', 'user']:
-        key = f"{item_type}s"
-        if item_value not in whitelist[key]:
-            whitelist[key].append(item_value)
-            save_whitelist(whitelist)
-            return jsonify({"message": f"{item_type.capitalize()} '{item_value}' added to whitelist"}), 200
-        return jsonify({"error": f"{item_type.capitalize()} already whitelisted"}), 400
-    return jsonify({"error": "Invalid whitelist type"}), 400
-
-@app.route('/admin/blacklist')
-def get_blacklist():
-    logging.info("Retrieving blacklist")
-    return jsonify(blacklist)
-
-@app.route('/admin/whitelist')
-def get_whitelist():
-    logging.info("Retrieving whitelist")
-    return jsonify(whitelist)
 
 @app.route('/users/<eth_address>', methods=['POST', 'GET'])
 def user_profile(eth_address):
