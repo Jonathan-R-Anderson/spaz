@@ -5,3 +5,4 @@ Flask-SQLAlchemy
 flask-cors
 requests
 Flask-RESTful
+web3
