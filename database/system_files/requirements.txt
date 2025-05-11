@@ -7,3 +7,4 @@ requests
 Flask-RESTful
 web3
 docker
+cryptography
