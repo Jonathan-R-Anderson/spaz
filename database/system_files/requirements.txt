@@ -6,3 +6,4 @@ flask-cors
 requests
 Flask-RESTful
 web3
+docker
