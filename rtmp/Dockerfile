@@ -3,10 +3,15 @@ FROM alpine:3.19
 # Set working directory
 WORKDIR /app
 
+# Environment settings
+ENV VIRTUAL_ENV=/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 # Install build tools and runtime dependencies
 RUN apk update && apk add --no-cache \
     python3 \
     py3-pip \
+    py3-virtualenv \
     build-base \
     curl \
     wget \
@@ -16,7 +21,6 @@ RUN apk update && apk add --no-cache \
     zlib-dev \
     supervisor \
     bash \
-    libexecinfo-dev \
     nginx \
     && ln -sf python3 /usr/bin/python && ln -sf pip3 /usr/bin/pip
 
@@ -35,17 +39,19 @@ RUN mkdir -p /usr/src/nginx && \
                 --add-module=../nginx-rtmp-module && \
     make && make install
 
-# Copy your NGINX config and assets
+# Copy NGINX config and assets
 COPY ./system_files/nginx.conf /usr/local/nginx/conf/nginx.conf
 COPY ./system_files/stat.xsl /usr/local/nginx/html/stat.xsl
 
 # Supervisor config
 COPY ./system_files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Flask API
+# Set up Python virtual environment and install requirements
 COPY ./system_files/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python3 -m venv $VIRTUAL_ENV && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Flask API code
 COPY app.py /app/app.py
 
 # Close stream script
