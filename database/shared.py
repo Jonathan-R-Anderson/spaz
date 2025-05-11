@@ -13,6 +13,11 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization, hashes
 from dotenv import load_dotenv
 import base64
+import os
+import redis
+import random
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 
 # Load environment variables
 load_dotenv()
@@ -44,6 +49,8 @@ logging.basicConfig(
     ]
 )
 
+
+
 # Flask App Initialization
 class ManiwaniApp(Flask):
     jinja_options = ImmutableDict()
@@ -56,6 +63,36 @@ app.url_map.strict_slashes = False
 rest_api = Api(app)
 session_store = {}
 client = docker.from_env()
+
+
+# Redis client to store secrets (NoSQL key-value store)
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# PostgreSQL configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:admin@localhost/profile_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    eth_address = db.Column(db.String(42), unique=True, nullable=False)
+    rtmp_secret = db.Column(db.String(64), nullable=False)
+    ip_address = db.Column(db.String(45), nullable=False)  # Ensure this field is added
+
+    def __init__(self, eth_address, rtmp_secret):
+        self.eth_address = eth_address
+        self.rtmp_secret = rtmp_secret
+
+# Define a model for storing magnet URLs
+class MagnetURL(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    eth_address = db.Column(db.String(42), nullable=False)
+    magnet_url = db.Column(db.Text, nullable=False)
+    snapshot_index = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
 
 # Helper functions
 def load_json_file(path):
