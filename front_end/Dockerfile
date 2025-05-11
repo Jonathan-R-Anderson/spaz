@@ -4,6 +4,8 @@ FROM alpine:3.19
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
+ENV VIRTUAL_ENV=/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install system dependencies
 RUN apk update && apk add --no-cache \
@@ -12,6 +14,7 @@ RUN apk update && apk add --no-cache \
     gcc \
     python3 \
     py3-pip \
+    py3-virtualenv \
     libffi-dev \
     openssl \
     openssl-dev \
@@ -28,6 +31,9 @@ RUN apk update && apk add --no-cache \
     && ln -sf python3 /usr/bin/python && \
     ln -sf pip3 /usr/bin/pip
 
+# Create a virtual environment
+RUN python3 -m venv $VIRTUAL_ENV
+
 # Create directories
 RUN mkdir -p /etc/nginx/ssl /opt/mediamtx
 
@@ -40,7 +46,7 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 # Generate Diffie-Hellman parameters
 RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
 
-# Download Mediamtx (skip cert check since Alpine often lacks CA bundle in some contexts)
+# Download Mediamtx
 WORKDIR /opt/mediamtx
 RUN wget --no-check-certificate https://github.com/bluenviron/mediamtx/releases/download/v1.9.1/mediamtx_v1.9.1_linux_amd64.tar.gz && \
     tar -xvf mediamtx_v1.9.1_linux_amd64.tar.gz && \
@@ -52,7 +58,7 @@ COPY . /app
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Install Python dependencies in venv
 COPY ./system_files/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -62,5 +68,5 @@ COPY ./system_files/nginx.conf /etc/nginx/nginx.conf
 # Expose needed ports
 EXPOSE 80 443 5000 3000
 
-# Default command (adjust as needed)
+# Default command
 CMD ["supervisord", "-c", "/app/system_files/supervisord.conf"]
