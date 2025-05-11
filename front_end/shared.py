@@ -47,7 +47,10 @@ app = ManiwaniApp(__name__, static_url_path='')
 app.config['TEMPLATES_AUTO_RELOAD'] = os.getenv('TEMPLATES_AUTO_RELOAD', True)
 HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
 session_store = {}
-    
+
+PROFILE_DB_URL = f"{os.getenv('PROFILE_DB_URL', 'http://profile_db')}:{os.getenv('PROFILE_DB_PORT', 5003)}"
+
+
 app.url_map.strict_slashes = False
 rest_api = Api(app)
 

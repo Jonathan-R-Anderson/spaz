@@ -6,7 +6,7 @@ from shared import (
     app, gremlinProfileAddress, gremlinProfileABI,
     client, WEBTORRENT_CONTAINER_URL,
     HMAC_SECRET_KEY, session_store, generate_ecc_key_pair,
-    serialize_public_key, RTMP_URLS, DB_API_URL, LOG_FILE_PATH,
+    serialize_public_key, RTMP_URLS, PROFILE_DB_URL, LOG_FILE_PATH,
     gremlinChallengeABI, gremlinChallengeAddress,
     gremlinDAOABI, gremlinDAOAddress,
     gremlinLeaderboardABI, gremlinLeaderboardAddress,
@@ -48,13 +48,12 @@ def home(eth_address):
 
 @app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
-    from shared import DB_API_URL  # Make sure DB_API_URL is set correctly (e.g., https://psichos.is:5003)
 
     logging.info(f"[proxy_get_rtmp_url] Incoming request for eth_address: {eth_address}")
 
     try:
         # Construct full URL to DB container's endpoint
-        db_url = f"{DB_API_URL}/get_rtmp_url/{eth_address}"
+        db_url = f"{PROFILE_DB_URL}/get_rtmp_url/{eth_address}"
         logging.info(f"[proxy_get_rtmp_url] Forwarding to DB URL: {db_url}")
 
         # Send GET request to DB container
@@ -106,7 +105,7 @@ def generate_rtmp_url():
         logging.warning("Missing Ethereum address")
         return jsonify({"error": "Ethereum address is required"}), 400
     try:
-        response = requests.post(f"{DB_API_URL}/generate_secret", json={"eth_address": eth_address, "ip_address": ip_address}, timeout=30)
+        response = requests.post(f"{PROFILE_DB_URL}/generate_secret", json={"eth_address": eth_address, "ip_address": ip_address}, timeout=30)
         logging.debug(f"Secret generation response: {response.status_code} - {response.text}")
         if response.status_code != 200:
             return jsonify({"error": "Failed to generate secret"}), 500
