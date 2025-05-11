@@ -69,7 +69,7 @@ client = docker.from_env()
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # PostgreSQL configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:admin@localhost/profile_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:admin@localhost/rtmp_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
