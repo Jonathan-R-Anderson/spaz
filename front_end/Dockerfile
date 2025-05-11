@@ -58,6 +58,8 @@ COPY . /app
 # Set working directory
 WORKDIR /app
 
+COPY ./system_files/supervisord.conf .
+
 # Install Python dependencies in venv
 COPY ./system_files/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
