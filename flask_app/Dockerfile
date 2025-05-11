@@ -1,75 +1,65 @@
-# Use Ubuntu as the base image
-FROM ubuntu:20.04
+# Use Alpine as the base image
+FROM alpine:3.19
 
-# Set environment variables to make the installation non-interactive
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
-# Install system dependencies, Python, Jupyter, and Node.js
-RUN apt-get update && apt-get install -y \
+# Install system dependencies
+RUN apk update && apk add --no-cache \
     bash \
-    build-essential \
+    build-base \
     gcc \
     python3 \
-    python3-pip \
+    py3-pip \
     libffi-dev \
-    libssl-dev \
+    openssl \
+    openssl-dev \
     ffmpeg \
     net-tools \
     supervisor \
     procps \
-    openssl \
     tzdata \
     nginx \
-    libnginx-mod-rtmp \
-    openssl \
     curl \
-    build-essential \
     git \
-    bash \
     wget \
     ca-certificates \
-    --no-install-recommends && \
-    ln -sf /usr/bin/python3 /usr/bin/python && \
-    ln -sf /usr/bin/pip3 /usr/bin/pip && \
-    rm -rf /var/lib/apt/lists/*
+    && ln -sf python3 /usr/bin/python && \
+    ln -sf pip3 /usr/bin/pip
 
-#RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-#    apt-get install -y nodejs
+# Create directories
+RUN mkdir -p /etc/nginx/ssl /opt/mediamtx
 
-
-# Create a directory for SSL certificates
-RUN mkdir -p /etc/nginx/ssl
-
-# Generate a self-signed SSL certificate (valid for 365 days)
+# Generate a self-signed SSL certificate
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/ssl/self-signed.key \
     -out /etc/nginx/ssl/self-signed.crt \
     -subj "/C=US/ST=State/L=City/O=Organization/OU=Unit/CN=localhost"
 
-
-# Generate a Diffie-Hellman group for added security
+# Generate Diffie-Hellman parameters
 RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
 
-# Download Mediamtx with SSL certificate validation disabled
-RUN mkdir -p /opt/mediamtx && \
-    cd /opt/mediamtx && \
-    wget --no-check-certificate https://github.com/bluenviron/mediamtx/releases/download/v1.9.1/mediamtx_v1.9.1_linux_amd64.tar.gz && \
+# Download Mediamtx (skip cert check since Alpine often lacks CA bundle in some contexts)
+WORKDIR /opt/mediamtx
+RUN wget --no-check-certificate https://github.com/bluenviron/mediamtx/releases/download/v1.9.1/mediamtx_v1.9.1_linux_amd64.tar.gz && \
     tar -xvf mediamtx_v1.9.1_linux_amd64.tar.gz && \
     chmod +x mediamtx
 
-
-# Copy the application code to the container
+# Copy your application code
 COPY . /app
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Install any Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r ./system_files/requirements.txt
 
-# Copy the custom Nginx configuration file to the container
-COPY nginx.conf /etc/nginx/nginx.conf
+# Replace default nginx config
+COPY ./system_files/nginx.conf /etc/nginx/nginx.conf
 
-# Expose ports for HTTP (80), HTTPS (443)
+# Expose needed ports
 EXPOSE 80 443 5000 3000
+
+# Default command (adjust as needed)
+CMD ["supervisord", "-c", "/app/system_files/supervisord.conf"]

@@ -1,7 +1,7 @@
 from shared import (logging, retrieve_magnet_urls, requests, jsonify,
                     WEBTORRENT_CONTAINER_URL, request, STATIC_FOLDER,
                     os, seeded_files, PROFILE_DB_URL, hmac, Process,
-                    seed_all_static_files_for_user)
+                    seed_all_static_files_for_user, app)
 
 
 @app.route('/magnet_urls/<eth_address>', methods=['GET'])

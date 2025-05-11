@@ -1,37 +1,41 @@
-FROM ubuntu:20.04
+FROM alpine:3.19
 
-# Set environment variables to make the installation non-interactive
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
 ENV TZ=Etc/UTC
 
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    inotify-tools \
+# Install dependencies
+RUN apk update && apk add --no-cache \
     python3 \
-    python3-pip \
+    py3-pip \
+    curl \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    inotify-tools \
+    bash \
+    build-base \
+    libstdc++ \
+    tzdata \
+    && ln -sf python3 /usr/bin/python && \
+    ln -sf pip3 /usr/bin/pip
 
-# Install Node.js 18.x and npm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+# Install Node.js 20 and npm from community repo
+RUN apk add --no-cache nodejs-current npm && \
     npm install -g npm@latest
 
 # Install WebTorrent CLI globally
 RUN npm install -g webtorrent-cli
 
-# Install Flask and required Python packages
-RUN pip3 install flask requests
+# Install Python dependencies
+RUN pip install --no-cache-dir flask requests
 
-# Create the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy the Flask app and the script to the container
+# Copy app files
 COPY . /app/
-# Expose the port that Flask will run on
+
+# Expose Flask port
 EXPOSE 5002
 
-
-# Use the startup script as the entry point
+# Run the Flask app
 CMD ["python3", "app.py"]
