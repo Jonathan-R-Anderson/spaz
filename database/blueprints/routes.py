@@ -1,12 +1,13 @@
 from shared import (
-    User, MagnetURL, db, HMAC_SECRET_KEY, logging, app
+    User, MagnetURL, db, HMAC_SECRET_KEY, logging, app,
+    blueprint
 )
 from app import (clear_magnet_urls, generate_secret, hash_secret,
                  store_secret, store_magnet_url, fetch_secret_from_api)
 from flask import request, jsonify
 import hmac
 
-@app.route('/get_secret/<eth_address>', methods=['GET'])
+@blueprint.route('/get_secret/<eth_address>', methods=['GET'])
 def get_secret(eth_address):
     logging.info(f"[get_secret] Received request to fetch secret for: {eth_address}")
     try:
@@ -23,7 +24,7 @@ def get_secret(eth_address):
 
 
 
-@app.route('/get_magnet_urls/<eth_address>', methods=['GET'])
+@blueprint.route('/get_magnet_urls/<eth_address>', methods=['GET'])
 def retrieve_magnet_urls(eth_address):
     urls = MagnetURL.query.filter_by(eth_address=eth_address).order_by(MagnetURL.snapshot_index).all()
     logging.info(f"data from db {urls}")
@@ -40,7 +41,7 @@ def retrieve_magnet_urls(eth_address):
         return jsonify({"message": "failure"}), 500 
 
 # API to generate and store a new secret
-@app.route('/generate_secret', methods=['POST'])
+@blueprint.route('/generate_secret', methods=['POST'])
 def generate_and_store_secret():
     logging.info("===== [START] /generate_secret =====")
 
@@ -75,7 +76,7 @@ def generate_and_store_secret():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@app.route('/get_rtmp_url/<eth_address>', methods=['GET'])
+@blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
     logging.info(f"[get_rtmp_url] Received request to build RTMP URL for: {eth_address}")
     try:
@@ -94,7 +95,7 @@ def get_rtmp_url(eth_address):
 
 
 # API to store a magnet URL
-@app.route('/store_magnet_url', methods=['POST'])
+@blueprint.route('/store_magnet_url', methods=['POST'])
 def store_magnet_url_route():
     data = request.json
     eth_address = data.get('eth_address')
@@ -110,13 +111,13 @@ def store_magnet_url_route():
 
 
 # API to clear all magnet URLs for a specific eth_address
-@app.route('/clear_magnet_urls/<eth_address>', methods=['DELETE'])
+@blueprint.route('/clear_magnet_urls/<eth_address>', methods=['DELETE'])
 def clear_magnet_urls_route(eth_address):
     return clear_magnet_urls(eth_address)
 
 
 # API to store streamer information (eth_address, secret, and IP address)
-@app.route('/store_streamer_info', methods=['POST'])
+@blueprint.route('/store_streamer_info', methods=['POST'])
 def store_streamer_info():
     data = request.json
     eth_address = data.get('eth_address')
@@ -152,7 +153,7 @@ def store_streamer_info():
         return jsonify({"error": "Failed to store streamer info"}), 500
 
 # API to get the streamer's IP address based on their Ethereum address
-@app.route('/get_streamer_eth_address/<ip_address>', methods=['GET'])
+@blueprint.route('/get_streamer_eth_address/<ip_address>', methods=['GET'])
 def get_streamer_ip(ip_address):
     try:
         # Query the database for the user based on the Ethereum address
@@ -168,7 +169,7 @@ def get_streamer_ip(ip_address):
         logging.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
-@app.route('/verify_secret', methods=['POST'])
+@blueprint.route('/verify_secret', methods=['POST'])
 def verify_secret():
     if request.is_json:
         eth_address = request.json.get('eth_address')
@@ -193,3 +194,6 @@ def verify_secret():
         return '', 204
     else:
         return '', 403
+
+
+app.register_blueprint(blueprint)

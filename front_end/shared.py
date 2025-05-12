@@ -40,6 +40,11 @@ logging.basicConfig(
     ]
 )
 
+SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
+
+
+
+
 class ManiwaniApp(Flask):
     jinja_options = ImmutableDict()
 
