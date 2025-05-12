@@ -38,4 +38,4 @@ until pg_isready -h localhost; do
 done
 
 # Start the Flask application
-python3 app.py
+python3 ../app.py
