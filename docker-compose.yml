@@ -58,7 +58,7 @@ services:
 
   database:
     build:
-      context: ./database
+      context: ./database/system
       args:
         - DOCKER_BUILDKIT=0
     environment:
