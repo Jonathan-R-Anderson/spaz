@@ -4,9 +4,8 @@ import random
 import requests
 import string
 from shared import (
-    User, MagnetURL, db, HMAC_SECRET_KEY, logging, app
+    User, MagnetURL, db, HMAC_SECRET_KEY, logging, app, blueprint
 )
-from blueprints.routes import blueprint
 
 app.register_blueprint(blueprint)
 
