@@ -25,7 +25,7 @@ load_dotenv()
 # Constants from environment
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
 HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
-WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
+WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_URL', 'https://webtorrent')}:{os.getenv('WEBTORRENT_PORT', 5002)}"
 DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 
 

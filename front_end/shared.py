@@ -51,7 +51,7 @@ blueprint = Blueprint('blueprint', __name__)
 app.register_blueprint(blueprint)
 
 
-WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
+WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent')}:{os.getenv('WEBTORRENT_PORT', 5002)}"
 DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 
 

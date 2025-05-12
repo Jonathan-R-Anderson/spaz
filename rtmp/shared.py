@@ -40,7 +40,7 @@ is_monitoring_static = {}
 is_monitoring_hls = {}
 seeded_files = {}
 
-WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
+WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent')}:{os.getenv('WEBTORRENT_PORT', 5002)}"
 DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 HOSTNAME = f"{os.getenv('HOSTNAME', 'http://psichos.is')}"
 
@@ -196,5 +196,5 @@ def get_peer_count(magnet_url):
         else:
             logging.error(f"Error from peer_count endpoint: {response.text}")
     except Exception as e:
-        logging.error(f"Exception while contacting webtorrent_seeder: {e}")
+        logging.error(f"Exception while contacting webtorrent: {e}")
     return 0

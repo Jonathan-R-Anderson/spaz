@@ -99,15 +99,15 @@ def seed_file():
 
         if response.status_code == 200:
             magnet_url = response.json().get('magnet_url')
-            logging.info(f"Magnet URL from webtorrent_seeder: {magnet_url}")
+            logging.info(f"Magnet URL from webtorrent: {magnet_url}")
             seeded_files[file_path] = magnet_url
             return jsonify({"magnet_url": magnet_url}), 200
         else:
-            logging.error(f"Seeding failed via webtorrent_seeder: {response.text}")
+            logging.error(f"Seeding failed via webtorrent: {response.text}")
             return jsonify({"error": "Seeding failed"}), 500
 
     except Exception as e:
-        logging.error(f"Exception contacting webtorrent_seeder: {e}")
+        logging.error(f"Exception contacting webtorrent: {e}")
         return jsonify({"error": "Failed to contact seeder"}), 500
 
 @app.route('/verify_secret', methods=['POST'])
