@@ -1,7 +1,12 @@
-from app import (_clear_magnet_urls, _generate_secret, _hash_secret,
-                 _store_secret, _store_magnet_url, _fetch_secret_from_api,
-                 User, MagnetURL, db, HMAC_SECRET_KEY, logging, app)
+# blueprints/views.py
 from flask import request, jsonify
+from .routes import blueprint
+from shared import db, User, MagnetURL, logging
+from services import (
+    _clear_magnet_urls, _generate_secret, _hash_secret,
+    _store_secret, _store_magnet_url, _fetch_secret_from_api
+)
+
 
 import hmac
 
