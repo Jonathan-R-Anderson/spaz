@@ -22,7 +22,6 @@ app.logger.addHandler(logging.StreamHandler())
 
 # Flask application setup
 CORS(app)
-app.register_blueprint(blueprint)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 # Create directories if they don't exist
