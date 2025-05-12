@@ -2,8 +2,8 @@ from shared import (
     User, MagnetURL, db, HMAC_SECRET_KEY, logging, app,
     blueprint
 )
-from app import (clear_magnet_urls, generate_secret, hash_secret,
-                 store_secret, store_magnet_url, fetch_secret_from_api)
+from app import (_clear_magnet_urls, _generate_secret, _hash_secret,
+                 _store_secret, _store_magnet_url, _fetch_secret_from_api)
 from flask import request, jsonify
 import hmac
 
@@ -61,11 +61,11 @@ def generate_and_store_secret():
             return jsonify({"error": "Missing IP address"}), 400
 
         logging.info(f"Generating secret for eth_address: {eth_address}, ip_address: {ip_address}")
-        secret = generate_secret()
+        secret = _generate_secret()
         logging.info(f"Generated plaintext secret: {secret}")
 
         logging.info("Storing secret in database...")
-        store_secret(eth_address, secret, ip_address)
+        _store_secret(eth_address, secret, ip_address)
         logging.info("Successfully stored secret in DB.")
 
         logging.info("===== [END] /generate_secret =====")
@@ -105,7 +105,7 @@ def store_magnet_url_route():
     if not eth_address or not magnet_url or snapshot_index is None:
         return jsonify({"error": "Missing required fields"}), 400
 
-    return store_magnet_url(eth_address, magnet_url, snapshot_index)
+    return _store_magnet_url(eth_address, magnet_url, snapshot_index)
 
 
 
@@ -113,7 +113,7 @@ def store_magnet_url_route():
 # API to clear all magnet URLs for a specific eth_address
 @blueprint.route('/clear_magnet_urls/<eth_address>', methods=['DELETE'])
 def clear_magnet_urls_route(eth_address):
-    return clear_magnet_urls(eth_address)
+    return _clear_magnet_urls(eth_address)
 
 
 # API to store streamer information (eth_address, secret, and IP address)
@@ -186,7 +186,7 @@ def verify_secret():
     if not eth_address or not secret:
         return '', 403
 
-    stored_secret = fetch_secret_from_api(eth_address)
+    stored_secret = _fetch_secret_from_api(eth_address)
     if not stored_secret:
         return '', 403
 

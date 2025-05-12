@@ -10,7 +10,7 @@ from shared import (
 
 
 # Function to clear all magnet URLs associated with an eth_address
-def clear_magnet_urls(eth_address):
+def _clear_magnet_urls(eth_address):
     try:
         # Query to delete all entries related to the eth_address
         MagnetURL.query.filter_by(eth_address=eth_address).delete()
@@ -21,15 +21,15 @@ def clear_magnet_urls(eth_address):
         return {"error": f"Failed to clear magnet URLs: {str(e)}"}, 500
 
 # Generate a random secret for RTMP stream
-def generate_secret():
+def _generate_secret():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
 # Hash the secret using HMAC with SHA-256
-def hash_secret(secret):
+def _hash_secret(secret):
     return hmac.new(HMAC_SECRET_KEY.encode(), secret.encode(), hashlib.sha256).hexdigest()
 
 # Store the secret in PostgreSQL
-def store_secret(eth_address, secret, ip_address):
+def _store_secret(eth_address, secret, ip_address):
     new_user = User(
         eth_address=eth_address,
         rtmp_secret=secret,
@@ -40,13 +40,13 @@ def store_secret(eth_address, secret, ip_address):
 
 
 # Store a magnet URL associated with the eth_address
-def store_magnet_url(eth_address, magnet_url, snapshot_index):
+def _store_magnet_url(eth_address, magnet_url, snapshot_index):
     new_magnet_url = MagnetURL(eth_address=eth_address, magnet_url=magnet_url, snapshot_index=snapshot_index)
     db.session.add(new_magnet_url)
     db.session.commit()
     return {"message": "Magnet URL stored successfully"}, 200
 
-def fetch_secret_from_api(eth_address):
+def _fetch_secret_from_api(eth_address):
     try:
         response = requests.get(f"http://localhost:5003/get_secret/{eth_address}", timeout=5)
         if response.status_code == 200:
