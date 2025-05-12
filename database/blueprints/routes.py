@@ -1,10 +1,11 @@
 from shared import (
-    User, MagnetURL, db, HMAC_SECRET_KEY, logging, app,
-    blueprint
+    User, MagnetURL, db, HMAC_SECRET_KEY, logging, app
 )
 from app import (_clear_magnet_urls, _generate_secret, _hash_secret,
                  _store_secret, _store_magnet_url, _fetch_secret_from_api)
 from flask import request, jsonify
+from blueprints.routes import blueprint
+
 import hmac
 
 @blueprint.route('/get_secret/<eth_address>', methods=['GET'])
