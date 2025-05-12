@@ -71,4 +71,4 @@ COPY ./system_files/nginx.conf /etc/nginx/nginx.conf
 EXPOSE 80 443 5000 3000
 
 # Default command
-CMD ["supervisord", "-c", "/app/system_files/supervisord.conf"]
+CMD ["supervisord", "-c", "/app/supervisord.conf"]
