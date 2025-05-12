@@ -19,10 +19,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code into the container
 COPY . .
-COPY api .
-COPY models .
-COPY services .
-COPY utils .
 
 # Copy the custom pg_hba.conf file
 COPY pg_hba.conf /etc/postgresql/15/main/pg_hba.conf
