@@ -6,7 +6,9 @@ import string
 from shared import (
     User, MagnetURL, db, HMAC_SECRET_KEY, logging, app
 )
+from blueprints.routes import blueprint
 
+app.register_blueprint(blueprint)
 
 
 # Function to clear all magnet URLs associated with an eth_address

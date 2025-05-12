@@ -195,5 +195,3 @@ def verify_secret():
     else:
         return '', 403
 
-
-app.register_blueprint(blueprint)
