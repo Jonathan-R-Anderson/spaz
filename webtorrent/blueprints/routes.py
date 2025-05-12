@@ -260,4 +260,4 @@ def stop_seeding():
         logging.error(f"Failed to stop seeding for {eth_address}: {e}")
         return jsonify({"error": str(e)}), 500
 
-app.register_blueprint(blueprint
+app.register_blueprint(blueprint)
