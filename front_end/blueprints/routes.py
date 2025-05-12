@@ -28,8 +28,6 @@ logging.basicConfig(
 
 SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
 
-app.register_blueprint(blueprint)
-
 
 @blueprint.route('/')
 def index():
@@ -200,3 +198,6 @@ def verify_secret():
     else:
         logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}")
         return '', 403
+
+
+app.register_blueprint(blueprint)
