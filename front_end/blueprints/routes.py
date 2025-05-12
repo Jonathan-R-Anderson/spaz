@@ -28,6 +28,9 @@ logging.basicConfig(
 
 SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
 
+app.register_blueprint(blueprint)
+
+
 @blueprint.route('/')
 def index():
     logging.debug("Rendering welcome page.")

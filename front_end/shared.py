@@ -48,7 +48,6 @@ app.config['TEMPLATES_AUTO_RELOAD'] = os.getenv('TEMPLATES_AUTO_RELOAD', True)
 HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
 session_store = {}
 blueprint = Blueprint('blueprint', __name__)
-app.register_blueprint(blueprint)
 
 
 WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent')}:{os.getenv('WEBTORRENT_PORT', 5002)}"
