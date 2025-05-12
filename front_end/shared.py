@@ -50,6 +50,8 @@ session_store = {}
 blueprint = Blueprint('blueprint', __name__)
 app.register_blueprint(blueprint)
 
+
+WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
 DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
 
 
@@ -3070,9 +3072,6 @@ FILE_DIR = os.getenv('FILE_DIR', 'hosted')
 TRACKER_PORT = os.getenv('TRACKER_PORT', 5000)
 
 
-WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent_seeder')}:{os.getenv('WEBTORRENT_SEEDER_PORT', 5002)}"
-DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORTblueprint = Blueprint('blueprint', __name__)
-', 5003)}"
 
 RTMP_URLS = {}
 client = docker.from_env()
