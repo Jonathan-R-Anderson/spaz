@@ -3,9 +3,9 @@ from shared import (app, request, jsonify, is_monitoring_hls,
                     Process, is_monitoring_static, monitor_hls_directory,
                     unquote, re, os, HLS_FOLDER, subprocess, stream_output,
                     requests, time, Thread, retrieve_magnet_urls, 
-                    STATIC_FOLDER, seeded_files,seed_processes)
+                    STATIC_FOLDER, seeded_files,seed_processes, blueprint)
 
-@app.route('/start_static_monitor', methods=['POST'])
+@blueprint.route('/start_static_monitor', methods=['POST'])
 def start_static_monitor():
     data = request.get_json()
     eth_address = data.get('eth_address')
@@ -26,7 +26,7 @@ def start_static_monitor():
         logging.error(f"[API] Failed to start static monitor: {e}")
         return jsonify({"error": "Failed to start static monitor"}), 500
 
-@app.route('/start_hls_monitor', methods=['POST'])
+@blueprint.route('/start_hls_monitor', methods=['POST'])
 def start_hls_monitor():
     data = request.get_json()
     eth_address = data.get('eth_address')
@@ -48,7 +48,7 @@ def start_hls_monitor():
         return jsonify({"error": "Failed to start HLS monitor"}), 500
 
 
-@app.route('/convert_to_mp4', methods=['POST'])
+@blueprint.route('/convert_to_mp4', methods=['POST'])
 def convert_to_mp4():
     logging.info(f"[convert_to_mp4] Received request: {request.json}")
 
@@ -120,7 +120,7 @@ def convert_to_mp4():
         logging.error(f"[convert_to_mp4] Unexpected error: {e}")
         return jsonify({"error": str(e)}), 500
     
-@app.route('/peer_count', methods=['POST'])
+@blueprint.route('/peer_count', methods=['POST'])
 def peer_count():
     data = request.get_json()
     magnet_url = data.get("magnet_url")
@@ -147,7 +147,7 @@ def peer_count():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/magnet_urls/<eth_address>', methods=['GET'])
+@blueprint.route('/magnet_urls/<eth_address>', methods=['GET'])
 def magnet_url(eth_address):
     logging.info(f"Received request for magnet URLs for Ethereum address: {eth_address}")
 
@@ -186,7 +186,7 @@ def magnet_url(eth_address):
         logging.error(f"Magnet URL not found for {eth_address} and monitoring started.")
         return jsonify({"error": "Magnet URL not found and monitoring started"}), 404
 
-@app.route('/seed', methods=['POST'])
+@blueprint.route('/seed', methods=['POST'])
 def seed_file():
     logging.info("Received request to seed a file.")
 
@@ -238,7 +238,7 @@ def seed_file():
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
-@app.route('/stop_seeding', methods=['POST'])
+@blueprint.route('/stop_seeding', methods=['POST'])
 def stop_seeding():
     data = request.get_json()
     eth_address = data.get("eth_address")
@@ -260,3 +260,4 @@ def stop_seeding():
         logging.error(f"Failed to stop seeding for {eth_address}: {e}")
         return jsonify({"error": str(e)}), 500
 
+app.register_blueprint(blueprint)

@@ -9,6 +9,7 @@ import requests
 from threading import Thread
 import re
 from urllib.parse import unquote
+from flask import Blueprint, render_template, request, jsonify, send_from_directory
 
 
 # Configure logging
@@ -26,6 +27,7 @@ HLS_FOLDER = os.path.join(STATIC_FOLDER, 'hls')
 seed_processes = {}
 logging.info("Creating necessary directories if they don't exist.")
 DATABASE_URL = f"{os.getenv('DATABASE_URL', 'http://database')}:{os.getenv('DATABASE_PORT', 5003)}"
+blueprint = Blueprint('blueprint', __name__)
 
 # Create directories if they don't exist
 for folder in [STATIC_FOLDER, HLS_FOLDER]:
