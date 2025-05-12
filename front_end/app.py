@@ -15,6 +15,7 @@ logging.basicConfig(
         logging.StreamHandler()  # Also log to console
     ]
 )
+app.register_blueprint(blueprint)
 
 # Flask logging
 app.logger.addHandler(logging.FileHandler(LOG_FILE_PATH))

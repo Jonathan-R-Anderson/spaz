@@ -16,19 +16,6 @@ from shared import (
     ec, hashlib
 )
 
-# Logging configuration
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_FILE_PATH),
-        logging.StreamHandler()
-    ]
-)
-
-SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
-
-
 @blueprint.route('/')
 def index():
     logging.debug("Rendering welcome page.")
@@ -199,5 +186,3 @@ def verify_secret():
         logging.warning(f"[verify_secret] ❌ Verification failed for {eth_address}")
         return '', 403
 
-
-app.register_blueprint(blueprint)
