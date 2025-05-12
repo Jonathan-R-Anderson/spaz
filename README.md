@@ -32,3 +32,4 @@
 ### TO DO
   - Refactor code to have global variables fetch back to env file
   - possibly refactor structure to be like MTV
+  - fix front end supervisord.conf file to use correct certs
