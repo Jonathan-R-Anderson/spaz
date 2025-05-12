@@ -13,7 +13,7 @@ from shared import (
     gremlinJournalABI, gremlinJournalAddress,
     blueprint, logging, render_template, json, requests,
     jsonify, send_from_directory, request, base64, hmac,
-    ec, hashlib
+    ec, hashlib, hashes
 )
 
 @blueprint.route('/')
