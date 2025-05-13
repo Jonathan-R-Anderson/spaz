@@ -56,7 +56,12 @@ RUN python3 -m venv $VIRTUAL_ENV && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy Flask app and support files
-COPY app.py /app/app.py
+COPY api/ /app/api/
+COPY config.py /app/
+COPY driver.py /app/
+COPY services/ /app/services/
+COPY utils/ /app/utils/
+COPY tests/ /app/tests/
 COPY ./system_files/close_stream.sh /app/close_stream.sh
 COPY ./system_files/entrypoint.sh /entrypoint.sh
 
