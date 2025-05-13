@@ -16,6 +16,8 @@ def app():
 
     with app.app_context():
         _db.init_app(app)
+        from models.user import User
+
         _db.create_all()  # ✅ Create all tables in PostgreSQL test DB
         yield app
         _db.drop_all()  # Optional: clean up
