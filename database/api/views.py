@@ -206,3 +206,17 @@ def verify_secret():
     else:
         return '', 403
 
+
+
+# Expose route logic functions for direct use in unit tests
+__all__ = [
+    "generate_and_store_secret",
+    "get_secret",
+    "get_rtmp_url",
+    "retrieve_magnet_urls",
+    "store_magnet_url_route",
+    "clear_magnet_urls_route",
+    "store_streamer_info",
+    "get_streamer_ip",
+    "verify_secret"
+]
