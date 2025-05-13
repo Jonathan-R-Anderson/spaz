@@ -1,8 +1,17 @@
 from flask import request, jsonify
 from ..routes import blueprint
-from utils.crypto import generate_ecc_key_pair, serialize_public_key
+from utils.crypto import _generate_ecc_key_pair, _serialize_public_key
 from config import session_store, HMAC_SECRET_KEY
-import base64, hmac, hashlib, logging
+
+import base64
+import hmac
+import hashlib
+import logging
+
+# Needed for the ECC decryption line
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+
 
 @blueprint.route('/start_session', methods=['POST'])
 def start_session():
@@ -10,9 +19,9 @@ def start_session():
     logging.debug(f"Starting session for {eth_address}")
     if not eth_address:
         return jsonify({"error": "Ethereum address missing"}), 400
-    private_key, public_key = generate_ecc_key_pair()
+    private_key, public_key = _generate_ecc_key_pair()
     session_store[eth_address] = private_key
-    return jsonify({"eth_address": eth_address, "public_key": serialize_public_key(public_key)}), 200
+    return jsonify({"eth_address": eth_address, "public_key": _serialize_public_key(public_key)}), 200
 
 
 
