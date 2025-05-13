@@ -1,28 +1,29 @@
-# blueprints/views.py
 from flask import request, jsonify
 from .routes import blueprint
-from shared import db, User, MagnetURL, logging
+from shared import db, User, MagnetURL, logger
 from services import (
     _clear_magnet_urls, _generate_secret, _hash_secret,
     _store_secret, _store_magnet_url, _fetch_secret_from_api
 )
-
-
 import hmac
+
+from logging import setup_logger
+logger = setup_logger(__name__)
+
 
 @blueprint.route('/get_secret/<eth_address>', methods=['GET'])
 def get_secret(eth_address):
-    logging.info(f"[get_secret] Received request to fetch secret for: {eth_address}")
+    logger.info(f"[get_secret] Received request to fetch secret for: {eth_address}")
     try:
         user = User.query.filter_by(eth_address=eth_address).first()
         if user:
-            logging.info(f"[get_secret] Secret found for {eth_address}")
+            logger.info(f"[get_secret] Secret found for {eth_address}")
             return jsonify({"eth_address": eth_address, "secret": user.rtmp_secret}), 200
         else:
-            logging.warning(f"[get_secret] No secret found for {eth_address}")
+            logger.warning(f"[get_secret] No secret found for {eth_address}")
             return jsonify({"error": "Secret not found"}), 404
     except Exception as e:
-        logging.error(f"[get_secret] Failed to fetch secret for {eth_address}: {e}")
+        logger.error(f"[get_secret] Failed to fetch secret for {eth_address}: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -30,7 +31,7 @@ def get_secret(eth_address):
 @blueprint.route('/get_magnet_urls/<eth_address>', methods=['GET'])
 def retrieve_magnet_urls(eth_address):
     urls = MagnetURL.query.filter_by(eth_address=eth_address).order_by(MagnetURL.snapshot_index).all()
-    logging.info(f"data from db {urls}")
+    logger.info(f"data from db {urls}")
     if urls:
         return jsonify({
             "message": "success",
@@ -46,54 +47,54 @@ def retrieve_magnet_urls(eth_address):
 # API to generate and store a new secret
 @blueprint.route('/generate_secret', methods=['POST'])
 def generate_and_store_secret():
-    logging.info("===== [START] /generate_secret =====")
+    logger.info("===== [START] /generate_secret =====")
 
     try:
         data = request.get_json()
-        logging.info(f"Incoming JSON payload: {data}")
+        logger.info(f"Incoming JSON payload: {data}")
 
         eth_address = data.get('eth_address') if data else None
         ip_address = data.get('ip_address') if data else None
 
         if not eth_address:
-            logging.warning("Missing Ethereum address in request.")
+            logger.warning("Missing Ethereum address in request.")
             return jsonify({"error": "Missing Ethereum address"}), 400
 
         if not ip_address:
-            logging.warning("Missing IP address in request.")
+            logger.warning("Missing IP address in request.")
             return jsonify({"error": "Missing IP address"}), 400
 
-        logging.info(f"Generating secret for eth_address: {eth_address}, ip_address: {ip_address}")
+        logger.info(f"Generating secret for eth_address: {eth_address}, ip_address: {ip_address}")
         secret = _generate_secret()
-        logging.info(f"Generated plaintext secret: {secret}")
+        logger.info(f"Generated plaintext secret: {secret}")
 
-        logging.info("Storing secret in database...")
+        logger.info("Storing secret in database...")
         _store_secret(eth_address, secret, ip_address)
-        logging.info("Successfully stored secret in DB.")
+        logger.info("Successfully stored secret in DB.")
 
-        logging.info("===== [END] /generate_secret =====")
+        logger.info("===== [END] /generate_secret =====")
         return jsonify({"eth_address": eth_address, "secret": secret}), 200
 
     except Exception as e:
-        logging.exception(f"Unhandled exception in /generate_secret: {e}")
+        logger.exception(f"Unhandled exception in /generate_secret: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
 
 @blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
-    logging.info(f"[get_rtmp_url] Received request to build RTMP URL for: {eth_address}")
+    logger.info(f"[get_rtmp_url] Received request to build RTMP URL for: {eth_address}")
     try:
         user = User.query.filter_by(eth_address=eth_address).first()
         if user:
             secret = user.rtmp_secret
             rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={secret}"
-            logging.info(f"[get_rtmp_url] Returning RTMP URL: {rtmp_url}")
+            logger.info(f"[get_rtmp_url] Returning RTMP URL: {rtmp_url}")
             return jsonify({"rtmp_url": rtmp_url}), 200
         else:
-            logging.warning(f"[get_rtmp_url] No user found for {eth_address}")
+            logger.warning(f"[get_rtmp_url] No user found for {eth_address}")
             return jsonify({"error": "Secret not found"}), 404
     except Exception as e:
-        logging.error(f"[get_rtmp_url] Exception while fetching RTMP URL: {e}")
+        logger.error(f"[get_rtmp_url] Exception while fetching RTMP URL: {e}")
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -127,7 +128,7 @@ def store_streamer_info():
     secret = data.get('secret')
     ip_address = data.get('ip_address')
 
-    logging.info(f"Storing streamer info: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
+    logger.info(f"Storing streamer info: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
 
 
     if not eth_address or not secret or not ip_address:
@@ -151,7 +152,7 @@ def store_streamer_info():
         db.session.commit()
         return jsonify({"message": "Streamer info stored successfully"}), 200
     except Exception as e:
-        logging.error(f"Failed to store streamer info: {str(e)}")
+        logger.error(f"Failed to store streamer info: {str(e)}")
         db.session.rollback()
         return jsonify({"error": "Failed to store streamer info"}), 500
 
@@ -169,7 +170,7 @@ def get_streamer_ip(ip_address):
             # Return an error if the user is not found
             return jsonify({"error": f"No streamer found with Ethereum address: {ip_address}"}), 404
     except Exception as e:
-        logging.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
+        logger.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
 @blueprint.route('/verify_secret', methods=['POST'])
