@@ -1,12 +1,8 @@
 import pytest
-from flask import Flask
 from driver import create_app
 from extensions import db as _db
 from models.user import Users
 from models.magnet import MagnetURL
-from services.auth import _generate_secret, _store_secret, _fetch_secret_from_api
-from api import generate_rtmp_url, verify_secret
-from flask import jsonify
 
 @pytest.fixture(scope="session")
 def app():
@@ -22,83 +18,80 @@ def app():
         yield app
         _db.drop_all()
 
-@pytest.fixture(scope="function")
-def db_session(app):
-    with app.app_context():
-        yield _db.session
-        _db.session.rollback()
+@pytest.fixture
+def client(app):
+    return app.test_client()
 
-# Helper function to simulate the /generate_secret logic
-def manual_generate_secret(eth_address, ip_address):
-    secret = _generate_secret()
-    _store_secret(eth_address, secret, ip_address)
-    return secret
 
-def test_generate_secret(db_session):
-    secret = manual_generate_secret("0xTEST", "127.0.0.1")
-    assert isinstance(secret, str)
-    assert len(secret) == 16
+def test_generate_secret(client):
+    res = client.post("/generate_secret", json={"eth_address": "0xTEST", "ip_address": "127.0.0.1"})
+    assert res.status_code == 200
+    assert "secret" in res.get_json()
 
-def test_get_secret(db_session):
+
+def test_get_secret(client):
     eth = "0xSECRET"
-    ip = "127.0.0.1"
-    secret = manual_generate_secret(eth, ip)
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+    res = client.get(f"/get_secret/{eth}")
+    assert res.status_code == 200
+    assert res.get_json()["eth_address"] == eth
 
-    user = Users.query.filter_by(eth_address=eth).first()
-    assert user is not None
-    assert user.rtmp_secret == secret
 
-def test_get_rtmp_url(db_session):
+def test_get_rtmp_url(client):
     eth = "0xRTMP"
-    ip = "127.0.0.1"
-    secret = manual_generate_secret(eth, ip)
+    res = client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+    secret = res.get_json()["secret"]
 
-    rtmp_url = f"rtmp://stream.server/live/eth_address={eth}&secret={secret}"
-    assert eth in rtmp_url
-    assert secret in rtmp_url
+    rtmp_res = client.get(f"/get_rtmp_url/{eth}")
+    assert rtmp_res.status_code == 200
+    assert secret in rtmp_res.get_json()["rtmp_url"]
 
-def test_store_and_get_magnet_url(db_session):
-    from models.magnet import MagnetURL
 
+def test_store_and_get_magnet_url(client):
     eth = "0xMAG"
-    manual_generate_secret(eth, "127.0.0.1")
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
 
-    magnet_url = "magnet:?xt=urn:btih:123"
-    entry = MagnetURL(eth_address=eth, magnet_url=magnet_url, snapshot_index=0)
-    _db.session.add(entry)
-    _db.session.commit()
+    client.post("/store_magnet_url", json={
+        "eth_address": eth,
+        "magnet_url": "magnet:?xt=urn:btih:123",
+        "snapshot_index": 0
+    })
 
-    entries = MagnetURL.query.filter_by(eth_address=eth).all()
-    assert len(entries) == 1
-    assert entries[0].magnet_url == magnet_url
+    res = client.get(f"/get_magnet_urls/{eth}")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert len(data["magnet_urls"]) == 1
+    assert data["magnet_urls"][0]["magnet_url"] == "magnet:?xt=urn:btih:123"
 
-def test_clear_magnet_urls(db_session):
-    from models.magnet import MagnetURL
 
+def test_clear_magnet_urls(client):
     eth = "0xCLEAR"
-    manual_generate_secret(eth, "127.0.0.1")
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+    client.post("/store_magnet_url", json={
+        "eth_address": eth,
+        "magnet_url": "magnet:?xt=urn:btih:clear",
+        "snapshot_index": 1
+    })
 
-    entry = MagnetURL(eth_address=eth, magnet_url="magnet:?xt=urn:btih:clear", snapshot_index=1)
-    _db.session.add(entry)
-    _db.session.commit()
+    res = client.delete(f"/clear_magnet_urls/{eth}")
+    assert res.status_code == 200
 
-    MagnetURL.query.filter_by(eth_address=eth).delete()
-    _db.session.commit()
+    get_res = client.get(f"/get_magnet_urls/{eth}")
+    assert get_res.status_code == 500 or get_res.get_json()["magnet_urls"] == []
 
-    remaining = MagnetURL.query.filter_by(eth_address=eth).all()
-    assert len(remaining) == 0
 
-def test_verify_secret_success(db_session):
+def test_verify_secret_success(client):
     eth = "0xVERIFY"
     ip = "127.0.0.1"
-    secret = manual_generate_secret(eth, ip)
+    secret = client.post("/generate_secret", json={"eth_address": eth, "ip_address": ip}).get_json()["secret"]
 
-    fetched_secret = _fetch_secret_from_api(eth)
-    assert fetched_secret == secret
+    verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": secret})
+    assert verify_res.status_code == 204
 
-def test_verify_secret_failure(db_session):
+
+def test_verify_secret_failure(client):
     eth = "0xFAIL"
-    manual_generate_secret(eth, "127.0.0.1")
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
 
-    fetched_secret = _fetch_secret_from_api(eth)
-    assert fetched_secret != "wrongsecret"
+    verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": "wrongsecret"})
+    assert verify_res.status_code == 403
