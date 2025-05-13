@@ -8,24 +8,27 @@ echo "[ENTRYPOINT] Starting services..."
 nginx &
 /opt/mediamtx/mediamtx &
 
-# Start supervisord to launch Flask, etc.
-supervisord -c /app/supervisord.conf
+# Start supervisord to launch Flask, Gunicorn, etc.
+supervisord -c /app/supervisord.conf &
+SUPERVISOR_PID=$!
 
-# Give services time to boot
+# Wait briefly to let services boot
+echo "[ENTRYPOINT] Waiting for services to boot..."
 sleep 5
 
+# Run tests with output shown
 echo "[ENTRYPOINT] Running tests..."
-pytest --maxfail=1 --disable-warnings --tb=short tests/
-
-if [ $? -ne 0 ]; then
-    echo "[ENTRYPOINT] ❌ Tests failed. Shutting down."
-    pkill supervisord
+if pytest --maxfail=1 --disable-warnings --tb=short tests/ | tee /app/logs/test_output.log; then
+    echo "[ENTRYPOINT] ✅ Tests passed. Continuing with container."
+else
+    echo "[ENTRYPOINT] ❌ Tests failed. Output was:"
+    cat /app/logs/test_output.log
+    echo "[ENTRYPOINT] Shutting down services."
+    kill $SUPERVISOR_PID
     pkill mediamtx
     pkill nginx
     exit 1
 fi
 
-echo "[ENTRYPOINT] ✅ Tests passed. Continuing with container."
-
 # Wait on supervisord
-tail -f /dev/null
+wait $SUPERVISOR_PID
