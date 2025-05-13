@@ -6,7 +6,7 @@ from services import (
 )
 import hmac
 
-from logging import setup_logger
+from system.logging import setup_logger
 
 
 from extensions import db
