@@ -34,3 +34,4 @@
   - possibly refactor structure to be like MTV
   - fix front end supervisord.conf file to use correct certs
   - make sure all private functions and variables start with _
+  - need to make central location for logs to be kept from all services
