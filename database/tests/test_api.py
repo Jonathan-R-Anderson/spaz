@@ -1,6 +1,6 @@
 import pytest
 from flask import Flask
-from database.driver import create_app
+from driver import create_app
 from extensions import db as _db
 from models.user import User
 from models.magnet import MagnetURL
