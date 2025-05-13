@@ -2,7 +2,7 @@ import pytest
 from flask import Flask
 from driver import create_app
 from extensions import db as _db
-from models.user import User
+from models.user import Users
 from models.magnet import MagnetURL
 
 @pytest.fixture
