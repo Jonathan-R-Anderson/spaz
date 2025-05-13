@@ -8,7 +8,7 @@ from extensions import db
 from models import User
 from config import Config
 
-from logging import setup_logger
+from system.logging import setup_logger
 logger = setup_logger(__name__)
 
 HMAC_SECRET_KEY = Config.HMAC_SECRET_KEY
