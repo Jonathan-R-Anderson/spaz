@@ -44,14 +44,14 @@ RUN mkdir -p /usr/src/nginx && \
 RUN mkdir -p /etc/nginx/ssl
 
 # Copy NGINX config and stat page
-COPY ./system_files/nginx.conf /usr/local/nginx/conf/nginx.conf
-COPY ./system_files/stat.xsl /usr/local/nginx/html/stat.xsl
+COPY ./system/nginx.conf /usr/local/nginx/conf/nginx.conf
+COPY ./system/stat.xsl /usr/local/nginx/html/stat.xsl
 
 # Copy Supervisor config
-COPY ./system_files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY ./system/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Copy Python dependencies and install them
-COPY ./system_files/requirements.txt .
+COPY ./system/requirements.txt .
 RUN python3 -m venv $VIRTUAL_ENV && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -62,8 +62,8 @@ COPY driver.py /app/
 COPY services/ /app/services/
 COPY utils/ /app/utils/
 COPY tests/ /app/tests/
-COPY ./system_files/close_stream.sh /app/close_stream.sh
-COPY ./system_files/entrypoint.sh /entrypoint.sh
+COPY ./system/close_stream.sh /app/close_stream.sh
+COPY ./system/entrypoint.sh /entrypoint.sh
 
 # Set execution permissions
 RUN chmod +x /app/close_stream.sh /entrypoint.sh
