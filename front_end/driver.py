@@ -1,10 +1,11 @@
 import logging
 import os
 import threading
-from shared import app, FILE_DIR, LOG_FILE_PATH
-from blueprints.routes import blueprint
+from front_end.utils.helpers import FILE_DIR, LOG_FILE_PATH
+from front_end.api.routes import blueprint
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_cors import CORS
+from api import create_app
 
 # Setup logging
 logging.basicConfig(
@@ -15,6 +16,11 @@ logging.basicConfig(
         logging.StreamHandler()  # Also log to console
     ]
 )
+
+
+app = create_app()
+
+
 app.register_blueprint(blueprint)
 
 # Flask logging
