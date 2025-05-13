@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from ..routes import blueprint
-from config import DATABASE_URL
+from config import Config
 import requests, logging
 
 @blueprint.route('/verify_secret', methods=['GET'])
@@ -30,7 +30,7 @@ def verify_secret():
 
     # Call internal verification
     verify_response = requests.post(
-        f"{DATABASE_URL}/verify_secret",
+        f"{Config.DATABASE_URL}/verify_secret",
         json={"eth_address": eth_address, "secret": secret},
         timeout=10,
     )

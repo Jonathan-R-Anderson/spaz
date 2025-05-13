@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from ..routes import blueprint
 from utils.crypto import _generate_ecc_key_pair, _serialize_public_key
-from config import HMAC_SECRET_KEY
+from config import Config
 from services.auth import session_store
 import base64
 import hmac
@@ -42,7 +42,7 @@ def verify_hmac():
     except Exception as e:
         logging.exception("Decryption failed")
         return jsonify({"error": "Decryption failed"}), 500
-    calculated_hmac = hmac.new(HMAC_SECRET_KEY.encode(), eth_address.encode(), hashlib.sha256).hexdigest()
+    calculated_hmac = hmac.new(Config.HMAC_SECRET_KEY.encode(), eth_address.encode(), hashlib.sha256).hexdigest()
     if hmac.compare_digest(calculated_hmac, hmac_secret):
         return jsonify({"message": "HMAC verified successfully"}), 200
     return jsonify({"error": "HMAC verification failed"}), 401
