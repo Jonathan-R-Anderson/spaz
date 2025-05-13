@@ -1,4 +1,14 @@
-def test_index(client):
+import pytest
+import requests
+
+# Only if you mock requests using requests-mock
+pytest_plugins = ['requests_mock']
+
+# If your tests rely on a test client fixture
+from flask import Flask
+from api import create_app
+
+ef test_index(client):
     response = client.get('/')
     assert response.status_code == 200
 
