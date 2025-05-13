@@ -1,4 +1,5 @@
 
+
 # Helper Functions
 def _gen_poster_id():
     return '%04X' % random.randint(0, 0xffff)
@@ -9,6 +10,3 @@ def _ip_to_int(ip_str):
         byteorder="little"
     ) << 8
 
-def _allowed_file(filename):
-    """Check if the file has an allowed extension."""
-    return True

@@ -55,3 +55,6 @@ flask-cors
 docker
 cryptography
 python-dotenv
+pytest 
+pytest-mock 
+requests-mock

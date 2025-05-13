@@ -1,39 +1,31 @@
-import logging
 import os
-import threading
-from front_end.utils.helpers import FILE_DIR, LOG_FILE_PATH
-from front_end.api.routes import blueprint
-from werkzeug.middleware.proxy_fix import ProxyFix
+import logging
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 from api import create_app
+from config import FILE_DIR, LOG_FILE_PATH
 
 # Setup logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Set to DEBUG for detailed logs
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(LOG_FILE_PATH),  # Specify log file
-        logging.StreamHandler()  # Also log to console
+        logging.FileHandler(LOG_FILE_PATH),
+        logging.StreamHandler()
     ]
 )
 
-
 app = create_app()
-
-
-app.register_blueprint(blueprint)
-
-# Flask logging
-app.logger.addHandler(logging.FileHandler(LOG_FILE_PATH))
-app.logger.addHandler(logging.StreamHandler())
-
-# Flask application setup
 CORS(app)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
-# Create directories if they don't exist
+# Ensure upload directory exists
 os.makedirs(FILE_DIR, exist_ok=True)
 
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context=('/certs/fullchain.pem', '/certs/privkey.pem'))
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        debug=True,
+        ssl_context=('/certs/fullchain.pem', '/certs/privkey.pem')
+    )

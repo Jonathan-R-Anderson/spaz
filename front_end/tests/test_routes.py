@@ -1,3 +1,5 @@
+import pytest
+
 def test_index(client):
     response = client.get('/')
     assert response.status_code == 200
@@ -17,8 +19,9 @@ def test_user_profile_post(client):
     assert response.json['is_owner'] is True
 
 def test_get_rtmp_url(client, requests_mock):
-    requests_mock.get("http://localhost:5001/get_rtmp_url/0xtest", json={"url": "test"}, status_code=200)
-    response = client.get('/get_rtmp_url/0xtest')
+    eth_address = "0xtest"
+    requests_mock.get(f"http://localhost:5001/get_rtmp_url/{eth_address}", json={"url": "test"}, status_code=200)
+    response = client.get(f'/get_rtmp_url/{eth_address}')
     assert response.status_code == 200
 
 def test_generate_rtmp_url_success(client, requests_mock):
