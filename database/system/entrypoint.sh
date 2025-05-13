@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PYTHONPATH=/app
+
 # Start PostgreSQL service
 service postgresql start
 
