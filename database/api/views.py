@@ -12,7 +12,7 @@ from logging import setup_logger
 from extensions import db
 from models.user import User
 from models.magnet import MagnetURL
-from system.logging import logger
+from system.logging import setup_logger
 
 
 logger = setup_logger(__name__)
