@@ -10,14 +10,16 @@ def app():
     app = create_app(testing=True)
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", 
         "SQLALCHEMY_TRACK_MODIFICATIONS": False
     })
+
     with app.app_context():
         _db.init_app(app)
-        _db.create_all()
+        _db.create_all()  # ✅ Ensure tables are created before test
         yield app
-        _db.drop_all()
+        _db.drop_all()  # ✅ Clean up
+
 
 @pytest.fixture
 def client():
