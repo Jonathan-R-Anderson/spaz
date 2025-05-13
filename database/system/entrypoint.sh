@@ -48,4 +48,4 @@ if [ $TEST_STATUS -ne 0 ]; then
 fi
 
 echo "✅ All tests passed. Starting Flask app..."
-python3 app.py
+python3 driver.py
