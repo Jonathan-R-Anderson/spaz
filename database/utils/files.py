@@ -1,4 +1,7 @@
-def load_json_file(path):
+import os
+import json
+
+def _load_json_file(path):
     if not os.path.exists(path):
         return []
     try:
@@ -7,11 +10,11 @@ def load_json_file(path):
     except json.JSONDecodeError:
         return []
 
-def save_json_file(path, data):
+def _save_json_file(path, data):
     with open(path, 'w') as f:
         json.dump(data, f)
 
 
-def allowed_file(filename):
+def _allowed_file(filename):
     return True
 

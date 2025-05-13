@@ -1,3 +1,4 @@
+from extensions import db
 
 class MagnetURL(db.Model):
     id = db.Column(db.Integer, primary_key=True)

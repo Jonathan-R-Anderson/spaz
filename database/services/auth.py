@@ -1,3 +1,15 @@
+import random
+import hmac
+import hashlib
+import requests
+import string
+
+from extensions import db
+from models import User
+from config import Config
+
+from logging import setup_logger
+logger = setup_logger(__name__)
 
 HMAC_SECRET_KEY = Config.HMAC_SECRET_KEY
 
@@ -19,8 +31,8 @@ def _fetch_secret_from_api(eth_address):
         if response.status_code == 200:
             return response.json().get('secret')
         else:
-            logging.warning(f"[fetch_secret_from_api] Failed to get secret for {eth_address}: {response.status_code}")
+            logger.warning(f"[fetch_secret_from_api] Failed to get secret for {eth_address}: {response.status_code}")
             return None
     except Exception as e:
-        logging.error(f"[fetch_secret_from_api] Exception fetching secret for {eth_address}: {e}")
+        logger.error(f"[fetch_secret_from_api] Exception fetching secret for {eth_address}: {e}")
         return None

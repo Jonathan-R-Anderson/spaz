@@ -1,3 +1,5 @@
+from models import MagnetURL
+from extensions import db
 
 def _clear_magnet_urls(eth_address):
     try:
