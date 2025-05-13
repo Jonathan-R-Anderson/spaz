@@ -3,6 +3,7 @@ import hmac
 import hashlib
 import requests
 import string
+from models import User
 
 from extensions import db
 from models import User
