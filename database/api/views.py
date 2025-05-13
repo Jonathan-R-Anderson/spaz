@@ -1,6 +1,5 @@
 from flask import request, jsonify
 from .routes import blueprint
-from shared import db, User, MagnetURL, logger
 from services import (
     _clear_magnet_urls, _generate_secret, _hash_secret,
     _store_secret, _store_magnet_url, _fetch_secret_from_api
@@ -8,6 +7,14 @@ from services import (
 import hmac
 
 from logging import setup_logger
+
+
+from extensions import db
+from models.user import User
+from models.magnet import MagnetURL
+from system.logging import logger
+
+
 logger = setup_logger(__name__)
 
 
