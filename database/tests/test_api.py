@@ -14,10 +14,10 @@ def app():
     })
 
     with app.app_context():
-        _db.init_app(app)
         _db.create_all()
         yield app
         _db.drop_all()
+
 
 
 @pytest.fixture(scope="function")
