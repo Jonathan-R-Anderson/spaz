@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+cd /app/front_end
 export PYTHONPATH=/app/front_end
 
 echo "[ENTRYPOINT] Starting services..."
