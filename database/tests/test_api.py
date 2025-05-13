@@ -20,8 +20,12 @@ def app():
         _db.drop_all()
 
 @pytest.fixture
-def client(app):
-    return app.test_client()
+def client():
+    app = create_app()
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
+
 
 
 def test_generate_secret(client):
