@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from ..routes import blueprint
-from config import Config
+from ...config import Config
 import requests, logging
 
 @blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
