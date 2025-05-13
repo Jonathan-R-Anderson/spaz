@@ -3,6 +3,33 @@ from driver import create_app
 from extensions import db as _db
 from models.user import Users
 from models.magnet import MagnetURL
+from unittest.mock import patch
+
+
+@patch("services.auth._fetch_secret_from_api")
+def test_verify_secret_success(mock_fetch, client):
+    eth = "0xVERIFY"
+    ip = "127.0.0.1"
+    secret = client.post("/generate_secret", json={"eth_address": eth, "ip_address": ip}).get_json()["secret"]
+
+    mock_fetch.return_value = secret  # Patch to return the correct secret
+
+    verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": secret})
+    assert verify_res.status_code == 204
+
+
+@patch("services.auth._fetch_secret_from_api")
+def test_verify_secret_failure(mock_fetch, client):
+    eth = "0xFAIL"
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+
+    mock_fetch.return_value = "some_wrong_secret"
+
+    verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": "wrongsecret"})
+    assert verify_res.status_code == 403
+
+
+
 
 @pytest.fixture(scope="session")
 def app():
