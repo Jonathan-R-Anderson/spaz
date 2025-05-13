@@ -1,7 +1,11 @@
 from flask import render_template, jsonify, request
 from ..routes import blueprint
 import logging, json
-from contracts import gremlinProfileAddress, gremlinProfileABI, gremlinLeaderboardAddress, gremlinLeaderboardABI, gremlinJournalAddress, gremlinJournalABI
+from utils.contracts import (
+    gremlinProfileAddress, gremlinProfileABI,
+    gremlinLeaderboardAddress, gremlinLeaderboardABI,
+    gremlinJournalAddress, gremlinJournalABI
+)
 from config import RTMP_URLS
 
 @blueprint.route('/')
