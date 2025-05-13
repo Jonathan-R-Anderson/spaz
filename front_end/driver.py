@@ -3,7 +3,7 @@ import logging
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from api import create_app
-from config import Config
+from ...config import Config
 
 # Setup logging
 logging.basicConfig(

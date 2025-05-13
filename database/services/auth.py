@@ -5,7 +5,7 @@ import requests
 import string
 from models import Users
 from extensions import db
-from config import Config
+from ...config import Config
 
 from system.logging import setup_logger
 logger = setup_logger(__name__)

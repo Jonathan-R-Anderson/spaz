@@ -2,7 +2,7 @@ from flask import Flask
 from flask_restful import Api
 from .routes import blueprint
 import os
-from config import Config
+from ...config import Config
 
 api = Api()
 
