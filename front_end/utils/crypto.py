@@ -1,3 +1,6 @@
+import base64
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization, hashes
 
 # Generate a random encryption key per session using elliptic curve
 def _generate_ecc_key_pair():
