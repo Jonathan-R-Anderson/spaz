@@ -1,2 +1,2 @@
-from .user import User
-from .magnet import MagnetURL
+from models.user import User
+from models.magnet import MagnetURL
