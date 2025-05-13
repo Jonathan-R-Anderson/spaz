@@ -3,14 +3,14 @@ import logging
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 from api import create_app
-from config import FILE_DIR, LOG_FILE_PATH
+from config import Config
 
 # Setup logging
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(LOG_FILE_PATH),
+        logging.FileHandler(Config.LOG_FILE_PATH),
         logging.StreamHandler()
     ]
 )
@@ -20,7 +20,7 @@ CORS(app)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 # Ensure upload directory exists
-os.makedirs(FILE_DIR, exist_ok=True)
+os.makedirs(Config.FILE_DIR, exist_ok=True)
 
 if __name__ == '__main__':
     app.run(
