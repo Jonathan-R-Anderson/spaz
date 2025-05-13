@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from ..routes import blueprint
-from config import DATABASE_URL
+from config import Config
 import requests, logging
 
 @blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
@@ -10,7 +10,7 @@ def get_rtmp_url(eth_address):
 
     try:
         # Construct full URL to DB container's endpoint
-        db_url = f"{DATABASE_URL}/get_rtmp_url/{eth_address}"
+        db_url = f"{Config.DATABASE_URL}/get_rtmp_url/{eth_address}"
         logging.info(f"[proxy_get_rtmp_url] Forwarding to DB URL: {db_url}")
 
         # Send GET request to DB container
@@ -40,7 +40,7 @@ def generate_rtmp_url():
         logging.warning("Missing Ethereum address")
         return jsonify({"error": "Ethereum address is required"}), 400
     try:
-        response = requests.post(f"{DATABASE_URL}/generate_secret", json={"eth_address": eth_address, "ip_address": ip_address}, timeout=30)
+        response = requests.post(f"{Config.DATABASE_URL}/generate_secret", json={"eth_address": eth_address, "ip_address": ip_address}, timeout=30)
         logging.debug(f"Secret generation response: {response.status_code} - {response.text}")
         if response.status_code != 200:
             return jsonify({"error": "Failed to generate secret"}), 500
