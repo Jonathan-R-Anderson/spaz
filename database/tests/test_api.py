@@ -5,7 +5,7 @@ from extensions import db as _db
 from models.user import Users
 from models.magnet import MagnetURL
 from services.auth import _generate_secret, _store_secret, _fetch_secret_from_api
-from api.views import generate_rtmp_url, verify_secret
+from api import generate_rtmp_url, verify_secret
 from flask import jsonify
 
 @pytest.fixture(scope="session")
