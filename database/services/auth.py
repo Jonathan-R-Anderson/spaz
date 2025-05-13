@@ -3,10 +3,8 @@ import hmac
 import hashlib
 import requests
 import string
-from models import User
-
+from models import Users
 from extensions import db
-from models import User
 from config import Config
 
 from system.logging import setup_logger
@@ -21,7 +19,7 @@ def _hash_secret(secret):
     return hmac.new(HMAC_SECRET_KEY.encode(), secret.encode(), hashlib.sha256).hexdigest()
 
 def _store_secret(eth_address, secret, ip_address):
-    new_user = User(eth_address=eth_address, rtmp_secret=secret, ip_address=ip_address)
+    new_user = Users(eth_address=eth_address, rtmp_secret=secret, ip_address=ip_address)
     db.session.add(new_user)
     db.session.commit()
 

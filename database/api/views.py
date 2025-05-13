@@ -10,7 +10,7 @@ from system.logging import setup_logger
 
 
 from extensions import db
-from models.user import User
+from models.user import Users
 from models.magnet import MagnetURL
 from system.logging import setup_logger
 
@@ -22,7 +22,7 @@ logger = setup_logger(__name__)
 def get_secret(eth_address):
     logger.info(f"[get_secret] Received request to fetch secret for: {eth_address}")
     try:
-        user = User.query.filter_by(eth_address=eth_address).first()
+        user = Users.query.filter_by(eth_address=eth_address).first()
         if user:
             logger.info(f"[get_secret] Secret found for {eth_address}")
             return jsonify({"eth_address": eth_address, "secret": user.rtmp_secret}), 200
@@ -91,7 +91,7 @@ def generate_and_store_secret():
 def get_rtmp_url(eth_address):
     logger.info(f"[get_rtmp_url] Received request to build RTMP URL for: {eth_address}")
     try:
-        user = User.query.filter_by(eth_address=eth_address).first()
+        user = Users.query.filter_by(eth_address=eth_address).first()
         if user:
             secret = user.rtmp_secret
             rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={secret}"
@@ -144,7 +144,7 @@ def store_streamer_info():
 
     try:
         # Store or update the streamer information in the PostgreSQL database
-        user = User.query.filter_by(eth_address=eth_address).first()
+        user = Users.query.filter_by(eth_address=eth_address).first()
         if user:
             # Update the existing record with the new secret and ip_address
             user.rtmp_secret = secret
@@ -152,7 +152,7 @@ def store_streamer_info():
             user.ip_address = ip_address  # You would need to add this field in the model
         else:
             # Create a new user record if it doesn't exist
-            user = User(eth_address, secret)
+            user = Users(eth_address, secret)
             user.ip_address = ip_address  # Set the IP address
 
         db.session.add(user)
@@ -168,7 +168,7 @@ def store_streamer_info():
 def get_streamer_ip(ip_address):
     try:
         # Query the database for the user based on the Ethereum address
-        user = User.query.filter_by(ip_address=ip_address).first()
+        user = Users.query.filter_by(ip_address=ip_address).first()
 
         if user:
             # Return the IP address if the user is found

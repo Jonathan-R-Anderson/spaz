@@ -1,4 +1,4 @@
-from .user import User
+from .user import Users
 from .magnet import MagnetURL
 
-__all__ = ['User', 'MagnetURL']
+__all__ = ['Users', 'MagnetURL']
