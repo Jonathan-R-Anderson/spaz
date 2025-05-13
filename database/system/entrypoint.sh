@@ -12,13 +12,13 @@ until pg_isready -h localhost; do
   sleep 1
 done
 
-# Switch to the postgres user and create the 'admin' user and DATABASE_URL database
+# Create DB user and database
 su - postgres -c "psql -c \"CREATE USER admin WITH PASSWORD 'admin';\""
 su - postgres -c "psql -c \"ALTER USER admin WITH SUPERUSER;\""
 su - postgres -c "psql -c \"CREATE DATABASE rtmp_db;\""
 su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE rtmp_db TO admin;\""
 
-# Create the magnet_urls table in DATABASE_URL
+# Create magnet_urls table if not exists
 su - postgres -c "psql -d rtmp_db -c \"
 CREATE TABLE IF NOT EXISTS magnet_urls (
     id SERIAL PRIMARY KEY,
@@ -28,14 +28,24 @@ CREATE TABLE IF NOT EXISTS magnet_urls (
     created_at TIMESTAMP DEFAULT NOW()
 );\""
 
-# Restart PostgreSQL to apply changes
+# Restart PostgreSQL
 service postgresql restart
 
-# Wait for PostgreSQL to restart and be available again
+# Wait for PostgreSQL again
 until pg_isready -h localhost; do
   >&2 echo "Waiting for Postgres to restart - sleeping"
   sleep 1
 done
 
-# Start the Flask application
+# Run unit tests
+echo "Running unit tests..."
+pytest tests/
+TEST_STATUS=$?
+
+if [ $TEST_STATUS -ne 0 ]; then
+  echo "❌ Tests failed. Flask app will NOT start."
+  exit 1
+fi
+
+echo "✅ All tests passed. Starting Flask app..."
 python3 app.py
