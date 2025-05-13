@@ -28,18 +28,19 @@ dictConfig({
     }
 })
 
-
-def create_app():
+def create_app(testing=False):
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    db.init_app(app)
+    if testing:
+        # Don't override from Config if using testing flag
+        pass  # config will be updated in the test fixture
 
-    # Avoid circular imports by importing here
+    db.init_app(app)
     from api.routes import blueprint
     app.register_blueprint(blueprint)
-
     return app
+
 
 
 if __name__ == '__main__':

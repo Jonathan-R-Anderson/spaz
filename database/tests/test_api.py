@@ -10,15 +10,15 @@ def app():
     app = create_app(testing=True)
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:", 
+        "SQLALCHEMY_DATABASE_URI": "postgresql://admin:admin@localhost:5432/rtmp_db",
         "SQLALCHEMY_TRACK_MODIFICATIONS": False
     })
 
     with app.app_context():
         _db.init_app(app)
-        _db.create_all()  # ✅ Ensure tables are created before test
+        _db.create_all()  # ✅ Create all tables in PostgreSQL test DB
         yield app
-        _db.drop_all()  # ✅ Clean up
+        _db.drop_all()  # Optional: clean up
 
 
 @pytest.fixture
