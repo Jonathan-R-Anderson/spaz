@@ -44,7 +44,7 @@ python3 driver.py &
 FLASK_PID=$!
 
 # Wait for Flask to become available (basic TCP check on port 5000)
-until nc -z localhost 5000; do
+until nc -z localhost 5003; do
   >&2 echo "Waiting for Flask app to start..."
   sleep 1
 done
