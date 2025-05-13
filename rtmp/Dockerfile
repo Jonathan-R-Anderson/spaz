@@ -3,7 +3,7 @@ FROM alpine:3.19
 # Set working directory
 WORKDIR /app
 
-# Environment settings
+# Environment variables
 ENV VIRTUAL_ENV=/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
@@ -22,6 +22,7 @@ RUN apk update && apk add --no-cache \
     supervisor \
     bash \
     nginx \
+    ca-certificates \
     && ln -sf python3 /usr/bin/python && ln -sf pip3 /usr/bin/pip
 
 # Build NGINX with RTMP module from source
@@ -39,31 +40,34 @@ RUN mkdir -p /usr/src/nginx && \
                 --add-module=../nginx-rtmp-module && \
     make && make install
 
+# Optional: Create SSL directory
+RUN mkdir -p /etc/nginx/ssl
 
-# Copy NGINX config and assets
+# Copy NGINX config and stat page
 COPY ./system_files/nginx.conf /usr/local/nginx/conf/nginx.conf
 COPY ./system_files/stat.xsl /usr/local/nginx/html/stat.xsl
 
-# Supervisor config
+# Copy Supervisor config
 COPY ./system_files/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Set up Python virtual environment and install requirements
+# Copy Python dependencies and install them
 COPY ./system_files/requirements.txt .
 RUN python3 -m venv $VIRTUAL_ENV && \
     pip install --no-cache-dir -r requirements.txt
 
-# Flask API code
+# Copy Flask app and support files
 COPY app.py /app/app.py
-
-# Close stream script
 COPY ./system_files/close_stream.sh /app/close_stream.sh
-RUN chmod +x /app/close_stream.sh
+COPY ./system_files/entrypoint.sh /entrypoint.sh
 
-# Optional: SSL directory
-RUN mkdir -p /etc/nginx/ssl
+# Set execution permissions
+RUN chmod +x /app/close_stream.sh /entrypoint.sh
 
-# Expose RTMP, HTTP, and Flask API ports
+# Copy test folder (if any)
+COPY tests/ /app/tests/
+
+# Expose RTMP, Flask, and NGINX ports
 EXPOSE 1935 5004 8080
 
-# Run Supervisor to manage NGINX and Flask
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Use entrypoint to manage startup and tests
+ENTRYPOINT ["/entrypoint.sh"]

@@ -10,7 +10,6 @@ import hmac
 
 LOG_FILE_PATH = os.path.join("logs", "app.log")
 
-app = Flask(__name__)
 
 # Directories for static files and HLS files
 STATIC_FOLDER = '/app/static'

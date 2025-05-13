@@ -1,10 +1,16 @@
-from shared import (logging, retrieve_magnet_urls, requests, jsonify,
-                    WEBTORRENT_CONTAINER_URL, request, STATIC_FOLDER,
-                    os, seeded_files, DATABASE_URL, hmac, Process,
-                    seed_all_static_files_for_user, app)
+from flask import Blueprint
+from utils.shared import (
+    logging, retrieve_magnet_urls, requests, jsonify,
+    WEBTORRENT_CONTAINER_URL, request, STATIC_FOLDER,
+    os, seeded_files, DATABASE_URL, hmac, Process,
+    seed_all_static_files_for_user
+)
+
+blueprint = Blueprint("rtmp", __name__)
 
 
-@app.route('/magnet_urls/<eth_address>', methods=['GET'])
+
+@blueprint.route('/magnet_urls/<eth_address>', methods=['GET'])
 def magnet_url(eth_address):
     logging.info(f"Received request for magnet URLs for Ethereum address: {eth_address}")
 
@@ -47,7 +53,7 @@ def magnet_url(eth_address):
         logging.info(f"Started monitoring for {eth_address}, but no magnet URLs available yet.")
         return jsonify({"error": "Magnet URL not found and monitoring started"}), 404
 
-@app.route('/seed', methods=['POST'])
+@blueprint.route('/seed', methods=['POST'])
 def seed_file():
     logging.info("Received request to seed a file.")
 
@@ -110,7 +116,7 @@ def seed_file():
         logging.error(f"Exception contacting webtorrent: {e}")
         return jsonify({"error": "Failed to contact seeder"}), 500
 
-@app.route('/verify_secret', methods=['POST'])
+@blueprint.route('/verify_secret', methods=['POST'])
 def verify_secret():
     logging.info("[verify_secret] Received verification request")
 
