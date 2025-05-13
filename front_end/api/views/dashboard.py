@@ -6,7 +6,7 @@ from ...utils.contracts import (
     gremlinLeaderboardAddress, gremlinLeaderboardABI,
     gremlinJournalAddress, gremlinJournalABI
 )
-from services.stream import RTMP_URLS
+from ...services.stream import RTMP_URLS
 
 @blueprint.route('/')
 def index():
