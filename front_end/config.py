@@ -1,3 +1,5 @@
+import os
+
 LOG_FILE_PATH = os.path.join("logs", "app.log")
 
 WEBTORRENT_CONTAINER_URL = f"{os.getenv('WEBTORRENT_CONTAINER_URL', 'https://webtorrent')}:{os.getenv('WEBTORRENT_PORT', 5002)}"
