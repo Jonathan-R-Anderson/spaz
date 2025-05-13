@@ -1,12 +1,16 @@
 #!/bin/bash
 
 set -e
+export PYTHONPATH=/app/front_end
 
 echo "[ENTRYPOINT] Starting services..."
 
 # Start Nginx and Mediamtx in background
 nginx &
+NGINX_PID=$!
+
 /opt/mediamtx/mediamtx &
+MEDIA_PID=$!
 
 # Start supervisord to launch Flask, Gunicorn, etc.
 supervisord -c /app/supervisord.conf &
@@ -24,11 +28,9 @@ else
     echo "[ENTRYPOINT] ❌ Tests failed. Output was:"
     cat /app/logs/test_output.log
     echo "[ENTRYPOINT] Shutting down services."
-    kill $SUPERVISOR_PID
-    pkill mediamtx
-    pkill nginx
+    kill $SUPERVISOR_PID $MEDIA_PID $NGINX_PID
     exit 1
 fi
 
-# Wait on supervisord
+# Wait on supervisord (which manages Gunicorn)
 wait $SUPERVISOR_PID
