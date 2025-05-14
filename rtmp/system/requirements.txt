@@ -1,2 +1,5 @@
-Flask
+flask
+gunicorn
+pytest
+requests-mock
 requests
