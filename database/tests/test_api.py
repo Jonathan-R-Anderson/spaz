@@ -117,4 +117,5 @@ def test_verify_secret_failure(client):
     client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
 
     verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": "wrongsecret"})
+    print(f"result: {verify_res.status_code}")
     assert verify_res.status_code == 403
