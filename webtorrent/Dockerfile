@@ -26,14 +26,17 @@ RUN npm install -g webtorrent-cli
 
 # Create and activate Python virtual environment, then install requirements
 WORKDIR /app
-COPY ./system_files/requirements.txt .
+COPY ./system/requirements.txt .
 RUN python3 -m venv $VIRTUAL_ENV && \
     $VIRTUAL_ENV/bin/pip install --no-cache-dir -r requirements.txt
 
 # Copy rest of the app
 COPY . /app/
 
+# Add entrypoint script
+COPY ./system/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 5002
 
-# Use venv Python to run app
-CMD ["python3", "app.py"]
+ENTRYPOINT ["/entrypoint.sh"]
