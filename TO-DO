@@ -1,2 +1,3 @@
 finish integrating logging
 make sure all containers reference appropriate env variables
+integrate blockchain api into front-end
