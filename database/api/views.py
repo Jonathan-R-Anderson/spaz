@@ -189,19 +189,19 @@ def verify_secret_fun():
         try:
             eth_address, secret = stream_key.split('&secret=')
         except Exception:
-            return '', 403
+            return '', 402
 
     if not eth_address or not secret:
-        return '', 403
+        return '', 401
 
     stored_secret = _fetch_secret_from_api(eth_address)
     if not stored_secret:
-        return '', 403
+        return '', 400
 
     if hmac.compare_digest(secret, stored_secret):
         return '', 204
     else:
-        return '', 403
+        return '', 500
 
 
 
