@@ -6,8 +6,6 @@ from services import (
 )
 import hmac
 
-from system.logging import setup_logger
-
 
 from extensions import db
 from models.user import Users
