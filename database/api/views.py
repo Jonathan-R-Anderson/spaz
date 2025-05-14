@@ -2,7 +2,7 @@ from flask import request, jsonify
 from api.routes import blueprint
 from services import (
     _clear_magnet_urls, _generate_secret, _hash_secret,
-    _store_secret, _store_magnet_url, _fetch_secret_from_api
+    _store_secret, _store_magnet_url, 
 )
 import hmac
 
