@@ -109,7 +109,7 @@ services:
   blockchain:
     build:
       context: ./blockchain
-    command: python3 help.py
+    command: python3 driver.py
     ports:
       - "5005:5005"
     volumes:
