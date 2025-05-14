@@ -32,14 +32,7 @@ dictConfig({
 })
 
 logger = logging.getLogger(__name__)
-app = create_app()
 
-with app.app_context():
-    try:
-        db.create_all()
-        app.logger.info("[create_app] Database tables created successfully")
-    except Exception as e:
-        app.logger.error(f"[create_app] Failed to create database tables: {e}")
 
 def create_app(testing=False):
     app = Flask(__name__)
@@ -55,7 +48,14 @@ def create_app(testing=False):
 
     return app
 
+app = create_app()
 
+with app.app_context():
+    try:
+        db.create_all()
+        app.logger.info("[create_app] Database tables created successfully")
+    except Exception as e:
+        app.logger.error(f"[create_app] Failed to create database tables: {e}")
 
 if __name__ == '__main__':
     logger.info("[main] Starting Flask app from __main__")
