@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from ..routes import blueprint
-from ...config import Config
+from config import Config
 import requests, logging
 
 @blueprint.route('/verify_secret', methods=['GET'])
