@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from ..routes import blueprint
 from ...utils.crypto import _generate_ecc_key_pair, _serialize_public_key
-from ...config import Config
+from config import Config
 from ...services.auth import session_store
 import base64
 import hmac

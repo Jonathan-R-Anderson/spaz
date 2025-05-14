@@ -1,6 +1,6 @@
 from flask import jsonify
 from ..routes import blueprint
-from ...config import Config
+from config import Config
 import requests, logging
 
 @blueprint.route('/magnet_urls/<eth_address>')
