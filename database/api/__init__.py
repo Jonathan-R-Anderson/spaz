@@ -12,7 +12,7 @@ from .views import (
     clear_magnet_urls_route,
     store_streamer_info,
     get_streamer_ip,
-    verify_secret
+    verify_secret_fun
 )
 
 __all__ = [
@@ -24,5 +24,5 @@ __all__ = [
     "clear_magnet_urls_route",
     "store_streamer_info",
     "get_streamer_ip",
-    "verify_secret"
+    "verify_secret_fun"
 ]
