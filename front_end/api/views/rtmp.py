@@ -25,10 +25,6 @@ def get_rtmp_url(eth_address):
     except requests.exceptions.RequestException as e:
         logging.error(f"[proxy_get_rtmp_url] Error while contacting DB: {str(e)}")
         return jsonify({"error": "Failed to contact DB"}), 500
-    
-
-
-
 
 
 @blueprint.route('/generate_rtmp_url', methods=['POST'])
