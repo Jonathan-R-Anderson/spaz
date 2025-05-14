@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
-    LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
+    LOG_FILE_PATH = os.getenv("DATABASE_LOG_PATH", "logs/database.log")
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', 'postgresql://admin:admin@localhost/rtmp_db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
