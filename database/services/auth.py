@@ -28,12 +28,16 @@ def _hash_secret(secret):
         logger.error(f"[hash_secret] Error hashing secret: {e}")
         raise
 
-
 def _store_secret(eth_address, secret, ip_address):
     logger.info(f"[store_secret] Storing secret for eth_address={eth_address}, ip_address={ip_address}")
     try:
-        new_user = Users(eth_address=eth_address, rtmp_secret=secret, ip_address=ip_address)
-        db.session.add(new_user)
+        user = Users.query.filter_by(eth_address=eth_address).first()
+        if user:
+            user.rtmp_secret = secret
+            user.ip_address = ip_address
+        else:
+            user = Users(eth_address, secret, ip_address)
+            db.session.add(user)
         db.session.commit()
         logger.info(f"[store_secret] Successfully stored secret for {eth_address}")
     except Exception as e:
