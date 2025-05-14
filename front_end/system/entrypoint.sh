@@ -1,8 +1,8 @@
 #!/bin/bash
 
 set -e
-cd ..
-export PYTHONPATH=/app/front_end
+cd /app
+export PYTHONPATH=/app
 
 echo "[ENTRYPOINT] Starting services..."
 
@@ -14,7 +14,7 @@ NGINX_PID=$!
 MEDIA_PID=$!
 
 # Start supervisord to launch Flask, Gunicorn, etc.
-supervisord -c /app/supervisord.conf &
+/usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 SUPERVISOR_PID=$!
 
 # Wait briefly to let services boot
