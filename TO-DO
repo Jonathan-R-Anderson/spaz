@@ -1,0 +1,2 @@
+finish integrating logging
+make sure all containers reference appropriate env variables
