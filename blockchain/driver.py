@@ -21,14 +21,14 @@ def load_abi(path):
         print(f"Error loading ABI from {path}: {e}")
         return []
 
-@app.route("/api/contracts/spaz_livestream")
+@app.route("/spaz_livestream")
 def get_spaz_livestream():
     return jsonify({
         "address": SPAZ_LIVESTREAM_ADDRESS,
         "abi": load_abi(SPAZ_LIVESTREAM_ABI_PATH)
     })
 
-@app.route("/api/contracts/spaz_moderation")
+@app.route("/spaz_moderation")
 def get_spaz_moderation():
     return jsonify({
         "address": SPAZ_MODERATION_ADDRESS,
@@ -37,5 +37,5 @@ def get_spaz_moderation():
 
 # Optional: Run this file as a standalone server
 if __name__ == "__main__":
-    port = int(os.getenv("HELP_PORT", 5001))
+    port = int(os.getenv("HELP_PORT", 5005))
     app.run(host="0.0.0.0", port=port)
