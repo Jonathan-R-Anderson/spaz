@@ -29,15 +29,16 @@ def test_magnet_url_success(mock_retrieve, client):
     assert response.status_code == 200
     assert "magnet_urls" in response.json
 
-
 @patch("api.routes.requests.post")
 @patch("api.routes.retrieve_magnet_urls", return_value=None)
 def test_magnet_url_monitoring(mock_retrieve, mock_post, client):
+    # Ensure that both calls to /start_static_monitor and /start_hls_monitor succeed
     mock_post.return_value.status_code = 200
     mock_post.return_value.text = "ok"
+
     response = client.get("/magnet_urls/0xtest")
     assert response.status_code == 404
-
+    assert "error" in response.json
 
 
 def test_seed_file_invalid_eth(client):
