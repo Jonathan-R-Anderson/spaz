@@ -1,7 +1,7 @@
 from flask import render_template, jsonify, request
 from ..routes import blueprint
 import logging, json
-from ...utils.contracts import (
+from utils.contracts import (
     gremlinProfileAddress, gremlinProfileABI,
     gremlinLeaderboardAddress, gremlinLeaderboardABI,
     gremlinJournalAddress, gremlinJournalABI
