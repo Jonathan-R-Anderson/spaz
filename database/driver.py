@@ -42,21 +42,6 @@ def create_app(testing=False):
     if testing:
         logger.warning("[create_app] App is running in TESTING mode — skipping some config overrides")
 
-    # Initialize database
-    try:
-        db.init_app(app)
-        logger.info("[create_app] Database initialized successfully")
-    except Exception as e:
-        logger.error(f"[create_app] Failed to initialize database: {e}")
-
-    # Register blueprints
-    try:
-        from api.routes import blueprint
-        app.register_blueprint(blueprint)
-        logger.info("[create_app] API blueprint registered")
-    except Exception as e:
-        logger.error(f"[create_app] Failed to register API blueprint: {e}")
-
     return app
 
 
