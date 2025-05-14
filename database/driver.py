@@ -4,8 +4,8 @@ from logging.config import dictConfig
 from flask import Flask
 from config import Config
 from extensions import db, redis_client
+from api.routes import blueprint 
 
-# Centralized logging setup
 dictConfig({
     'version': 1,
     'formatters': {
@@ -33,14 +33,15 @@ dictConfig({
 logger = logging.getLogger(__name__)
 
 def create_app(testing=False):
-    logger.info("[create_app] Initializing Flask app...")
     app = Flask(__name__)
-    
-    logger.debug("[create_app] Loading config from Config object")
     app.config.from_object(Config)
 
     if testing:
-        logger.warning("[create_app] App is running in TESTING mode — skipping some config overrides")
+        app.config["TESTING"] = True
+
+    db.init_app(app)
+
+    app.register_blueprint(blueprint)
 
     return app
 
@@ -48,6 +49,12 @@ def create_app(testing=False):
 if __name__ == '__main__':
     logger.info("[main] Starting Flask app from __main__")
     app = create_app()
+
+
+    logger.info("[ROUTES] Listing all registered routes:")
+    for rule in app.url_map.iter_rules():
+        logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
+
 
     with app.app_context():
         try:

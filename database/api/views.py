@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from .routes import blueprint
+from api.routes import blueprint
 from services import (
     _clear_magnet_urls, _generate_secret, _hash_secret,
     _store_secret, _store_magnet_url, _fetch_secret_from_api
@@ -49,7 +49,6 @@ def retrieve_magnet_urls(eth_address):
     else:
         return jsonify({"message": "failure"}), 500 
 
-# API to generate and store a new secret
 @blueprint.route('/generate_secret', methods=['POST'])
 def generate_and_store_secret():
     logger.info("===== [START] /generate_secret =====")
@@ -83,7 +82,6 @@ def generate_and_store_secret():
     except Exception as e:
         logger.exception(f"Unhandled exception in /generate_secret: {e}")
         return jsonify({"error": "Internal server error"}), 500
-
 
 @blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
