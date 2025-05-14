@@ -10,7 +10,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', 'postgresql://admin:admin@localhost/rtmp_db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
-    WEBTORRENT_URL = os.getenv('WEBTORRENT_URL', 'https://webtorrent')
+    WEBTORRENT_URI = os.getenv('WEBTORRENT_URI', 'https://webtorrent')
     WEBTORRENT_PORT = int(os.getenv('WEBTORRENT_PORT', 5002))
     REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
     REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
