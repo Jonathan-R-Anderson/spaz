@@ -4,22 +4,39 @@ from extensions import db as _db
 from models.user import Users
 from models.magnet import MagnetURL
 
-
 @pytest.fixture(scope="session")
 def app():
     app = create_app(testing=True)
     app.config.update({
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "postgresql://admin:admin@localhost:5432/rtmp_db", 
-        "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+        "SQLALCHEMY_DATABASE_URI": "postgresql://admin:admin@localhost:5432/rtmp_db",
     })
+    return app
 
-    _db.init_app(app)
-
+@pytest.fixture(scope="session")
+def db(app):
     with app.app_context():
         _db.create_all()
-        yield app
+        yield _db
         _db.drop_all()
+
+@pytest.fixture(scope="function", autouse=True)
+def session(db, app):
+    """Start a new nested transaction for each test and roll it back."""
+    connection = db.engine.connect()
+    txn = connection.begin()
+
+    options = dict(bind=connection, binds={})
+    session = db.create_scoped_session(options=options)
+
+    db.session = session
+
+    yield session
+
+    txn.rollback()
+    connection.close()
+    session.remove()
+
 
 @pytest.fixture
 def client(app):
