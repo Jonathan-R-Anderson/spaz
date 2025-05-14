@@ -206,8 +206,6 @@ def verify_secret_fun():
     return '', 403
 
 
-
-
 # Expose route logic functions for direct use in unit tests
 __all__ = [
     "generate_and_store_secret",

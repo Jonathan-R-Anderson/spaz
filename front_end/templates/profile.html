@@ -107,315 +107,105 @@ h1, h2, h3 {
 <script src="https://cdn.jsdelivr.net/npm/web3@1.3.0/dist/web3.min.js"></script>
 
 <script>
-    const ethAddress = "{{ eth_address }}";  // Get the Ethereum address from Flask
-    const client = new WebTorrent();  // Initialize WebTorrent
+    const ethAddress = "{{ eth_address }}";
+    const client = new WebTorrent();
     const videoElement = document.getElementById("player");
-    let videoQueue = [];  // Queue to manage the downloaded videos in the correct order
-    const processedMagnetUrls = new Set();  // To prevent duplicate processing
+    let videoQueue = [];
+    let processedSegmentIds = new Set();
     let currentVideoIndex = 0;
     let isPlaying = false;
-
-    // Add console logs for video element events
-    videoElement.addEventListener('canplay', () => {
-        console.log('Video can start playing, but may have to buffer.');
+    
+    // Contract setup
+    const web3 = new Web3(window.ethereum);
+    const spazLivestreamAddress = {{ livestreamAddress | safe }};  // Replace with actual address
+    const spazLivestreamABI = {{ livestreamABI | safe }}; // Paste the ABI array here
+    
+    const spazLivestream = new web3.eth.Contract(spazLivestreamABI, spazLivestreamAddress);
+    
+    // Specify which streamId to load
+    const streamId = 1;
+    
+    document.addEventListener("DOMContentLoaded", async () => {
+        await window.ethereum.enable(); // Prompt user to connect wallet
+        loadLivestreamSegments(streamId);
     });
-
-    videoElement.addEventListener('canplaythrough', () => {
-        console.log('Video can play through without stopping for buffering.');
-    });
-
-    videoElement.addEventListener('play', () => {
-        console.log('Video playback started.');
-    });
-
-    videoElement.addEventListener('pause', () => {
-        console.log('Video playback paused.');
-    });
-
-    videoElement.addEventListener('ended', () => {
-        console.log('Video playback ended.');
-        handleVideoEnd(); // Trigger next video
-    });
-
-    videoElement.addEventListener('waiting', () => {
-        console.log('Video is waiting for more data.');
-    });
-
-    videoElement.addEventListener('error', (error) => {
-        console.error('Error occurred in video element:', error);
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        console.log('Page loaded, polling magnet URLs...');
-        pollMagnetUrls();  // First immediate call when the page loads
-        setInterval(pollMagnetUrls, 5000);  // Poll every 5 seconds to quickly respond to available torrents
-    });
-
-    async function pollMagnetUrls() {
+    
+    async function loadLivestreamSegments(streamId) {
         try {
-            console.log(`Fetching magnet URLs for eth address: ${ethAddress.toLowerCase()}`);
-            const response = await fetch(`/magnet_urls/${ethAddress.toLowerCase()}`);
-            if (response.ok) {
-                const data = await response.json();
-                const magnetUrls = data.magnet_urls;
-
-                if (magnetUrls.length > 0) {
-                    // Sort videos by snapshot_index to ensure correct order
-                    magnetUrls.sort((a, b) => a.snapshot_index - b.snapshot_index);
-                    console.log(`Magnet URLs sorted by snapshot index: ${magnetUrls.map(url => url.snapshot_index)}`);
-                    streamMagnetUrls(magnetUrls);
-                } else {
-                    console.error("No magnet URLs found.");
+            const segmentIds = await spazLivestream.methods.getSegmentChain(streamId).call();
+            segmentIds.sort((a, b) => a - b);  // Ensure ascending order
+    
+            for (const segmentId of segmentIds) {
+                if (!processedSegmentIds.has(segmentId)) {
+                    const [magnetURI] = await spazLivestream.methods.getSegment(segmentId).call();
+                    downloadAndQueueMagnet(magnetURI, segmentId);
+                    processedSegmentIds.add(segmentId);
                 }
-            } else {
-                console.error("Failed to fetch magnet URLs:", response.statusText);
             }
-        } catch (error) {
-            console.error("Error fetching magnet URLs:", error);
+        } catch (err) {
+            console.error("Error loading stream segments:", err);
         }
     }
-
-    function streamMagnetUrls(magnetUrls) {
-        magnetUrls.forEach(({ magnet_url, snapshot_index }) => {
-            if (!processedMagnetUrls.has(magnet_url)) {
-                downloadAndQueueMagnet(magnet_url, snapshot_index);  // Download video and queue it with snapshot_index
-                processedMagnetUrls.add(magnet_url);  // Mark as processed to avoid duplicates
-            }
-        });
-    }
-
-    function downloadAndQueueMagnet(magnetUrl, snapshotIndex) {
-        console.log("Processing magnet URL:", magnetUrl);
-
+    
+    function downloadAndQueueMagnet(magnetUrl, segmentId) {
+        console.log("Downloading segment:", segmentId, magnetUrl);
+    
         client.add(magnetUrl, function (torrent) {
-            setupTorrentGraph(torrent);  // Set up graph for torrent download progress
-
+            setupTorrentGraph(torrent);
             const file = torrent.files.find(file => file.name.endsWith('.mp4'));
-
+    
             if (file) {
-                console.log(`Found MP4 file in torrent: ${file.name} (Snapshot index: ${snapshotIndex})`);
-
                 file.getBlobURL((err, url) => {
-                    if (err) {
-                        console.error("Error getting Blob URL:", err);
-                        return;
-                    }
-
-                    // Add the Blob URL to the queue with the snapshot_index
-                    videoQueue.push({ url, snapshotIndex });
-                    console.log(`Video (Snapshot index: ${snapshotIndex}) added to queue.`);
-
-                    // Sort the videoQueue by snapshotIndex to ensure correct playback order
+                    if (err) return console.error("Blob error:", err);
+                    videoQueue.push({ url, snapshotIndex: segmentId });
                     videoQueue.sort((a, b) => a.snapshotIndex - b.snapshotIndex);
-
-                    // Start playing if not already playing and the queue is ready
                     if (!isPlaying && videoQueue.length > 0) {
                         playNextInQueue();
                     }
                 });
-            } else {
-                console.error("No MP4 file found in the torrent.");
             }
         });
     }
-
+    
     function playNextInQueue() {
         if (currentVideoIndex < videoQueue.length) {
             const video = videoQueue[currentVideoIndex];
-            videoElement.src = video.url;  // Set the video source based on the correct order
+            videoElement.src = video.url;
             videoElement.load();
             videoElement.play().then(() => {
-                console.log(`Playing video with snapshot index: ${video.snapshotIndex}.`);
                 isPlaying = true;
-            }).catch((error) => {
-                console.error("Error playing video:", error);
-            });
-        } else {
-            console.log("No videos in the queue to play.");
+            }).catch(console.error);
         }
     }
-
+    
     function handleVideoEnd() {
         currentVideoIndex++;
         isPlaying = false;
-        
-        // If there is another video in the queue, play it
         if (currentVideoIndex < videoQueue.length) {
             playNextInQueue();
-        } else {
-            console.log("Queue is empty. Polling for more videos...");
         }
     }
-
-    function setupTorrentGraph(torrent) {
-        const canvas = document.getElementById('torrent-graph');
-        const ctx = canvas.getContext('2d');
-
-        function drawGraph() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw progress bar
-            ctx.fillStyle = '#4CAF50';
-            ctx.fillRect(0, 0, canvas.width * torrent.progress, 50);
-            ctx.strokeStyle = '#000000';
-            ctx.strokeRect(0, 0, canvas.width, 50);
-
-            // Show download speed
-            ctx.font = '20px Arial';
-            ctx.fillStyle = '#000000';
-            ctx.fillText('Download Speed: ' + (torrent.downloadSpeed / 1024).toFixed(2) + ' KB/s', 10, 100);
-
-            // Show upload speed
-            ctx.fillText('Upload Speed: ' + (torrent.uploadSpeed / 1024).toFixed(2) + ' KB/s', 10, 150);
-
-            // Show number of peers
-            ctx.fillText('Peers: ' + torrent.numPeers, 10, 200);
-
-            requestAnimationFrame(drawGraph);  // Continuously update the graph
-        }
-
-        requestAnimationFrame(drawGraph);
-    }
-
-
-    // Load user's profile from GremlinProfile contract
-    async function loadUserProfile() {
+    
+    videoElement.addEventListener('ended', handleVideoEnd);
+    
+    // Optional tip function
+    async function tipStreamer(amountInEth) {
         try {
-            const profile = await gremlinProfileContract.methods.getProfile(ethAddress).call();
-            document.getElementById('profile-name').innerText = profile[0];
-            const sanitizedHtml = sanitizeHTML(profile[3]);
-            document.getElementById('custom-html-content').innerHTML = sanitizedHtml;
-        } catch (error) {
-            console.error("Error loading user profile:", error);
+            const accounts = await web3.eth.getAccounts();
+            const from = accounts[0];
+    
+            await spazLivestream.methods.tipStreamer(streamId).send({
+                from,
+                value: web3.utils.toWei(amountInEth.toString(), "ether")
+            });
+    
+            alert("Tip sent successfully!");
+        } catch (err) {
+            console.error("Error tipping:", err);
+            alert("Failed to send tip");
         }
     }
+    </script>
+    
 
-    // Load user's published papers
-    async function loadPublishedPapers() {
-        const papersList = document.getElementById("published-papers-list");
-        const noPapersMessage = document.getElementById("no-papers-message");
-
-        try {
-            const allPaperIds = await gremlinJournalContract.methods.getAllPaperIds("submissionOrder").call();
-            let paperCount = 0;
-
-            for (let i = 0; i < allPaperIds.length; i++) {
-                const paper = await gremlinJournalContract.methods.getPaperDetails(allPaperIds[i]).call();
-                if (paper.author === ethAddress) {
-                    paperCount++;
-                    const listItem = document.createElement('li');
-                    listItem.innerHTML = `
-                        <strong>Title:</strong> ${paper.title}<br>
-                        <strong>Description:</strong> ${paper.description}<br>
-                        <strong>Magnet URL:</strong> <a href="${paper.magnetURL}" target="_blank">${paper.magnetURL}</a>
-                        <button onclick="seedMagnetUrl('${paper.magnetURL}')" class="btn btn-primary btn-sm">Seed Magnet</button><br>
-                    `;
-                    papersList.appendChild(listItem);
-                }
-            }
-
-            if (paperCount === 0) {
-                noPapersMessage.style.display = 'block';
-            }
-        } catch (error) {
-            console.error("Error loading published papers:", error);
-        }
-    }
-
-    // Load user's rating
-    async function loadUserRating() {
-        try {
-            const leaderboard = await gremlinLeaderboardContract.methods.getLeaderboard().call();
-            let rating = null;
-
-            for (let i = 0; i < leaderboard.length; i++) {
-                if (leaderboard[i].entity === ethAddress) {
-                    rating = leaderboard[i].score;
-                    break;
-                }
-            }
-
-            if (rating !== null) {
-                document.getElementById('user-rating').innerText = rating;
-                document.getElementById('no-rating-message').style.display = 'none';
-            } else {
-                document.getElementById('no-rating-message').style.display = 'block';
-            }
-        } catch (error) {
-            console.error("Error loading user rating:", error);
-        }
-    }
-
-    // Load user skills for spider chart
-    async function loadUserSkills() {
-        try {
-            const leaderboard = await gremlinLeaderboardContract.methods.getLeaderboard().call();
-            let skills = [0, 0, 0, 0, 0, 0];
-
-            for (let i = 0; i < leaderboard.length; i++) {
-                if (leaderboard[i].entity === ethAddress) {
-                    skills = [
-                        leaderboard[i].score,
-                        leaderboard[i].score / 2,
-                        leaderboard[i].score / 3,
-                        leaderboard[i].score / 1.5,
-                        leaderboard[i].score / 4,
-                        leaderboard[i].score / 5
-                    ];
-                    break;
-                }
-            }
-
-            renderSkillChart(skills);
-        } catch (error) {
-            console.error("Error loading user skills:", error);
-            renderSkillChart([0, 0, 0, 0, 0, 0]);
-        }
-    }
-
-    function renderSkillChart(skills) {
-        const ctx = document.getElementById('skillChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: ['Speed', 'Algorithms', 'Data Structures', 'Security', 'Web Development', 'Versatility'],
-                datasets: [{
-                    label: 'User Skills',
-                    data: skills,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2,
-                    pointBackgroundColor: 'rgba(54, 162, 235, 1)'
-                }]
-            },
-            options: {
-                scale: {
-                    ticks: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                },
-                responsive: true
-            }
-        });
-    }
-
-    // Sanitize HTML content
-    function sanitizeHTML(html) {
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        const scripts = div.getElementsByTagName('script');
-        for (let i = 0; i < scripts.length; i++) {
-            scripts[i].remove();
-        }
-        return div.innerHTML;
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        loadUserProfile();  // Load user profile data
-        loadPublishedPapers();  // Load published papers
-        loadUserRating();  // Load user rating
-        loadUserSkills();  // Load user skills chart
-    });
-</script>
 {% endblock %}

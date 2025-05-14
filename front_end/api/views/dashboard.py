@@ -2,9 +2,8 @@ from flask import render_template, jsonify, request
 from ..routes import blueprint
 import logging, json
 from utils.contracts import (
-    gremlinProfileAddress, gremlinProfileABI,
-    gremlinLeaderboardAddress, gremlinLeaderboardABI,
-    gremlinJournalAddress, gremlinJournalABI
+    get_spaz_livestream_abi, get_spaz_livestream_address,
+    get_spaz_moderation_abi, get_spaz_moderation_address
 )
 from services.stream import RTMP_URLS
 
@@ -16,13 +15,7 @@ def index():
 @blueprint.route('/dashboard/<eth_address>', methods=['GET'])
 def home(eth_address):
     logging.debug(f"Rendering dashboard for {eth_address}")
-    return render_template('dashboard.html', eth_address=eth_address,
-                           gremlinProfileABI=json.dumps(gremlinProfileABI, ensure_ascii=False),
-                           gremlinProfileAddress=gremlinProfileAddress,
-                           gremlinLeaderboardAddress=gremlinLeaderboardAddress,
-                           gremlinLeaderboardABI=json.dumps(gremlinLeaderboardABI, ensure_ascii=False),
-                           gremlinJournalAddress=gremlinJournalAddress,
-                           gremlinJournalABI=json.dumps(gremlinJournalABI, ensure_ascii=False))
+    return render_template('dashboard.html', eth_address=eth_address)
 
 @blueprint.route('/users/<eth_address>', methods=['POST', 'GET'])
 def user_profile(eth_address):
@@ -34,9 +27,7 @@ def user_profile(eth_address):
         return jsonify({"is_owner": is_owner, "rtmp_stream_url": rtmp_url})
     logging.debug(f"Rendering profile for {eth_address}")
     return render_template('profile.html', eth_address=eth_address,
-                           gremlinProfileABI=json.dumps(gremlinProfileABI, ensure_ascii=False),
-                           gremlinProfileAddress=gremlinProfileAddress,
-                           gremlinLeaderboardAddress=gremlinLeaderboardAddress,
-                           gremlinLeaderboardABI=json.dumps(gremlinLeaderboardABI, ensure_ascii=False),
-                           gremlinJournalAddress=gremlinJournalAddress,
-                           gremlinJournalABI=json.dumps(gremlinJournalABI, ensure_ascii=False))
+                           livestreamABI=json.dumps(get_spaz_livestream_abi(), ensure_ascii=False),
+                           livestreamAddress=get_spaz_livestream_address(),
+                           moderationAddres=get_spaz_moderation_address(),
+                           moderationABI=json.dumps(get_spaz_moderation_abi(), ensure_ascii=False))
