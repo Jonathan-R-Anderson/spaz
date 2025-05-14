@@ -68,9 +68,6 @@ COPY ./system/entrypoint.sh /entrypoint.sh
 # Set execution permissions
 RUN chmod +x /app/close_stream.sh /entrypoint.sh
 
-# Copy test folder (if any)
-COPY tests/ /app/tests/
-
 # Expose RTMP, Flask, and NGINX ports
 EXPOSE 1935 5004 8080
 
