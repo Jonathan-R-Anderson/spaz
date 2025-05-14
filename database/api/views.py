@@ -55,7 +55,9 @@ def retrieve_magnet_urls(eth_address):
 
 @blueprint.route('/generate_secret', methods=['POST'])
 def generate_and_store_secret():
-    print("===== [START] /generate_secret =====")
+    import sys
+    sys.stderr.write("=== HIT /generate_secret route ===\n")
+    sys.stderr.flush()
     logger.info("===== [START] /generate_secret =====")
 
     try:
