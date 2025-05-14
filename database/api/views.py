@@ -58,37 +58,29 @@ def generate_and_store_secret():
     import sys
     sys.stderr.write("=== HIT /generate_secret route ===\n")
     sys.stderr.flush()
-    logger.info("===== [START] /generate_secret =====")
 
     try:
-        data = request.get_json()
-        logger.info(f"Incoming JSON payload: {data}")
+        data = request.get_json(force=True)
+        print(f"== JSON received: {data}")
+        eth_address = data.get('eth_address')
+        ip_address = data.get('ip_address')
 
-        eth_address = data.get('eth_address') if data else None
-        ip_address = data.get('ip_address') if data else None
+        print(f"eth_address: {eth_address}, ip_address: {ip_address}")
 
-        if not eth_address:
-            logger.warning("Missing Ethereum address in request.")
-            return jsonify({"error": "Missing Ethereum address"}), 400
-
-        if not ip_address:
-            logger.warning("Missing IP address in request.")
-            return jsonify({"error": "Missing IP address"}), 400
-
-        logger.info(f"Generating secret for eth_address: {eth_address}, ip_address: {ip_address}")
         secret = _generate_secret()
-        logger.info(f"Generated plaintext secret: {secret}")
+        print(f"generated secret: {secret}")
 
-        logger.info("Storing secret in database...")
         _store_secret(eth_address, secret, ip_address)
-        logger.info("Successfully stored secret in DB.")
+        print("stored secret successfully")
 
-        logger.info("===== [END] /generate_secret =====")
         return jsonify({"eth_address": eth_address, "secret": secret}), 200
 
     except Exception as e:
-        logger.exception(f"Unhandled exception in /generate_secret: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Internal server error"}), 500
+
+
 
 @blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
 def get_rtmp_url(eth_address):
