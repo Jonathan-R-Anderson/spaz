@@ -7,7 +7,7 @@ from flask_restful import Api
 api = Api()
 
 def create_app():
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
     app = Flask(
         __name__,
