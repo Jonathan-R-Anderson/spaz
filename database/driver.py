@@ -41,9 +41,17 @@ def create_app(testing=False):
 
     db.init_app(app)
 
+    with app.app_context():
+        try:
+            db.create_all()
+            app.logger.info("[create_app] Database tables created successfully")
+        except Exception as e:
+            app.logger.error(f"[create_app] Failed to create database tables: {e}")
+
     app.register_blueprint(blueprint)
 
     return app
+
 
 
 if __name__ == '__main__':
@@ -55,13 +63,6 @@ if __name__ == '__main__':
     for rule in app.url_map.iter_rules():
         logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
 
-
-    with app.app_context():
-        try:
-            db.create_all()
-            logger.info("[main] Database tables created successfully")
-        except Exception as e:
-            logger.error(f"[main] Failed to create database tables: {e}")
 
     try:
         logger.info("[main] Running app on http://0.0.0.0:5003")
