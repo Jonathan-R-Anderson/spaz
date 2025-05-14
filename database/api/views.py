@@ -23,13 +23,17 @@ def get_secret(eth_address):
         user = Users.query.filter_by(eth_address=eth_address).first()
         if user:
             logger.info(f"[get_secret] Secret found for {eth_address}")
-            return jsonify({"eth_address": eth_address, "secret": user.rtmp_secret}), 200
+            return jsonify({
+                "eth_address": eth_address,
+                "secret": user.rtmp_secret
+            }), 200
         else:
             logger.warning(f"[get_secret] No secret found for {eth_address}")
             return jsonify({"error": "Secret not found"}), 404
     except Exception as e:
         logger.error(f"[get_secret] Failed to fetch secret for {eth_address}: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
 
 
 
@@ -178,7 +182,6 @@ def get_streamer_ip(ip_address):
 
 @blueprint.route('/verify_secret', methods=['POST'])
 def verify_secret_fun():
-    print(f"request: {request}")
     if request.is_json:
         eth_address = request.json.get('eth_address')
         secret = request.json.get('secret')
@@ -194,14 +197,14 @@ def verify_secret_fun():
     if not eth_address or not secret:
         return '', 401
 
-    stored_secret = get_secret(eth_address)
-    if not stored_secret:
+    user = Users.query.filter_by(eth_address=eth_address).first()
+    if not user:
         return '', 400
 
-    if hmac.compare_digest(secret, stored_secret):
+    if hmac.compare_digest(secret, user.rtmp_secret):
         return '', 204
-    else:
-        return '', 500
+    return '', 403
+
 
 
 
