@@ -3,6 +3,7 @@ from driver import create_app
 from extensions import db as _db
 from models.user import Users
 from models.magnet import MagnetURL
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 @pytest.fixture(scope="session")
 def app():
@@ -20,6 +21,7 @@ def db(app):
         yield _db
         _db.drop_all()
 
+
 @pytest.fixture(scope="function", autouse=True)
 def session(db, app):
     """Start a new nested transaction for each test and roll it back."""
@@ -27,15 +29,16 @@ def session(db, app):
     txn = connection.begin()
 
     options = dict(bind=connection, binds={})
-    session = db.create_scoped_session(options=options)
+    session = scoped_session(sessionmaker(**options))
 
-    db.session = session
+    db.session = session  # Overwrite the global db.session
 
     yield session
 
     txn.rollback()
     connection.close()
     session.remove()
+
 
 
 @pytest.fixture
