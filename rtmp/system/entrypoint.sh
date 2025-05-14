@@ -16,7 +16,7 @@ echo "[ENTRYPOINT] Verifying /app/tests exists:"
 ls -l /app/tests || echo "❌ /app/tests is missing!"
 
 echo "[ENTRYPOINT] Running tests..."
-if pytest ../tests/ --tb=short -v | tee test_output.log; then
+if pytest /app/tests/ --tb=short -v | tee test_output.log; then
     echo "[ENTRYPOINT] ✅ Tests passed. Continuing with container."
 else
     echo "[ENTRYPOINT] ❌ Tests failed. Output:"
