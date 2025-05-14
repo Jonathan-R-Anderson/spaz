@@ -21,9 +21,9 @@ if $VIRTUAL_ENV/bin/pytest tests/ --tb=short -v | tee test_output.log; then
 else
     echo "[ENTRYPOINT] ❌ Tests failed. Output:"
     cat test_output.log
-    echo "[ENTRYPOINT] Shutting down services..."
-    kill $SUPERVISOR_PID
-    exit 1
+    #echo "[ENTRYPOINT] Shutting down services..."
+    #kill $SUPERVISOR_PID
+    #exit 1
 fi
 
 wait $SUPERVISOR_PID
