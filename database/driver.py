@@ -5,7 +5,8 @@ from flask import Flask
 from config import Config
 from extensions import db, redis_client
 from api.routes import blueprint 
-
+from models.user import Users 
+from models.magnet import MagnetURL
 dictConfig({
     'version': 1,
     'formatters': {
