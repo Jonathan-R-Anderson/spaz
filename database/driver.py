@@ -2,7 +2,7 @@
 import logging
 from logging.config import dictConfig
 from flask import Flask
-from ...config import Config
+from config import Config
 from extensions import db, redis_client
 
 # Centralized logging setup
