@@ -40,23 +40,3 @@ def _store_secret(eth_address, secret, ip_address):
         db.session.rollback()
         logger.error(f"[store_secret] Failed to store secret for {eth_address}: {e}")
         raise
-
-
-def _fetch_secret_from_api(eth_address):
-    logger.info(f"[fetch_secret_from_api] Fetching secret for eth_address={eth_address}")
-    try:
-        url = f"http://localhost:5003/get_secret/{eth_address}"
-        logger.debug(f"[fetch_secret_from_api] Sending GET request to {url}")
-        response = requests.get(url, timeout=5)
-        logger.debug(f"[fetch_secret_from_api] Response status code: {response.status_code}")
-        
-        if response.status_code == 200:
-            secret = response.json().get('secret')
-            logger.info(f"[fetch_secret_from_api] Retrieved secret for {eth_address}")
-            return secret
-        else:
-            logger.warning(f"[fetch_secret_from_api] Failed with status {response.status_code} for {eth_address}")
-            return None
-    except Exception as e:
-        logger.error(f"[fetch_secret_from_api] Exception fetching secret for {eth_address}: {e}")
-        return None

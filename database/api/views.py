@@ -194,7 +194,7 @@ def verify_secret_fun():
     if not eth_address or not secret:
         return '', 401
 
-    stored_secret = _fetch_secret_from_api(eth_address)
+    stored_secret = get_secret(eth_address)
     if not stored_secret:
         return '', 400
 
