@@ -176,28 +176,33 @@ def get_streamer_ip(ip_address):
         logger.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
-@blueprint.route("/verify_secret", methods=["POST"])
+@blueprint.route('/verify_secret', methods=['POST'])
 def verify_secret():
-    data = request.get_json()
-    eth_address = data.get("eth_address")
-    secret = data.get("secret")
-    ip_address = request.remote_addr
+    print(f"request: {request}")
+    if request.is_json:
+        eth_address = request.json.get('eth_address')
+        secret = request.json.get('secret')
+    else:
+        stream_key = request.args.get('name') or request.form.get('name')
+        if not stream_key or '&' not in stream_key:
+            return '', 403
+        try:
+            eth_address, secret = stream_key.split('&secret=')
+        except Exception:
+            return '', 403
 
-    logger.info(f"Verifying {eth_address=} with {secret=} from {ip_address=}")
+    if not eth_address or not secret:
+        return '', 403
 
-    entry = db.session.query(Users).filter_by(eth_address=eth_address).first()
+    stored_secret = _fetch_secret_from_api(eth_address)
+    if not stored_secret:
+        return '', 403
 
-    if not entry:
-        logger.warning("No such eth_address")
-        return "", 403
+    if hmac.compare_digest(secret, stored_secret):
+        return '', 204
+    else:
+        return '', 403
 
-    logger.info(f"Stored secret={entry.secret}, stored ip={entry.ip_address}")
-
-    if entry.secret != secret or entry.ip_address != ip_address:
-        logger.warning("Secret or IP mismatch")
-        return "", 403
-
-    return "", 204
 
 
 # Expose route logic functions for direct use in unit tests
