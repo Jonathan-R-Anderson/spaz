@@ -177,7 +177,7 @@ def get_streamer_ip(ip_address):
         return jsonify({"error": "Failed to retrieve IP address"}), 500
 
 @blueprint.route('/verify_secret', methods=['POST'])
-def verify_secret():
+def verify_secret_fun():
     print(f"request: {request}")
     if request.is_json:
         eth_address = request.json.get('eth_address')
@@ -215,5 +215,5 @@ __all__ = [
     "clear_magnet_urls_route",
     "store_streamer_info",
     "get_streamer_ip",
-    "verify_secret"
+    "verify_secret_fun"
 ]
