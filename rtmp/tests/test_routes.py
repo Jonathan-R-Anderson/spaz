@@ -9,6 +9,21 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from api.routes import blueprint
 
+
+from unittest.mock import patch
+
+
+@patch("utils.shared.retrieve_magnet_urls", return_value=None)
+@patch("utils.shared.requests.post")
+def test_magnet_url_monitoring(mock_post, mock_retrieve, client):
+    mock_post.return_value.status_code = 200
+    mock_post.return_value.text = "ok"
+
+    response = client.get("/magnet_urls/0xtest")
+    assert response.status_code == 404
+
+
+
 @pytest.fixture
 def client():
     app = Flask(__name__)
