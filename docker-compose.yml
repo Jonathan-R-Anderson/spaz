@@ -71,6 +71,7 @@ services:
       - ./logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/ssl/psychos.is:/certs:ro
+      - pgdata:/var/lib/postgresql/13/main
     networks:
       - spaz_net
     logging:
@@ -132,6 +133,9 @@ services:
 volumes:
   hls_data:
     driver: local
+  pgdata:
+    driver: local
+
 
 networks:
   spaz_net:
