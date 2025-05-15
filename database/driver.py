@@ -6,7 +6,7 @@ from flask import Flask
 from config import Config
 from extensions import db, redis_client
 from api.routes import blueprint
-import models
+from models import Users, MagnetURL
 import sys
 
 # Logging setup
