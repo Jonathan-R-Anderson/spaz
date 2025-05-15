@@ -5,32 +5,17 @@ export PYTHONPATH=/app
 # Start Redis
 service redis-server start
 
-# Initialize DB if needed
-if [ ! -s "/var/lib/postgresql/data/PG_VERSION" ]; then
-  su - postgres -c "/usr/lib/postgresql/13/bin/initdb -D /var/lib/postgresql/data"
-fi
-
-# Start Postgres
-su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
-
-# Wait for it
+# Wait for PostgreSQL to be ready
 until pg_isready -h localhost -U "${POSTGRES_USER:-postgres}"; do
   echo "[entrypoint] Waiting for PostgreSQL at localhost:5432..."
   sleep 1
 done
 
-# Fix permissions
-chown -R postgres:postgres /var/lib/postgresql/data
-
-# Start PostgreSQL in background
-su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
-PG_PID=$!
-
-# Run DB initialization
+# Initialize database tables
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
 python3 /app/driver.py --init-db
 
-# Start Flask app in background
+# Start Flask application
 echo "[entrypoint] Starting Flask app..."
 python3 /app/driver.py &
 FLASK_PID=$!
@@ -41,14 +26,12 @@ until nc -z localhost 5003; do
   sleep 1
 done
 
-# Run tests
+# Run unit tests
 echo "[entrypoint] Running unit tests..."
 if ! pytest tests/; then
   echo "❌ Tests failed. Shutting down..."
   kill $FLASK_PID
-  kill $PG_PID
   wait $FLASK_PID
-  wait $PG_PID
   exit 1
 fi
 
