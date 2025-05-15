@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 export PYTHONPATH=/app
 
 # Start PostgreSQL and Redis services
@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS magnet_url (
     created_at TIMESTAMP DEFAULT NOW()
 );"
 
-
+echo "[entrypoint] Verifying tables exist..."
+PGPASSWORD=admin psql -U admin -d rtmp_db -h localhost -c '\dt'
 
 # Create tables using SQLAlchemy (inside Python app)
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
