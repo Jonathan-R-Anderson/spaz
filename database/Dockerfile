@@ -11,6 +11,9 @@ ENV VIRTUAL_ENV=/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN python3 -m venv $VIRTUAL_ENV
 
+COPY ./system/postgresql.conf /var/lib/postgresql/data/postgresql.conf
+
+
 COPY ./system/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
