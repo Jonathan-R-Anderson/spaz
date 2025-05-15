@@ -5,11 +5,19 @@ export PYTHONPATH=/app
 # Start Redis
 service redis-server start
 
-# Initialize PostgreSQL if not initialized
+# Initialize DB if needed
 if [ ! -s "/var/lib/postgresql/data/PG_VERSION" ]; then
-  echo "[entrypoint] Initializing database..."
   su - postgres -c "/usr/lib/postgresql/13/bin/initdb -D /var/lib/postgresql/data"
 fi
+
+# Start Postgres
+su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
+
+# Wait for it
+until pg_isready -h localhost -U "${POSTGRES_USER:-postgres}"; do
+  echo "[entrypoint] Waiting for PostgreSQL at localhost:5432..."
+  sleep 1
+done
 
 # Fix permissions
 chown -R postgres:postgres /var/lib/postgresql/data
@@ -17,12 +25,6 @@ chown -R postgres:postgres /var/lib/postgresql/data
 # Start PostgreSQL in background
 su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
 PG_PID=$!
-
-# Wait for PostgreSQL
-until pg_isready -h localhost -U "${POSTGRES_USER:-postgres}"; do
-  echo "[entrypoint] Waiting for PostgreSQL at localhost:5432..."
-  sleep 1
-done
 
 # Run DB initialization
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
