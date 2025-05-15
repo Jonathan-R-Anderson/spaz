@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-COPY ./system/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY ./system/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Override CMD but keep default entrypoint
 CMD ["/entrypoint.sh"]
