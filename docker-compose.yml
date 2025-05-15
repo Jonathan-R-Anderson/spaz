@@ -65,9 +65,9 @@ services:
         - DOCKER_BUILDKIT=0
     command: ["/app/entrypoint.sh"]
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=rtmp_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: rtmp_db
     expose:
       - "5003" 
     volumes:
