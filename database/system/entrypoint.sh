@@ -1,26 +1,25 @@
 #!/bin/bash
 set -ex
+echo "💥 [entrypoint] Starting services"
 
-echo "💥 [entrypoint] Script is running"
-
-POSTGRES_CONF="/app/postgresql.conf"
-
-# Wait for PostgreSQL to generate the config file
-until [ -f "$POSTGRES_CONF" ]; do
-  echo "[entrypoint] Waiting for $POSTGRES_CONF to exist..."
-  sleep 1
-done
-
-
-# Start Redis
+# Start redis
 service redis-server start
 
-# Wait for PG to be ready
-until psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h localhost -c '\q' 2>/dev/null; do
-  echo "Waiting for PostgreSQL to accept connections..."
+# Start Postgres in background
+su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
+PG_PID=$!
+
+# Wait for Postgres to be ready
+until pg_isready -h localhost -U "$POSTGRES_USER"; do
+  echo "⏳ Waiting for PostgreSQL..."
   sleep 1
 done
 
-
-# Create tables
+# Init DB if needed
 python3 /app/driver.py --init-db
+
+# Start Flask API (or run tests)
+python3 /app/driver.py &
+
+# Wait for background processes
+wait $PG_PID

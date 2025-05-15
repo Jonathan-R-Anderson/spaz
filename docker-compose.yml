@@ -61,6 +61,7 @@ services:
       context: ./database
       args:
         - DOCKER_BUILDKIT=0
+    command: ["/app/entrypoint.sh"]
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
