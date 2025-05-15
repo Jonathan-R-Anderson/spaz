@@ -12,11 +12,16 @@ from api.routes import blueprint
 
 @pytest.fixture
 def client():
-    app = Flask(__name__)
-    app.register_blueprint(blueprint)
-    app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
+    with patch("api.routes.retrieve_magnet_urls") as mock_retrieve:
+        mock_retrieve.return_value = {"message": "error"}  # default fallback
+
+        app = Flask(__name__)
+        app.register_blueprint(blueprint)
+        app.config['TESTING'] = True
+
+        with app.test_client() as client:
+            yield client
+
 
 
 @patch("api.routes.retrieve_magnet_urls")

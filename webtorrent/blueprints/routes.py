@@ -175,7 +175,6 @@ def magnet_url(eth_address):
         if not is_monitoring_hls.get(eth_address, None):
             try:
                 logging.info(f"Starting process to monitor HLS directory for {eth_address}.")
-                hls_process = Process(target=monitor_hls_directory, args=(eth_address,))
                 hls_process.start()
                 is_monitoring_hls[eth_address] = True
                 logging.info(f"Successfully started monitoring HLS directory for {eth_address}.")
