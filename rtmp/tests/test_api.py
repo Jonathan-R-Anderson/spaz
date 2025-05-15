@@ -22,14 +22,12 @@ def client():
         with app.test_client() as client:
             yield client
 
-@patch("requests.post")
-@patch("services.magnet.retrieve_magnet_urls")
+@patch("api.routes.requests.post")
+@patch("api.routes.retrieve_magnet_urls")
 def test_magnet_url_success(mock_retrieve, mock_post, client):
-    # Prevents actual network fallback to webtorrent
     mock_post.return_value.status_code = 200
     mock_post.return_value.text = "ok"
 
-    # Simulate successful magnet URL fetch
     mock_retrieve.return_value = {
         "message": "success",
         "magnet_urls": ["magnet:?xt=test"]
@@ -38,6 +36,7 @@ def test_magnet_url_success(mock_retrieve, mock_post, client):
     response = client.get("/magnet_urls/0xtest")
     assert response.status_code == 200
     assert "magnet_urls" in response.json
+
 
 
 @patch("requests.post")
