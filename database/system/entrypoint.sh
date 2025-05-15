@@ -7,7 +7,7 @@ export PYTHONPATH=/app
 service redis-server start
 
 # Wait for PostgreSQL (external container) to be ready
-until pg_isready -h database -U admin; do
+until pg_isready -h localhost -U admin; do
   echo "[entrypoint] Waiting for PostgreSQL at database:5432..."
   sleep 1
 done
