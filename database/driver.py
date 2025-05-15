@@ -1,24 +1,39 @@
-# app.py
+# driver.py or app.py
+
+import logging
+from logging.config import dictConfig
 from flask import Flask
 from config import Config
 from extensions import db, redis_client
 from api.routes import blueprint
-from models.user import Users
+from models.user import Users  # Make sure this is imported BEFORE create_all
 from models.magnet import MagnetURL
-import logging
-from logging.config import dictConfig
 
+# Logging setup
 dictConfig({
     'version': 1,
-    'formatters': {'default': {'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'}},
-    'handlers': {
-        'wsgi': {'class': 'logging.FileHandler', 'filename': Config.LOG_FILE_PATH, 'formatter': 'default'},
-        'console': {'class': 'logging.StreamHandler', 'formatter': 'default'}
+    'formatters': {
+        'default': {'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'},
     },
-    'root': {'level': 'DEBUG', 'handlers': ['wsgi', 'console']}
+    'handlers': {
+        'wsgi': {
+            'class': 'logging.FileHandler',
+            'filename': Config.LOG_FILE_PATH,
+            'formatter': 'default',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        },
+    },
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['wsgi', 'console'],
+    }
 })
 
 logger = logging.getLogger(__name__)
+
 
 def create_app(testing=False):
     app = Flask(__name__)
@@ -29,24 +44,23 @@ def create_app(testing=False):
 
     db.init_app(app)
     app.register_blueprint(blueprint)
-
     return app
 
-# Create app at module level so Gunicorn can access it
+
 app = create_app()
 
-# Ensure tables are created even if app is launched via gunicorn
+# Ensure models are imported before calling create_all()
 with app.app_context():
     try:
         db.create_all()
-        app.logger.info("[create_app] Database tables created successfully")
+        logger.info("[driver] Database tables created successfully")
     except Exception as e:
-        app.logger.error(f"[create_app] Failed to create database tables: {e}")
+        logger.error(f"[driver] Failed to create tables: {e}")
 
-# Optional CLI/dev-only block
+
 if __name__ == '__main__':
-    logger.info("[main] Starting Flask app from __main__")
-    logger.info("[ROUTES] Listing all registered routes:")
+    logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
+
     for rule in app.url_map.iter_rules():
         logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
 
