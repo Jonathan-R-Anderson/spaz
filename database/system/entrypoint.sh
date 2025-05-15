@@ -26,6 +26,26 @@ until pg_isready -h localhost; do
   sleep 1
 done
 
+
+PGPASSWORD=admin psql -U admin -d rtmp_db -h localhost -c "
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    eth_address VARCHAR(42) UNIQUE NOT NULL,
+    rtmp_secret VARCHAR(64) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL
+);"
+
+PGPASSWORD=admin psql -U admin -d rtmp_db -h localhost -c "
+CREATE TABLE IF NOT EXISTS magnet_url (
+    id SERIAL PRIMARY KEY,
+    eth_address VARCHAR(42) NOT NULL,
+    magnet_url TEXT NOT NULL,
+    snapshot_index INT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);"
+
+
+
 # Create tables using SQLAlchemy (inside Python app)
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
 PGPASSWORD=admin python3 driver.py --init-db
