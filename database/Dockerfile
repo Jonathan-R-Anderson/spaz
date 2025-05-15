@@ -1,10 +1,10 @@
-# Start FROM official PostgreSQL image
 FROM postgres:13
 
-# Install system dependencies (Python, Redis, etc.)
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \
     redis-server \
     netcat-traditional \
     gcc \
@@ -15,13 +15,20 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy Python requirements and install
-COPY ./system/requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Create and activate venv
+ENV VIRTUAL_ENV=/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN python3 -m venv $VIRTUAL_ENV
 
-# Copy all app code into container
+# Copy requirements and install inside the venv
+COPY ./system/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy app code
 COPY . .
 
-# Copy and enable custom entrypoint
-COPY ./system/entrypoint.sh /docker-entrypoint-initdb.d/entrypoint.sh
-RUN chmod +x /docker-entrypoint-initdb.d/entrypoint.sh
+# Entry point logic
+COPY ./system/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]
