@@ -8,6 +8,12 @@ service redis-server start
 chmod 0700 /var/lib/postgresql/data
 chown -R postgres:postgres /var/lib/postgresql/data
 
+
+if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
+  su - postgres -c "/usr/lib/postgresql/13/bin/initdb -D /var/lib/postgresql/data"
+fi
+
+
 # Start Postgres in background
 su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
 PG_PID=$!
