@@ -52,6 +52,7 @@ app = create_app()
 # Ensure models are imported before calling create_all()
 with app.app_context():
     try:
+        logger.info(f"[driver] Connecting to DB at: {app.config['SQLALCHEMY_DATABASE_URI']}")
         db.create_all()
         logger.info("[driver] Database tables created successfully")
     except Exception as e:
