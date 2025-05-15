@@ -50,7 +50,8 @@ def create_app(testing=False):
 
 app = create_app()
 _ = [Users, MagnetURL]
-db.create_all()
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
     logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
