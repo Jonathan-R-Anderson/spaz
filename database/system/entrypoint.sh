@@ -16,5 +16,12 @@ chown postgres:postgres "$POSTGRES_CONF"
 # Start Redis
 service redis-server start
 
+# Wait for PG to be ready
+until psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -h localhost -c '\q' 2>/dev/null; do
+  echo "Waiting for PostgreSQL to accept connections..."
+  sleep 1
+done
+
+
 # Create tables
 python3 /app/driver.py --init-db
