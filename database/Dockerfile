@@ -16,6 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Copy config file to a temp location
+COPY ./system/postgresql.conf /tmp/postgresql.conf
+
 # Add init script to run after PostgreSQL initializes
 COPY ./system/entrypoint.sh /docker-entrypoint-initdb.d/init-entrypoint.sh
 RUN chmod +x /docker-entrypoint-initdb.d/init-entrypoint.sh
