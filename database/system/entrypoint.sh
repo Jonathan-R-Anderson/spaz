@@ -1,9 +1,10 @@
 #!/bin/bash
 set -ex
 
-chown -R postgres:postgres /var/lib/postgresql
+chown -R postgres:postgres /var/lib/postgresql/data/postgresql.conf
 
-# If config is missing, copy default
+cat /var/lib/postgresql/data/postgresql.conf
+
 if [ ! -f /var/lib/postgresql/data/postgresql.conf ]; then
   chown postgres:postgres /var/lib/postgresql/data/postgresql.conf
 fi
