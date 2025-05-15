@@ -27,8 +27,14 @@ until pg_isready -h localhost; do
 done
 
 # Launch Flask app in background
+# Launch Flask app once just to trigger db.create_all() with correct user
+echo "Creating DB tables with SQLAlchemy (as 'admin')..."
+PGPASSWORD=admin python3 driver.py --once
+
+# Now launch Flask app normally
 echo "Starting Flask app for testing..."
 python3 driver.py &
+
 
 FLASK_PID=$!
 

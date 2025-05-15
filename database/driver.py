@@ -8,6 +8,7 @@ from extensions import db, redis_client
 from api.routes import blueprint
 from models.user import Users
 from models.magnet import MagnetURL
+import sys
 
 # Logging setup
 dictConfig({
@@ -60,9 +61,13 @@ with app.app_context():
 
 
 if __name__ == '__main__':
+    if '--once' in sys.argv:
+        logger.info("[driver] Initializing DB only once")
+        with app.app_context():
+            db.create_all()
+        sys.exit(0)
+    
     logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
-
     for rule in app.url_map.iter_rules():
         logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
-
     app.run(host='0.0.0.0', port=5003, debug=True)
