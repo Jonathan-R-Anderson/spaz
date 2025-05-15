@@ -1,36 +1,27 @@
-# Use slim Debian base
-FROM debian:bullseye-slim
+FROM python:3.9-slim
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Install system dependencies including PostgreSQL and Redis
+# Install Redis (client-only if needed), netcat for readiness checks
 RUN apt-get update && apt-get install -y \
-    postgresql \
     redis-server \
+    netcat-traditional \
     gcc \
-    python3 \
-    python3-pip \
     libpq-dev \
-    netcat-traditional
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements and install
 COPY ./system/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code into the container
+# Copy app source code
 COPY . .
 
-# Copy and apply the custom pg_hba.conf for PostgreSQL 13
-COPY ./system/pg_hba.conf /etc/postgresql/13/main/pg_hba.conf
-RUN chown postgres:postgres /etc/postgresql/13/main/pg_hba.conf
+# Expose Flask API port
+EXPOSE 5003
 
-# Expose Flask, PostgreSQL, and Redis ports
-EXPOSE 5003 5432 6379
-
-# Copy and prepare entrypoint script
+# Entrypoint to start Flask + Redis etc.
 COPY ./system/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Start services and app
 CMD ["/entrypoint.sh"]
