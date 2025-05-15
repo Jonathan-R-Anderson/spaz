@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ex
 
+echo "💥 [entrypoint] Script is running"
+
 chown -R postgres:postgres /var/lib/postgresql/data/postgresql.conf
 
 cp /app/postgresql.conf /var/lib/postgresql/data/postgresql.conf
