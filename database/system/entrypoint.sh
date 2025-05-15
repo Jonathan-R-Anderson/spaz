@@ -3,7 +3,7 @@ set -ex
 
 chown -R postgres:postgres /var/lib/postgresql/data/postgresql.conf
 
-cat /var/lib/postgresql/data/postgresql.conf
+cp /app/postgresql.conf /var/lib/postgresql/data/postgresql.conf
 
 if [ ! -f /var/lib/postgresql/data/postgresql.conf ]; then
   chown postgres:postgres /var/lib/postgresql/data/postgresql.conf
