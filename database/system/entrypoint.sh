@@ -3,49 +3,46 @@
 set -e
 export PYTHONPATH=/app
 
-# Start PostgreSQL and Redis
+# Start PostgreSQL and Redis services
 service postgresql start
 service redis-server start
 
 # Wait for PostgreSQL to be ready
 until pg_isready -h localhost; do
-  echo "Postgres is unavailable - sleeping"
+  echo "[entrypoint] Waiting for PostgreSQL..."
   sleep 1
 done
 
-# Create DB user and database
+# Create DB user and database if they don't exist
 su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='admin'\" | grep -q 1 || psql -c 'CREATE USER admin WITH PASSWORD '\''admin'\'';'"
 su - postgres -c "psql -c 'ALTER USER admin WITH SUPERUSER;'"
 su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='rtmp_db'\" | grep -q 1 || psql -c 'CREATE DATABASE rtmp_db;'"
 su - postgres -c "psql -c 'GRANT ALL PRIVILEGES ON DATABASE rtmp_db TO admin;'"
 
-# Restart PostgreSQL again and wait
+# Restart PostgreSQL to apply changes
 service postgresql restart
 until pg_isready -h localhost; do
-  echo "Waiting for Postgres to restart - sleeping"
+  echo "[entrypoint] Waiting for PostgreSQL restart..."
   sleep 1
 done
 
-# Launch Flask app in background
-# Launch Flask app once just to trigger db.create_all() with correct user
-echo "Creating DB tables with SQLAlchemy (as 'admin')..."
-PGPASSWORD=admin FLASK_ENV=production python3 -c "from driver import app, db; app.app_context().push(); db.create_all(); print('✅ Tables created from entrypoint')"
+# Create tables using SQLAlchemy (inside Python app)
+echo "[entrypoint] Creating DB tables via SQLAlchemy..."
+PGPASSWORD=admin python3 driver.py --init-db
 
-# Now launch Flask app normally
-echo "Starting Flask app for testing..."
+# Start Flask app in background
+echo "[entrypoint] Starting Flask app in background..."
 python3 driver.py &
-
-
 FLASK_PID=$!
 
-# Wait for Flask to become available
+# Wait for Flask app to be reachable
 until nc -z localhost 5003; do
-  echo "Waiting for Flask app to start on port 5003..."
+  echo "[entrypoint] Waiting for Flask to listen on port 5003..."
   sleep 1
 done
 
 # Run unit tests
-echo "Running unit tests..."
+echo "[entrypoint] Running unit tests..."
 if ! pytest tests/; then
   echo "❌ Tests failed. Shutting down Flask app..."
   kill $FLASK_PID

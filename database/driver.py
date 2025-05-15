@@ -1,5 +1,4 @@
-# driver.py or app.py
-
+# driver.py
 import logging
 from logging.config import dictConfig
 from flask import Flask
@@ -39,7 +38,6 @@ logger = logging.getLogger(__name__)
 def create_app(testing=False):
     app = Flask(__name__)
     app.config.from_object(Config)
-
     if testing:
         app.config['TESTING'] = True
 
@@ -48,13 +46,17 @@ def create_app(testing=False):
     return app
 
 
-app = create_app()
-_ = [Users, MagnetURL]
-with app.app_context():
-    db.create_all()
-
+# Main execution path
 if __name__ == '__main__':
-    logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
-    for rule in app.url_map.iter_rules():
-        logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
-    app.run(host='0.0.0.0', port=5003, debug=True)
+    app = create_app()
+    with app.app_context():
+        if '--init-db' in sys.argv:
+            logger.info("Initializing database tables...")
+            db.create_all()
+            logger.info("✅ Tables created.")
+            sys.exit(0)
+
+        logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
+        for rule in app.url_map.iter_rules():
+            logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
+        app.run(host='0.0.0.0', port=5003, debug=True)
