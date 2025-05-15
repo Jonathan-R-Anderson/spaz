@@ -29,7 +29,7 @@ done
 # Launch Flask app in background
 # Launch Flask app once just to trigger db.create_all() with correct user
 echo "Creating DB tables with SQLAlchemy (as 'admin')..."
-PGPASSWORD=admin python3 driver.py --once
+PGPASSWORD=admin FLASK_ENV=production python3 -c "from driver import app, db; app.app_context().push(); db.create_all(); print('✅ Tables created from entrypoint')"
 
 # Now launch Flask app normally
 echo "Starting Flask app for testing..."

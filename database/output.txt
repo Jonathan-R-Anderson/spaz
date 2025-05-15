@@ -1,0 +1,894 @@
+
+===== ./api/routes.py =====
+from flask import Blueprint
+from api import views
+
+blueprint = Blueprint("main", __name__)
+
+===== ./api/__init__.py =====
+from models.user import Users
+from models.magnet import MagnetURL
+
+from flask import Blueprint
+
+from .views import (
+    generate_and_store_secret,
+    get_secret,
+    get_rtmp_url,
+    retrieve_magnet_urls,
+    store_magnet_url_route,
+    clear_magnet_urls_route,
+    store_streamer_info,
+    get_streamer_ip,
+    verify_secret_fun
+)
+
+__all__ = [
+    "generate_and_store_secret",
+    "get_secret",
+    "get_rtmp_url",
+    "retrieve_magnet_urls",
+    "store_magnet_url_route",
+    "clear_magnet_urls_route",
+    "store_streamer_info",
+    "get_streamer_ip",
+    "verify_secret_fun"
+]
+
+===== ./api/views.py =====
+from flask import request, jsonify
+from api.routes import blueprint
+from services import (
+    _clear_magnet_urls, _generate_secret, _hash_secret,
+    _store_secret, _store_magnet_url, 
+)
+import hmac
+
+
+from extensions import db
+from models.user import Users
+from models.magnet import MagnetURL
+from system.logging import setup_logger
+
+
+logger = setup_logger(__name__)
+
+
+@blueprint.route('/get_secret/<eth_address>', methods=['GET'])
+def get_secret(eth_address):
+    logger.info(f"[get_secret] Received request to fetch secret for: {eth_address}")
+    try:
+        user = Users.query.filter_by(eth_address=eth_address).first()
+        if user:
+            logger.info(f"[get_secret] Secret found for {eth_address}")
+            return jsonify({
+                "eth_address": eth_address,
+                "secret": user.rtmp_secret
+            }), 200
+        else:
+            logger.warning(f"[get_secret] No secret found for {eth_address}")
+            return jsonify({"error": "Secret not found"}), 404
+    except Exception as e:
+        logger.error(f"[get_secret] Failed to fetch secret for {eth_address}: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+
+
+@blueprint.route('/get_magnet_urls/<eth_address>', methods=['GET'])
+def retrieve_magnet_urls(eth_address):
+    urls = MagnetURL.query.filter_by(eth_address=eth_address).order_by(MagnetURL.snapshot_index).all()
+    logger.info(f"data from db {urls}")
+    if urls:
+        return jsonify({
+            "message": "success",
+            "eth_address": eth_address,
+            "magnet_urls": [
+                {"magnet_url": url.magnet_url, "snapshot_index": url.snapshot_index, "created_at": url.created_at}
+                for url in urls
+            ]
+        }), 200
+    else:
+        return jsonify({"message": "failure"}), 500 
+
+@blueprint.route('/generate_secret', methods=['POST'])
+def generate_and_store_secret():
+    import sys
+    sys.stderr.write("=== HIT /generate_secret route ===\n")
+    sys.stderr.flush()
+
+    try:
+        data = request.get_json(force=True)
+        print(f"== JSON received: {data}")
+        eth_address = data.get('eth_address')
+        ip_address = data.get('ip_address')
+
+        print(f"eth_address: {eth_address}, ip_address: {ip_address}")
+
+        secret = _generate_secret()
+        print(f"generated secret: {secret}")
+
+        _store_secret(eth_address, secret, ip_address)
+        print("stored secret successfully")
+
+        return jsonify({"eth_address": eth_address, "secret": secret}), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "Internal server error"}), 500
+
+
+
+@blueprint.route('/get_rtmp_url/<eth_address>', methods=['GET'])
+def get_rtmp_url(eth_address):
+    logger.info(f"[get_rtmp_url] Received request to build RTMP URL for: {eth_address}")
+    try:
+        user = Users.query.filter_by(eth_address=eth_address).first()
+        if user:
+            secret = user.rtmp_secret
+            rtmp_url = f"rtmp://psichos.is:1935/live/{eth_address}?secret={secret}"
+            logger.info(f"[get_rtmp_url] Returning RTMP URL: {rtmp_url}")
+            return jsonify({"rtmp_url": rtmp_url}), 200
+        else:
+            logger.warning(f"[get_rtmp_url] No user found for {eth_address}")
+            return jsonify({"error": "Secret not found"}), 404
+    except Exception as e:
+        logger.error(f"[get_rtmp_url] Exception while fetching RTMP URL: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+# API to store a magnet URL
+@blueprint.route('/store_magnet_url', methods=['POST'])
+def store_magnet_url_route():
+    data = request.json
+    eth_address = data.get('eth_address')
+    magnet_url = data.get('magnet_url')
+    snapshot_index = data.get('snapshot_index')
+
+    if not eth_address or not magnet_url or snapshot_index is None:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    return _store_magnet_url(eth_address, magnet_url, snapshot_index)
+
+
+
+
+# API to clear all magnet URLs for a specific eth_address
+@blueprint.route('/clear_magnet_urls/<eth_address>', methods=['DELETE'])
+def clear_magnet_urls_route(eth_address):
+    return _clear_magnet_urls(eth_address)
+
+
+# API to store streamer information (eth_address, secret, and IP address)
+@blueprint.route('/store_streamer_info', methods=['POST'])
+def store_streamer_info():
+    data = request.json
+    eth_address = data.get('eth_address')
+    secret = data.get('secret')
+    ip_address = data.get('ip_address')
+
+    logger.info(f"Storing streamer info: eth_address={eth_address}, secret={secret}, ip_address={ip_address}")
+
+
+    if not eth_address or not secret or not ip_address:
+        return jsonify({"error": "Missing required fields"}), 400
+
+
+    try:
+        # Store or update the streamer information in the PostgreSQL database
+        user = Users.query.filter_by(eth_address=eth_address).first()
+        if user:
+            # Update the existing record with the new secret and ip_address
+            user.rtmp_secret = secret
+            # Assuming you have an IP column in the database
+            user.ip_address = ip_address  # You would need to add this field in the model
+        else:
+            # Create a new user record if it doesn't exist
+            user = Users(eth_address, secret)
+            user.ip_address = ip_address  # Set the IP address
+
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({"message": "Streamer info stored successfully"}), 200
+    except Exception as e:
+        logger.error(f"Failed to store streamer info: {str(e)}")
+        db.session.rollback()
+        return jsonify({"error": "Failed to store streamer info"}), 500
+
+# API to get the streamer's IP address based on their Ethereum address
+@blueprint.route('/get_streamer_eth_address/<ip_address>', methods=['GET'])
+def get_streamer_ip(ip_address):
+    try:
+        # Query the database for the user based on the Ethereum address
+        user = Users.query.filter_by(ip_address=ip_address).first()
+
+        if user:
+            # Return the IP address if the user is found
+            return jsonify({"eth_address": user.eth_address, "ip_address": user.ip_address}), 200
+        else:
+            # Return an error if the user is not found
+            return jsonify({"error": f"No streamer found with Ethereum address: {ip_address}"}), 404
+    except Exception as e:
+        logger.error(f"Failed to retrieve IP address for {ip_address}: {str(e)}")
+        return jsonify({"error": "Failed to retrieve IP address"}), 500
+
+@blueprint.route('/verify_secret', methods=['POST'])
+def verify_secret_fun():
+    if request.is_json:
+        eth_address = request.json.get('eth_address')
+        secret = request.json.get('secret')
+    else:
+        stream_key = request.args.get('name') or request.form.get('name')
+        if not stream_key or '&' not in stream_key:
+            return '', 403
+        try:
+            eth_address, secret = stream_key.split('&secret=')
+        except Exception:
+            return '', 402
+
+    if not eth_address or not secret:
+        return '', 401
+
+    user = Users.query.filter_by(eth_address=eth_address).first()
+    if not user:
+        return '', 400
+
+    if hmac.compare_digest(secret, user.rtmp_secret):
+        return '', 204
+    return '', 403
+
+
+# Expose route logic functions for direct use in unit tests
+__all__ = [
+    "generate_and_store_secret",
+    "get_secret",
+    "get_rtmp_url",
+    "retrieve_magnet_urls",
+    "store_magnet_url_route",
+    "clear_magnet_urls_route",
+    "store_streamer_info",
+    "get_streamer_ip",
+    "verify_secret_fun"
+]
+
+===== ./models/user.py =====
+from extensions import db
+
+class Users(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    eth_address = db.Column(db.String(42), unique=True, nullable=False)
+    rtmp_secret = db.Column(db.String(64), nullable=False)
+    ip_address = db.Column(db.String(45), nullable=False)
+
+    def __init__(self, eth_address, rtmp_secret, ip_address):
+        self.eth_address = eth_address
+        self.rtmp_secret = rtmp_secret
+        self.ip_address = ip_address
+===== ./models/__init__.py =====
+# models/__init__.py
+
+# These two lines force SQLAlchemy to evaluate the model classes
+from . import user
+from . import magnet
+
+# These make them importable elsewhere
+from .user import Users
+from .magnet import MagnetURL
+
+__all__ = ['Users', 'MagnetURL']
+
+===== ./models/magnet.py =====
+from extensions import db
+
+class MagnetURL(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    eth_address = db.Column(db.String(42), nullable=False)
+    magnet_url = db.Column(db.Text, nullable=False)
+    snapshot_index = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+===== ./Dockerfile =====
+# Use slim Debian base
+FROM debian:bullseye-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Install system dependencies including PostgreSQL and Redis
+RUN apt-get update && apt-get install -y \
+    postgresql \
+    redis-server \
+    gcc \
+    python3 \
+    python3-pip \
+    libpq-dev \
+    netcat-traditional
+
+# Install Python dependencies
+COPY ./system/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code into the container
+COPY . .
+
+# Copy and apply the custom pg_hba.conf for PostgreSQL 13
+COPY ./system/pg_hba.conf /etc/postgresql/13/main/pg_hba.conf
+RUN chown postgres:postgres /etc/postgresql/13/main/pg_hba.conf
+
+# Expose Flask, PostgreSQL, and Redis ports
+EXPOSE 5003 5432 6379
+
+# Copy and prepare entrypoint script
+COPY ./system/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Start services and app
+CMD ["/entrypoint.sh"]
+
+===== ./__init__.py =====
+
+===== ./system/requirements.txt =====
+Flask
+redis
+psycopg2-binary
+Flask-SQLAlchemy
+flask-cors
+requests
+Flask-RESTful
+web3
+docker
+cryptography
+python-dotenv
+pytest
+===== ./system/logging.py =====
+import logging
+import os
+from config import Config
+
+def setup_logger(name=None):
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+
+        # Create log directory if it doesn't exist
+        os.makedirs(os.path.dirname(Config.LOG_FILE_PATH), exist_ok=True)
+
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+
+        file_handler = logging.FileHandler(Config.LOG_FILE_PATH)
+        file_handler.setFormatter(formatter)
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
+        logger.addHandler(stream_handler)
+
+    return logger
+
+===== ./system/entrypoint.sh =====
+#!/bin/bash
+
+set -e
+export PYTHONPATH=/app
+
+# Start PostgreSQL and Redis
+service postgresql start
+service redis-server start
+
+# Wait for PostgreSQL to be ready
+until pg_isready -h localhost; do
+  echo "Postgres is unavailable - sleeping"
+  sleep 1
+done
+
+# Create DB user and database
+su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='admin'\" | grep -q 1 || psql -c 'CREATE USER admin WITH PASSWORD '\''admin'\'';'"
+su - postgres -c "psql -c 'ALTER USER admin WITH SUPERUSER;'"
+su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='rtmp_db'\" | grep -q 1 || psql -c 'CREATE DATABASE rtmp_db;'"
+su - postgres -c "psql -c 'GRANT ALL PRIVILEGES ON DATABASE rtmp_db TO admin;'"
+
+# Restart PostgreSQL again and wait
+service postgresql restart
+until pg_isready -h localhost; do
+  echo "Waiting for Postgres to restart - sleeping"
+  sleep 1
+done
+
+# Launch Flask app in background
+# Launch Flask app once just to trigger db.create_all() with correct user
+echo "Creating DB tables with SQLAlchemy (as 'admin')..."
+PGPASSWORD=admin python3 driver.py --once
+
+# Now launch Flask app normally
+echo "Starting Flask app for testing..."
+python3 driver.py &
+
+
+FLASK_PID=$!
+
+# Wait for Flask to become available
+until nc -z localhost 5003; do
+  echo "Waiting for Flask app to start on port 5003..."
+  sleep 1
+done
+
+# Run unit tests
+echo "Running unit tests..."
+if ! pytest tests/; then
+  echo "❌ Tests failed. Shutting down Flask app..."
+  kill $FLASK_PID
+  wait $FLASK_PID
+  exit 1
+fi
+
+echo "✅ All tests passed. Bringing Flask app to foreground..."
+wait $FLASK_PID
+
+===== ./system/pg_hba.conf =====
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# Allow socket connections without password inside container
+local   all             all                                     trust
+
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            trust
+
+# IPv6 local connections:
+host    all             all             ::1/128                 trust
+
+===== ./services/__init__.py =====
+from .auth import (
+    _generate_secret, _hash_secret, _store_secret,
+)
+from .magnet import _store_magnet_url, _clear_magnet_urls
+
+__all__ = [
+    '_generate_secret', '_hash_secret', '_store_secret',
+    '_store_magnet_url', '_clear_magnet_urls'
+]
+===== ./services/magnet.py =====
+from models import MagnetURL
+from extensions import db
+from system.logging import setup_logger
+
+logger = setup_logger(__name__)
+
+def _clear_magnet_urls(eth_address):
+    logger.info(f"[clear_magnet_urls] Attempting to clear magnet URLs for eth_address={eth_address}")
+    try:
+        deleted_count = MagnetURL.query.filter_by(eth_address=eth_address).delete()
+        db.session.commit()
+        logger.info(f"[clear_magnet_urls] Successfully cleared {deleted_count} magnet URLs for {eth_address}")
+        return {"message": f"All magnet URLs for {eth_address} have been cleared."}, 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[clear_magnet_urls] Failed to clear magnet URLs for {eth_address}: {e}")
+        return {"error": f"Failed to clear magnet URLs: {str(e)}"}, 500
+
+
+def _store_magnet_url(eth_address, magnet_url, snapshot_index):
+    logger.info(f"[store_magnet_url] Storing magnet URL for eth_address={eth_address}, snapshot_index={snapshot_index}")
+    try:
+        new_magnet_url = MagnetURL(
+            eth_address=eth_address,
+            magnet_url=magnet_url,
+            snapshot_index=snapshot_index
+        )
+        db.session.add(new_magnet_url)
+        db.session.commit()
+        logger.info(f"[store_magnet_url] Magnet URL stored for {eth_address}: {magnet_url}")
+        return {"message": "Magnet URL stored successfully"}, 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[store_magnet_url] Failed to store magnet URL for {eth_address}: {e}")
+        return {"error": f"Failed to store magnet URL: {str(e)}"}, 500
+
+===== ./services/auth.py =====
+import random
+import hmac
+import hashlib
+import requests
+import string
+from models import Users
+from extensions import db
+from config import Config
+
+from system.logging import setup_logger
+logger = setup_logger(__name__)
+
+HMAC_SECRET_KEY = Config.HMAC_SECRET_KEY
+
+
+def _generate_secret():
+    secret = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    logger.debug(f"[generate_secret] Generated secret: {secret}")
+    return secret
+
+
+def _hash_secret(secret):
+    try:
+        hashed = hmac.new(HMAC_SECRET_KEY.encode(), secret.encode(), hashlib.sha256).hexdigest()
+        logger.debug(f"[hash_secret] Hashed secret for input '{secret}': {hashed}")
+        return hashed
+    except Exception as e:
+        logger.error(f"[hash_secret] Error hashing secret: {e}")
+        raise
+
+def _store_secret(eth_address, secret, ip_address):
+    logger.info(f"[store_secret] Storing secret for eth_address={eth_address}, ip_address={ip_address}")
+    try:
+        user = Users.query.filter_by(eth_address=eth_address).first()
+        if user:
+            user.rtmp_secret = secret
+            user.ip_address = ip_address
+        else:
+            user = Users(eth_address, secret, ip_address)
+            db.session.add(user)
+        db.session.commit()
+        logger.info(f"[store_secret] Successfully stored secret for {eth_address}")
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"[store_secret] Failed to store secret for {eth_address}: {e}")
+        raise
+
+===== ./extensions.py =====
+# extensions.py
+from flask_sqlalchemy import SQLAlchemy
+import redis
+
+db = SQLAlchemy()
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+
+===== ./driver.py =====
+# driver.py or app.py
+
+import logging
+from logging.config import dictConfig
+from flask import Flask
+from config import Config
+from extensions import db, redis_client
+from api.routes import blueprint
+import models
+import sys
+
+# Logging setup
+dictConfig({
+    'version': 1,
+    'formatters': {
+        'default': {'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'},
+    },
+    'handlers': {
+        'wsgi': {
+            'class': 'logging.FileHandler',
+            'filename': Config.LOG_FILE_PATH,
+            'formatter': 'default',
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        },
+    },
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['wsgi', 'console'],
+    }
+})
+
+logger = logging.getLogger(__name__)
+
+
+def create_app(testing=False):
+    app = Flask(__name__)
+    app.config.from_object(Config)
+
+    if testing:
+        app.config['TESTING'] = True
+
+    db.init_app(app)
+    app.register_blueprint(blueprint)
+    return app
+
+
+app = create_app()
+
+# Ensure models are imported before calling create_all()
+with app.app_context():
+    try:
+        logger.info(f"[driver] Connecting to DB at: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        db.create_all()
+        logger.info("[driver] Database tables created successfully")
+    except Exception as e:
+        logger.error(f"[driver] Failed to create tables: {e}")
+
+
+if __name__ == '__main__':
+    if '--once' in sys.argv:
+        logger.info("[driver] Initializing DB only once")
+        with app.app_context():
+            db.create_all()
+        sys.exit(0)
+    
+    logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
+    for rule in app.url_map.iter_rules():
+        logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
+    app.run(host='0.0.0.0', port=5003, debug=True)
+
+===== ./utils/files.py =====
+import os
+import json
+from system.logging import setup_logger
+
+logger = setup_logger(__name__)
+
+
+def _load_json_file(path):
+    logger.info(f"[load_json_file] Attempting to load JSON from: {path}")
+    
+    if not os.path.exists(path):
+        logger.warning(f"[load_json_file] File does not exist: {path}")
+        return []
+
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+            logger.debug(f"[load_json_file] Successfully loaded data from {path}")
+            return data
+    except json.JSONDecodeError as e:
+        logger.error(f"[load_json_file] JSON decode error in {path}: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"[load_json_file] Unexpected error loading {path}: {e}")
+        return []
+
+
+def _save_json_file(path, data):
+    logger.info(f"[save_json_file] Saving JSON data to: {path}")
+    try:
+        with open(path, 'w') as f:
+            json.dump(data, f, indent=4)
+            logger.debug(f"[save_json_file] Data successfully written to {path}")
+    except Exception as e:
+        logger.error(f"[save_json_file] Failed to write data to {path}: {e}")
+        raise
+
+
+def _allowed_file(filename):
+    logger.debug(f"[allowed_file] Checking if filename is allowed: {filename}")
+    # Placeholder always returning True; logging added for future rule implementation
+    return True
+
+===== ./utils/__init__.py =====
+from .crypto import generate_ecc_key_pair, serialize_public_key, encrypt_secret
+from .files import load_json_file, save_json_file
+from .helpers import gen_poster_id, ip_to_int
+
+===== ./utils/helpers.py =====
+import random
+import ipaddress
+from system.logging import setup_logger
+
+logger = setup_logger(__name__)
+
+
+def _gen_poster_id():
+    try:
+        poster_id = '%04X' % random.randint(0, 0xFFFF)
+        logger.info(f"[gen_poster_id] Generated poster ID: {poster_id}")
+        return poster_id
+    except Exception as e:
+        logger.error(f"[gen_poster_id] Failed to generate poster ID: {e}")
+        raise
+
+
+def _ip_to_int(ip_str):
+    logger.info(f"[ip_to_int] Converting IP address to int: {ip_str}")
+    try:
+        ip_obj = ipaddress.ip_address(ip_str)
+        ip_bytes = ip_obj.packed
+        ip_int = int.from_bytes(ip_bytes, byteorder="little") << 8
+        logger.debug(f"[ip_to_int] IP bytes: {list(ip_bytes)}, Integer (shifted): {ip_int}")
+        return ip_int
+    except ValueError as e:
+        logger.error(f"[ip_to_int] Invalid IP address format: {ip_str} | Error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"[ip_to_int] Unexpected error converting IP address: {e}")
+        raise
+
+===== ./utils/crypto.py =====
+import base64
+import logging
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
+from system.logging import setup_logger
+
+logger = setup_logger(__name__)
+
+
+def _generate_ecc_key_pair():
+    logger.info("[generate_ecc_key_pair] Generating new ECC key pair using SECP256R1")
+    try:
+        private_key = ec.generate_private_key(ec.SECP256R1())
+        public_key = private_key.public_key()
+        logger.debug(f"[generate_ecc_key_pair] Private key type: {type(private_key)}")
+        logger.debug(f"[generate_ecc_key_pair] Public key type: {type(public_key)}")
+        return private_key, public_key
+    except Exception as e:
+        logger.error(f"[generate_ecc_key_pair] Failed to generate ECC key pair: {e}")
+        raise
+
+
+def _serialize_public_key(public_key):
+    logger.info("[serialize_public_key] Serializing public key to PEM format")
+    try:
+        pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ).decode('utf-8')
+        logger.debug(f"[serialize_public_key] PEM output (first 100 chars): {pem[:100]}...")
+        return pem
+    except Exception as e:
+        logger.error(f"[serialize_public_key] Failed to serialize public key: {e}")
+        raise
+
+
+def _encrypt_secret(secret, public_key):
+    logger.info("[encrypt_secret] Encoding secret using base64 (placeholder encryption)")
+    try:
+        encoded = base64.b64encode(secret.encode()).decode('utf-8')
+        logger.debug(f"[encrypt_secret] Original secret: {secret}, Encoded: {encoded}")
+        return encoded
+    except Exception as e:
+        logger.error(f"[encrypt_secret] Failed to encode secret: {e}")
+        raise
+
+===== ./tests/test_api.py =====
+import pytest
+from driver import create_app
+from extensions import db as _db
+from models.user import Users
+from models.magnet import MagnetURL
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+@pytest.fixture(scope="session")
+def app():
+    app = create_app(testing=True)
+    app.config.update({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "postgresql://admin:admin@localhost:5432/rtmp_db",
+    })
+    return app
+
+@pytest.fixture(scope="session")
+def db(app):
+    with app.app_context():
+        _db.create_all()
+        yield _db
+        _db.drop_all()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def session(db, app):
+    """Start a new nested transaction for each test and roll it back."""
+    connection = db.engine.connect()
+    txn = connection.begin()
+
+    options = dict(bind=connection, binds={})
+    session = scoped_session(sessionmaker(**options))
+
+    db.session = session  # Overwrite the global db.session
+
+    yield session
+
+    txn.rollback()
+    connection.close()
+    session.remove()
+
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
+
+
+def test_generate_secret(client):
+    res = client.post("/generate_secret", json={"eth_address": "0xTEST", "ip_address": "127.0.0.1"})
+    assert res.status_code == 200
+    assert "secret" in res.get_json()
+
+
+def test_get_secret(client):
+    eth = "0xSECRET"
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+    res = client.get(f"/get_secret/{eth}")
+    assert res.status_code == 200
+    assert res.get_json()["eth_address"] == eth
+
+
+def test_get_rtmp_url(client):
+    eth = "0xRTMP"
+    res = client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+    secret = res.get_json()["secret"]
+
+    rtmp_res = client.get(f"/get_rtmp_url/{eth}")
+    assert rtmp_res.status_code == 200
+    assert secret in rtmp_res.get_json()["rtmp_url"]
+
+
+def test_store_and_get_magnet_url(client):
+    eth = "0xMAG"
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+
+    client.post("/store_magnet_url", json={
+        "eth_address": eth,
+        "magnet_url": "magnet:?xt=urn:btih:123",
+        "snapshot_index": 0
+    })
+
+    res = client.get(f"/get_magnet_urls/{eth}")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert len(data["magnet_urls"]) == 1
+    assert data["magnet_urls"][0]["magnet_url"] == "magnet:?xt=urn:btih:123"
+
+
+def test_clear_magnet_urls(client):
+    eth = "0xCLEAR"
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+    client.post("/store_magnet_url", json={
+        "eth_address": eth,
+        "magnet_url": "magnet:?xt=urn:btih:clear",
+        "snapshot_index": 1
+    })
+
+    res = client.delete(f"/clear_magnet_urls/{eth}")
+    assert res.status_code == 200
+
+    get_res = client.get(f"/get_magnet_urls/{eth}")
+    assert get_res.status_code == 500 or get_res.get_json()["magnet_urls"] == []
+
+
+def test_verify_secret_success(client):
+    eth = "0xVERIFY"
+    ip = "127.0.0.1"
+    secret = client.post("/generate_secret", json={"eth_address": eth, "ip_address": ip}).get_json()["secret"]
+
+    verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": secret})
+    print(f"result: {verify_res.status_code}")
+
+    assert verify_res.status_code == 204
+
+
+def test_verify_secret_failure(client):
+    eth = "0xFAIL"
+    client.post("/generate_secret", json={"eth_address": eth, "ip_address": "127.0.0.1"})
+
+    verify_res = client.post("/verify_secret", json={"eth_address": eth, "secret": "wrongsecret"})
+    assert verify_res.status_code == 403
+
+===== ./tests/__init__.py =====
+
+===== ./config.py =====
+# config.py
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev")
+    LOG_FILE_PATH = os.getenv("DATABASE_LOG_PATH", "logs/database.log")
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'postgresql://admin:admin@localhost/rtmp_db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
+    WEBTORRENT_URI = os.getenv('WEBTORRENT_URI', 'https://webtorrent')
+    WEBTORRENT_PORT = int(os.getenv('WEBTORRENT_PORT', 5002))
+    REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+    REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+    REDIS_DB = int(os.getenv('REDIS_DB', 0))
