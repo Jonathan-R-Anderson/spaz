@@ -6,7 +6,8 @@ from flask import Flask
 from config import Config
 from extensions import db, redis_client
 from api.routes import blueprint
-from models import Users, MagnetURL
+from models.user import Users
+from models.magnet import MagnetURL
 import sys
 
 # Logging setup
@@ -49,23 +50,9 @@ def create_app(testing=False):
 
 app = create_app()
 _ = [Users, MagnetURL]
-# Ensure models are imported before calling create_all()
-with app.app_context():
-    try:
-        logger.info(f"[driver] Connecting to DB at: {app.config['SQLALCHEMY_DATABASE_URI']}")
-        db.create_all()
-        logger.info("[driver] Database tables created successfully")
-    except Exception as e:
-        logger.error(f"[driver] Failed to create tables: {e}")
-
+db.create_all()
 
 if __name__ == '__main__':
-    if '--once' in sys.argv:
-        logger.info("[driver] Initializing DB only once")
-        with app.app_context():
-            db.create_all()
-        sys.exit(0)
-    
     logger.info("[driver] Starting Flask app on http://0.0.0.0:5003")
     for rule in app.url_map.iter_rules():
         logger.info(f"{rule.endpoint}: {rule.rule} [{','.join(rule.methods)}]")
