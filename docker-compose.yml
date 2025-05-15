@@ -99,6 +99,7 @@ services:
       - /opt/ssl/psychos.is:/certs:ro
     depends_on:
       - database
+      - webtorrent
     networks:
       - spaz_net
     logging:
