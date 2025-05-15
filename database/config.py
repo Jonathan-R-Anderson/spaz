@@ -7,7 +7,7 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     LOG_FILE_PATH = os.getenv("DATABASE_LOG_PATH", "logs/database.log")
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'postgresql://admin:admin@database/rtmp_db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', 'postgresql://admin:admin@localhost/rtmp_db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
     WEBTORRENT_URI = os.getenv('WEBTORRENT_URI', 'https://webtorrent')
