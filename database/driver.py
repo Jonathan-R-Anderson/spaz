@@ -48,7 +48,7 @@ def create_app(testing=False):
 
 
 app = create_app()
-
+_ = [Users, MagnetURL]
 # Ensure models are imported before calling create_all()
 with app.app_context():
     try:
