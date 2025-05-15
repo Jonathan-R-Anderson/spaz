@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 @pytest.fixture
 def client():
-    from ..shared import app
+    from shared import app
     with app.test_client() as client:
         yield client
 
