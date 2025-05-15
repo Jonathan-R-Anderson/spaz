@@ -20,5 +20,6 @@ COPY . .
 COPY ./system/postgresql.conf /app/postgresql.conf
 
 # Add init script to run after PostgreSQL initializes
-COPY ./system/entrypoint.sh /docker-entrypoint-initdb.d/init-entrypoint.sh
-RUN chmod +x /docker-entrypoint-initdb.d/init-entrypoint.sh
+COPY ./system/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
