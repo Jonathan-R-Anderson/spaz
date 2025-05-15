@@ -1,4 +1,4 @@
-# Use the official Python image
+# Use slim Debian base
 FROM debian:bullseye-slim
 
 # Set the working directory inside the container
@@ -21,18 +21,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code into the container
 COPY . .
 
-# Copy the custom pg_hba.conf file
-COPY ./system/pg_hba.conf /etc/postgresql/15/main/pg_hba.conf
+# Copy and apply the custom pg_hba.conf for PostgreSQL 13
+COPY ./system/pg_hba.conf /etc/postgresql/13/main/pg_hba.conf
+RUN chown postgres:postgres /etc/postgresql/13/main/pg_hba.conf
 
-# Set the appropriate permissions on the PostgreSQL configuration
-RUN chown postgres:postgres /etc/postgresql/15/main/pg_hba.conf
-
-# Expose necessary ports
+# Expose Flask, PostgreSQL, and Redis ports
 EXPOSE 5003 5432 6379
 
-# Create entrypoint script to start services
+# Copy and prepare entrypoint script
 COPY ./system/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Start the entrypoint script
+# Start services and app
 CMD ["/entrypoint.sh"]
