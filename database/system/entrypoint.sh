@@ -3,7 +3,16 @@ set -ex
 
 echo "💥 [entrypoint] Script is running"
 
-chown -R postgres:postgres /var/lib/postgresql/data/postgresql.conf
+POSTGRES_CONF="/var/lib/postgresql/data/postgresql.conf"
+
+# Wait for PostgreSQL to generate the config file
+until [ -f "$POSTGRES_CONF" ]; do
+  echo "[entrypoint] Waiting for $POSTGRES_CONF to exist..."
+  sleep 1
+done
+
+chown postgres:postgres "$POSTGRES_CONF"
+
 
 cp /app/postgresql.conf /var/lib/postgresql/data/postgresql.conf
 
