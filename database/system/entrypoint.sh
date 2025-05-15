@@ -48,11 +48,11 @@ CREATE TABLE IF NOT EXISTS magnet_url (
 
 # Create tables using SQLAlchemy (inside Python app)
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
-PGPASSWORD=admin python3 driver.py --init-db
+PGPASSWORD=admin python3 /app/driver.py --init-db
 
 # Start Flask app in background
 echo "[entrypoint] Starting Flask app in background..."
-python3 driver.py &
+python3 /app/driver.py &
 FLASK_PID=$!
 
 # Wait for Flask app to be reachable
