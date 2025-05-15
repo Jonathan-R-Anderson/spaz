@@ -134,7 +134,7 @@ volumes:
   hls_data:
     driver: local
   pgdata:
-
+    driver: local
 
 networks:
   spaz_net:

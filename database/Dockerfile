@@ -20,17 +20,19 @@ ENV VIRTUAL_ENV=/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN python3 -m venv $VIRTUAL_ENV
 
-# Copy requirements and install inside the venv
+# Install Python requirements
 COPY ./system/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY . .
 
+# Ensure PostgreSQL data directory exists and has the right owner
 RUN mkdir -p /var/lib/postgresql/data && chown -R postgres:postgres /var/lib/postgresql
 
-# Entry point logic
+# Copy entrypoint
 COPY ./system/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Use custom entrypoint
 CMD ["/entrypoint.sh"]
