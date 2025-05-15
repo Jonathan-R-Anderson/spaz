@@ -12,7 +12,7 @@ from api.routes import blueprint
 
 @pytest.fixture
 def client():
-    with patch("api.routes.retrieve_magnet_urls") as mock_retrieve:
+    with patch("services.magnet.retrieve_magnet_urls") as mock_retrieve:
         mock_retrieve.return_value = {"message": "error"}  # default fallback
 
         app = Flask(__name__)
@@ -23,8 +23,7 @@ def client():
             yield client
 
 
-
-@patch("api.routes.retrieve_magnet_urls")
+@patch("services.magnet.retrieve_magnet_urls")
 def test_magnet_url_success(mock_retrieve, client):
     mock_retrieve.return_value = {
         "message": "success",
@@ -34,8 +33,9 @@ def test_magnet_url_success(mock_retrieve, client):
     assert response.status_code == 200
     assert "magnet_urls" in response.json
 
-@patch("api.routes.requests.post")
-@patch("api.routes.retrieve_magnet_urls", return_value={"message": "error"})
+
+@patch("requests.post")
+@patch("services.magnet.retrieve_magnet_urls", return_value={"message": "error"})
 def test_magnet_url_monitoring(mock_retrieve, mock_post, client):
     mock_post.return_value.status_code = 200
     mock_post.return_value.text = "ok"
@@ -43,7 +43,6 @@ def test_magnet_url_monitoring(mock_retrieve, mock_post, client):
     response = client.get("/magnet_urls/0xtest")
     assert response.status_code == 404
     assert "error" in response.json
-
 
 
 def test_seed_file_invalid_eth(client):
@@ -57,8 +56,8 @@ def test_seed_file_missing_file(client):
     assert response.status_code == 400
 
 
-@patch("utils.shared.requests.post")
-@patch("utils.shared.requests.get")
+@patch("requests.post")
+@patch("requests.get")
 def test_verify_secret_success(mock_get, mock_post, client):
     mock_post.return_value.status_code = 200
     mock_get.return_value.status_code = 200
@@ -68,15 +67,15 @@ def test_verify_secret_success(mock_get, mock_post, client):
     assert response.status_code == 204
 
 
-@patch("utils.shared.requests.post")
+@patch("requests.post")
 def test_verify_secret_fail_store(mock_post, client):
     mock_post.return_value.status_code = 500
     response = client.post('/verify_secret', json={"eth_address": "0xtest", "secret": "abc123"})
     assert response.status_code == 403
 
 
-@patch("utils.shared.requests.post")
-@patch("utils.shared.requests.get")
+@patch("requests.post")
+@patch("requests.get")
 def test_verify_secret_fail_lookup(mock_get, mock_post, client):
     mock_post.return_value.status_code = 200
     mock_get.return_value.status_code = 403

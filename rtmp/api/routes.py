@@ -1,10 +1,14 @@
-from flask import Blueprint
-from utils.shared import (
-    logging, retrieve_magnet_urls, requests, jsonify,
-    WEBTORRENT_CONTAINER_URL, request, STATIC_FOLDER,
-    os, seeded_files, DATABASE_URL, hmac, Process,
-    seed_all_static_files_for_user
-)
+import logging
+from flask import request, jsonify, Blueprint
+from multiprocessing import Process
+from services.magnet import retrieve_magnet_urls, seed_all_static_files_for_user
+from services.state import seeded_files
+from config import Config
+from utils.files import sanitize_eth_address
+import requests
+import os
+import hmac
+from services.auth import get_secret, store_streamer_info
 
 blueprint = Blueprint("rtmp", __name__)
 
@@ -28,7 +32,7 @@ def magnet_url(eth_address):
             # Start static monitor
             logging.info(f"Calling /start_static_monitor for {eth_address}")
             static_resp = requests.post(
-                f"{WEBTORRENT_CONTAINER_URL}/start_static_monitor",
+                f"{Config.WEBTORRENT_CONTAINER_URL}/start_static_monitor",
                 json={"eth_address": eth_address},
                 timeout=5
             )
@@ -41,7 +45,7 @@ def magnet_url(eth_address):
             # Start HLS monitor
             logging.info(f"Calling /start_hls_monitor for {eth_address}")
             hls_resp = requests.post(
-                f"{WEBTORRENT_CONTAINER_URL}/start_hls_monitor",
+                f"{Config.WEBTORRENT_CONTAINER_URL}/start_hls_monitor",
                 json={"eth_address": eth_address},
                 timeout=5
             )
@@ -80,7 +84,7 @@ def seed_file():
         return jsonify({"error": "No file selected"}), 400
 
     file_name = file.filename
-    file_path = os.path.join(STATIC_FOLDER, file_name)
+    file_path = os.path.join(Config.STATIC_FOLDER, file_name)
 
     if not os.path.exists(file_path):
         file.save(file_path)
@@ -101,7 +105,7 @@ def seed_file():
                 'eth_address': eth_address,
                 'snapshot_index': snapshot_index
             }
-            response = requests.post(f"{WEBTORRENT_CONTAINER_URL}/seed", files=files, data=data)
+            response = requests.post(f"{Config.WEBTORRENT_CONTAINER_URL}/seed", files=files, data=data)
 
         if response.status_code == 200:
             magnet_url = response.json().get('magnet_url')
@@ -146,40 +150,42 @@ def verify_secret():
         logging.warning(f"[verify_secret] Missing eth_address or secret. eth_address={eth_address}, secret={secret}")
         return '', 403
 
-    # Store the streamer info before verifying
+    # Step 1: Store the streamer info
     try:
         logging.debug(f"[verify_secret] Attempting to store streamer info for {eth_address}")
-        store_response = requests.post(
-            f"{DATABASE_URL}/store_streamer_info",
-            json={"eth_address": eth_address, "secret": secret, "ip_address": ip_address},
-            timeout=5
-        )
-        if store_response.status_code != 200:
-            logging.warning(f"[verify_secret] Failed to store streamer info: {store_response.text}")
+        store_response = store_streamer_info(eth_address, secret, ip_address)
+        if store_response is None or store_response.status_code != 200:
+            logging.warning(f"[verify_secret] Failed to store streamer info.")
             return '', 403
     except Exception as e:
         logging.error(f"[verify_secret] Exception during streamer info store: {e}")
         return '', 500
 
-    # Now verify secret
+    # Step 2: Retrieve the stored secret
     try:
         logging.debug(f"[verify_secret] Looking up stored secret for {eth_address}")
-        secret_response = requests.get(f"{DATABASE_URL}/get_secret/{eth_address}", timeout=5)
-        if secret_response.status_code != 200:
+        stored_secret = get_secret(eth_address)
+        if stored_secret is None:
             logging.warning(f"[verify_secret] No stored secret found for {eth_address}")
             return '', 403
-
-        stored_secret = secret_response.json().get('secret')
     except Exception as e:
         logging.error(f"[verify_secret] Exception retrieving stored secret: {e}")
         return '', 500
 
+    # Step 3: Compare secrets
     if hmac.compare_digest(secret, stored_secret):
         logging.info(f"[verify_secret] ✅ Secret verified for {eth_address}")
         p = Process(target=seed_all_static_files_for_user, args=(eth_address,))
         p.start()
-        
         return '', 204
     else:
         logging.warning(f"[verify_secret] ❌ Secret mismatch for {eth_address}")
         return '', 403
+
+
+@blueprint.route('/on_publish_done', methods=['POST', 'GET'])
+def on_publish_done():
+    eth_address = request.args.get("eth_address")
+    secret = request.args.get("secret")
+    logging.info(f"[on_publish_done] Stream ended for {eth_address} with secret {secret}")
+    return '', 204
