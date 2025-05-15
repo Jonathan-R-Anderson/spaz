@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-
 export PYTHONPATH=/app
 
 # Start PostgreSQL
@@ -16,40 +15,34 @@ until pg_isready -h localhost; do
   sleep 1
 done
 
-# Create DB user/database/table
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='admin'\" | grep -q 1 || psql -c \"CREATE USER admin WITH PASSWORD 'admin';\""
-su - postgres -c "psql -c \"ALTER USER admin WITH SUPERUSER;\""
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='rtmp_db'\" | grep -q 1 || psql -c \"CREATE DATABASE rtmp_db;\""
-su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE rtmp_db TO admin;\""
-su - postgres -c "psql -d rtmp_db -c \"
-CREATE TABLE IF NOT EXISTS magnet_urls (
-    id SERIAL PRIMARY KEY,
-    eth_address VARCHAR(255) NOT NULL,
-    magnet_url TEXT NOT NULL,
-    snapshot_index INT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);\""
+# Create DB user and database if they don't exist
+su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='admin'\" | grep -q 1 || psql -c \\\"CREATE USER admin WITH PASSWORD 'admin';\\\""
+su - postgres -c "psql -c \\\"ALTER USER admin WITH SUPERUSER;\\\""
+su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='rtmp_db'\" | grep -q 1 || psql -c \\\"CREATE DATABASE rtmp_db;\\\""
+su - postgres -c "psql -c \\\"GRANT ALL PRIVILEGES ON DATABASE rtmp_db TO admin;\\\""
 
-# Restart PostgreSQL and wait again
+# Restart PostgreSQL to ensure proper auth is picked up
 service postgresql restart
+
+# Wait again for DB to be ready
 until pg_isready -h localhost; do
   >&2 echo "Waiting for Postgres to restart - sleeping"
   sleep 1
 done
 
-# Start Flask app in the background
-echo "Starting Flask app for testing..."
+# Start Flask app in the background (this will create tables via driver.py)
+echo "Starting Flask app..."
 python3 driver.py &
 
 FLASK_PID=$!
 
-# Wait for Flask to become available (basic TCP check on port 5000)
+# Wait for Flask app to become reachable
 until nc -z localhost 5003; do
   >&2 echo "Waiting for Flask app to start..."
   sleep 1
 done
 
-# Run tests
+# Run unit tests
 echo "Running unit tests..."
 if ! pytest tests/; then
   echo "❌ Tests failed. Shutting down Flask app and container..."
