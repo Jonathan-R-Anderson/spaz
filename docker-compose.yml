@@ -57,7 +57,6 @@ services:
       - .env
 
   database:
-    command: ["/app/entrypoint.sh"]
     build:
       context: ./database
       args:
