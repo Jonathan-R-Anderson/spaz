@@ -3,60 +3,25 @@
 set -ex
 export PYTHONPATH=/app
 
-# Start PostgreSQL and Redis services
-service postgresql start
+# Start Redis server (if you're running it locally inside the same container)
 service redis-server start
 
-# Wait for PostgreSQL to be ready
-until pg_isready -h localhost; do
-  echo "[entrypoint] Waiting for PostgreSQL..."
+# Wait for PostgreSQL (external container) to be ready
+until pg_isready -h database -U admin; do
+  echo "[entrypoint] Waiting for PostgreSQL at database:5432..."
   sleep 1
 done
 
-# Create DB user and database if they don't exist
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='admin'\" | grep -q 1 || psql -c 'CREATE USER admin WITH PASSWORD '\''admin'\'';'"
-su - postgres -c "psql -c 'ALTER USER admin WITH SUPERUSER;'"
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='rtmp_db'\" | grep -q 1 || psql -c 'CREATE DATABASE rtmp_db;'"
-su - postgres -c "psql -c 'GRANT ALL PRIVILEGES ON DATABASE rtmp_db TO admin;'"
-
-# Restart PostgreSQL to apply changes
-service postgresql restart
-until pg_isready -h localhost; do
-  echo "[entrypoint] Waiting for PostgreSQL restart..."
-  sleep 1
-done
-
-
-PGPASSWORD=admin psql -U admin -d rtmp_db -h localhost -c "
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    eth_address VARCHAR(42) UNIQUE NOT NULL,
-    rtmp_secret VARCHAR(64) NOT NULL,
-    ip_address VARCHAR(45) NOT NULL
-);"
-
-PGPASSWORD=admin psql -U admin -d rtmp_db -h localhost -c "
-CREATE TABLE IF NOT EXISTS magnet_url (
-    id SERIAL PRIMARY KEY,
-    eth_address VARCHAR(42) NOT NULL,
-    magnet_url TEXT NOT NULL,
-    snapshot_index INT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);"
-
-echo "[entrypoint] Verifying tables exist..."
-PGPASSWORD=admin psql -U admin -d rtmp_db -h localhost -c '\dt'
-
-# Create tables using SQLAlchemy (inside Python app)
+# Initialize tables via SQLAlchemy
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
-PGPASSWORD=admin python3 /app/driver.py --init-db
+python3 /app/driver.py --init-db
 
 # Start Flask app in background
 echo "[entrypoint] Starting Flask app in background..."
 python3 /app/driver.py &
 FLASK_PID=$!
 
-# Wait for Flask app to be reachable
+# Wait for Flask to be reachable
 until nc -z localhost 5003; do
   echo "[entrypoint] Waiting for Flask to listen on port 5003..."
   sleep 1
