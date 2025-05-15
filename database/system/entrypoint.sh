@@ -3,25 +3,28 @@
 set -ex
 export PYTHONPATH=/app
 
-# Start Redis server (if you're running it locally inside the same container)
+# Start Redis in background
 service redis-server start
 
-# Wait for PostgreSQL (external container) to be ready
-until pg_isready -h localhost -U admin; do
-  echo "[entrypoint] Waiting for PostgreSQL at database:5432..."
+# Launch Postgres in the background
+/docker-entrypoint.sh postgres &
+
+# Wait for it to be ready
+until pg_isready -h localhost -U "$POSTGRES_USER"; do
+  echo "[entrypoint] Waiting for PostgreSQL at localhost:5432..."
   sleep 1
 done
 
-# Initialize tables via SQLAlchemy
+# Run SQLAlchemy DB init
 echo "[entrypoint] Creating DB tables via SQLAlchemy..."
 python3 /app/driver.py --init-db
 
-# Start Flask app in background
+# Start Flask in background
 echo "[entrypoint] Starting Flask app in background..."
 python3 /app/driver.py &
 FLASK_PID=$!
 
-# Wait for Flask to be reachable
+# Wait for Flask to become ready
 until nc -z localhost 5003; do
   echo "[entrypoint] Waiting for Flask to listen on port 5003..."
   sleep 1
