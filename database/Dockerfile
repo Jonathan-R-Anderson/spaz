@@ -27,6 +27,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app code
 COPY . .
 
+RUN mkdir -p /var/lib/postgresql/data && chown -R postgres:postgres /var/lib/postgresql
+
 # Entry point logic
 COPY ./system/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

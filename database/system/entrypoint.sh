@@ -5,8 +5,11 @@ export PYTHONPATH=/app
 # Start Redis (optional)
 service redis-server start
 
+chown -R postgres:postgres /var/lib/postgresql/data
+
 # Start PostgreSQL in the background using official entrypoint
-/docker-entrypoint.sh postgres &
+su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data"
+
 
 # Wait for PostgreSQL to come up
 until pg_isready -h localhost -U "${POSTGRES_USER:-postgres}"; do
