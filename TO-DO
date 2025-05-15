@@ -3,3 +3,4 @@ make sure all containers reference appropriate env variables
 integrate blockchain api into front-end
 each container should have a config file unless they don't import env variables
 heavily comment code
+viewers distributing content need to be turned into tor hidden services, so viewers ip's aren't exposed
