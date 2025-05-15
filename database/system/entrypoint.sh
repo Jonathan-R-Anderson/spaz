@@ -3,7 +3,7 @@ set -ex
 
 echo "💥 [entrypoint] Script is running"
 
-POSTGRES_CONF="/var/lib/postgresql/data/postgresql.conf"
+POSTGRES_CONF="/app/postgresql.conf"
 
 # Wait for PostgreSQL to generate the config file
 until [ -f "$POSTGRES_CONF" ]; do
@@ -12,13 +12,6 @@ until [ -f "$POSTGRES_CONF" ]; do
 done
 
 chown postgres:postgres "$POSTGRES_CONF"
-
-
-cp /app/postgresql.conf /var/lib/postgresql/data/postgresql.conf
-
-if [ ! -f /var/lib/postgresql/data/postgresql.conf ]; then
-  chown postgres:postgres /var/lib/postgresql/data/postgresql.conf
-fi
 
 # Start Redis
 service redis-server start
