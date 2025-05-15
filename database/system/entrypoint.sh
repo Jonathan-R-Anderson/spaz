@@ -11,7 +11,6 @@ until [ -f "$POSTGRES_CONF" ]; do
   sleep 1
 done
 
-chown postgres:postgres "$POSTGRES_CONF"
 
 # Start Redis
 service redis-server start
