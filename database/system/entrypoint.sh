@@ -10,6 +10,7 @@ chown -R postgres:postgres /var/lib/postgresql/data
 
 
 if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
+  rm -rf /var/lib/postgresql/data/*
   su - postgres -c "/usr/lib/postgresql/13/bin/initdb -D /var/lib/postgresql/data"
 fi
 
