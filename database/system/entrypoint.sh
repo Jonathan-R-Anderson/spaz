@@ -5,6 +5,9 @@ echo "💥 [entrypoint] Starting services"
 # Start redis
 service redis-server start
 
+chmod 0700 /var/lib/postgresql/data
+chown -R postgres:postgres /var/lib/postgresql/data
+
 # Start Postgres in background
 su - postgres -c "/usr/lib/postgresql/13/bin/postgres -D /var/lib/postgresql/data" &
 PG_PID=$!
