@@ -27,8 +27,20 @@ RUN npm install -g webtorrent-cli
 # Create and activate Python virtual environment, then install requirements
 WORKDIR /app
 COPY ./system/requirements.txt .
-RUN python3 -m venv $VIRTUAL_ENV && \
-    $VIRTUAL_ENV/bin/pip install --no-cache-dir -r requirements.txt
+
+# Install build dependencies required for psutil
+RUN apk add --no-cache \
+    build-base \
+    linux-headers \
+    python3-dev \
+    musl-dev \
+    gcc \
+    libffi-dev \
+    openssl-dev \
+    && python3 -m venv $VIRTUAL_ENV \
+    && $VIRTUAL_ENV/bin/pip install --no-cache-dir -r requirements.txt \
+    && apk del build-base linux-headers python3-dev musl-dev gcc libffi-dev openssl-dev
+
 
 # Copy rest of the app
 COPY . /app/
