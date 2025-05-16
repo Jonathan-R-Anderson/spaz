@@ -1,22 +1,28 @@
 import io
 import pytest
 from unittest.mock import patch
+from api import create_app
+from api.services.monitor import seed_processes
+from config import Config
+
+
 
 @pytest.fixture
 def client():
-    from shared import app
+    app = create_app()
+    app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
 
 def test_start_static_monitor(client):
-    with patch('blueprints.routes.Process') as mock_process:
+    with patch('api.routes.Process') as mock_process:
         response = client.post('/start_static_monitor', json={"eth_address": "0xabc123"})
         assert response.status_code in [200, 400]
 
 
 def test_start_hls_monitor(client):
-    with patch('blueprints.routes.Process') as mock_process:
+    with patch('api.routes.Process') as mock_process:
         response = client.post('/start_hls_monitor', json={"eth_address": "0xabc123"})
         assert response.status_code in [200, 400]
 
@@ -34,7 +40,7 @@ def test_peer_count_missing_url(client):
 
 
 def test_magnet_url_endpoint(client):
-    with patch('blueprints.routes.retrieve_magnet_urls') as mock_retrieve:
+    with patch('api.routes.retrieve_magnet_urls') as mock_retrieve:
         mock_retrieve.return_value = {"message": "success", "magnet_urls": ["magnet:?xt=urn:btih:123"]}
         response = client.get('/magnet_urls/0xabc123')
         assert response.status_code == 200
@@ -42,8 +48,8 @@ def test_magnet_url_endpoint(client):
 
 
 def test_magnet_url_trigger_monitor(client):
-    with patch('blueprints.routes.retrieve_magnet_urls') as mock_retrieve, \
-         patch('blueprints.routes.Process') as mock_process:
+    with patch('api.routes.retrieve_magnet_urls') as mock_retrieve, \
+         patch('api.routes.Process') as mock_process:
         mock_retrieve.return_value = {"message": "error"}
         response = client.get('/magnet_urls/0xabc123')
         assert response.status_code == 404
@@ -67,8 +73,9 @@ def test_seed_file_invalid_eth(client):
 
 def test_seed_file_success(client):
     dummy_file = (io.BytesIO(b"dummy content"), "video.mp4")
-    with patch('blueprints.routes.subprocess.Popen') as mock_popen, \
-         patch('blueprints.routes.stream_output') as mock_stream_output:
+    with patch('api.routes.subprocess.Popen') as mock_popen, \
+        patch('api.routes.stream_output') as mock_stream_output:
+
         mock_stream_output.return_value = "magnet:?xt=urn:btih:123"
         process_mock = mock_popen.return_value
         process_mock.stdout = io.StringIO("output")
@@ -89,7 +96,6 @@ def test_stop_seeding_missing_eth(client):
 
 
 def test_stop_seeding_no_process(client):
-    from blueprints.routes import seed_processes
-    seed_processes.clear()
+    Config.seed_processes.clear()
     response = client.post('/stop_seeding', json={"eth_address": "0xabc123"})
     assert response.status_code == 404

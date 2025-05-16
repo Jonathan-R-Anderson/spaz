@@ -1,8 +1,8 @@
-from shared import (logging, app)
+from api import create_app
+from system.logging import setup_logging
 
+setup_logging()
+app = create_app()
 
-
-
-if __name__ == '__main__':
-    logging.info("Starting Flask server...")
-    app.run(host='0.0.0.0', port=5002, debug=True, ssl_context=('/certs/fullchain.pem', '/certs/privkey.pem'))
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5002)
