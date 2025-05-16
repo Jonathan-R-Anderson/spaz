@@ -1,10 +1,11 @@
-# register_contracts.py
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import time
 import json
-import os
 import requests
 from config import Config
-from ..system.logging import setup_logger
+from system.logging import setup_logger
 
 logger = setup_logger("spaz_register")
 
