@@ -146,6 +146,8 @@ services:
       - SPAZ_MODERATION_ADDRESS_FILE=/app/address/SpazModeration.txt
     networks:
       - spaz_net
+    env_file:
+      - .env
     logging:
       driver: "json-file"
       options:

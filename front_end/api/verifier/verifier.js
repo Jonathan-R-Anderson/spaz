@@ -5,7 +5,15 @@ const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const cors = require('cors');
 const ethers = require('ethers');
-require('dotenv').config();
+require("dotenv").config();
+const { Wallet } = require("ethers");
+
+const privateKey = process.env.PRIVATE_KEY;
+console.log("[DEBUG] PRIVATE_KEY length:", privateKey?.length);
+console.log("[DEBUG] PRIVATE_KEY starts with 0x:", privateKey?.startsWith("0x"));
+
+const wallet = new Wallet(privateKey.startsWith("0x") ? privateKey : "0x" + privateKey);
+
 
 const app = express();
 app.use(cors());

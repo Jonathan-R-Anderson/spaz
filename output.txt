@@ -1,0 +1,543 @@
+-e 
+===== ./file_watcher.err.log =====
+
+[2025-05-16 17:59:17,177] INFO - [WATCHER] Watching directory: /app/uploads
+[2025-05-16 17:59:17,179] DEBUG - [WATCHER] Initialized with watch dir: /app/uploads
+[2025-05-16 17:59:17,180] INFO - [WATCHER] Scanning for pre-existing files...
+[2025-05-16 17:59:17,180] DEBUG - [WATCHER] Found file: /app/uploads/dropdown-menu.tsx
+[2025-05-16 17:59:17,181] DEBUG - [WATCHER] SHA256 for dropdown-menu.tsx: 042132f5ee2e5297488441fc7bd0e343393e3150be516110a8e3337196515b61
+[2025-05-16 17:59:17,181] INFO - [WATCHER] Detected new/changed file: dropdown-menu.tsx
+[2025-05-16 17:59:17,181] INFO - [WATCHER] Sending file to: http://webtorrent:5002/seed
+[2025-05-16 17:59:17,196] DEBUG - Starting new HTTP connection (1): webtorrent:5002
+-e 
+===== ./webtorrent.log =====
+
+[2025-05-16 17:59:15,714] INFO in _internal: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5002
+ * Running on http://172.19.0.5:5002
+[2025-05-16 17:59:15,714] INFO in _internal: [33mPress CTRL+C to quit[0m
+[2025-05-16 17:59:17,212] INFO in routes: Received request to seed a file.
+[2025-05-16 17:59:17,213] INFO in routes: File /app/uploads/dropdown-menu.tsx already exists on disk.
+[2025-05-16 17:59:17,217] INFO in routes: Seeding file /app/uploads/dropdown-menu.tsx...
+[2025-05-16 17:59:17,222] DEBUG in monitor: [stream_output] Started for 0x000000000000000000000000000000000000dead, snapshot 0
+[2025-05-16 17:59:19,481] INFO in monitor: [stream_output] Raw line: 
+-e 
+===== ./file_watcher.log =====
+
+[2025-05-16 17:59:17,177] INFO - [WATCHER] Watching directory: /app/uploads
+[2025-05-16 17:59:17,179] DEBUG - [WATCHER] Initialized with watch dir: /app/uploads
+[2025-05-16 17:59:17,180] INFO - [WATCHER] Scanning for pre-existing files...
+[2025-05-16 17:59:17,180] DEBUG - [WATCHER] Found file: /app/uploads/dropdown-menu.tsx
+[2025-05-16 17:59:17,181] DEBUG - [WATCHER] SHA256 for dropdown-menu.tsx: 042132f5ee2e5297488441fc7bd0e343393e3150be516110a8e3337196515b61
+[2025-05-16 17:59:17,181] INFO - [WATCHER] Detected new/changed file: dropdown-menu.tsx
+[2025-05-16 17:59:17,181] INFO - [WATCHER] Sending file to: http://webtorrent:5002/seed
+[2025-05-16 17:59:17,196] DEBUG - Starting new HTTP connection (1): webtorrent:5002
+-e 
+===== ./verifier.err.log =====
+
+/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:149
+        throw makeError(message, code, info);
+        ^
+
+TypeError: invalid private key (argument="privateKey", value="[ REDACTED ]", code=INVALID_ARGUMENT, version=6.14.1)
+    at makeError (/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:122:21)
+    at assert (/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:149:15)
+    at assertArgument (/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:161:5)
+    at new BaseWallet (/app/verifier/node_modules/ethers/lib.commonjs/wallet/base-wallet.js:35:39)
+    at new Wallet (/app/verifier/node_modules/ethers/lib.commonjs/wallet/wallet.js:34:9)
+    at Object.<anonymous> (/app/verifier/verifier.js:16:16)
+    at Module._compile (node:internal/modules/cjs/loader:1358:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1416:10)
+    at Module.load (node:internal/modules/cjs/loader:1208:32)
+    at Module._load (node:internal/modules/cjs/loader:1024:12) {
+  code: 'INVALID_ARGUMENT',
+  argument: 'privateKey',
+  value: '[ REDACTED ]',
+  shortMessage: 'invalid private key'
+}
+
+Node.js v20.15.1
+/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:149
+        throw makeError(message, code, info);
+        ^
+
+TypeError: invalid private key (argument="privateKey", value="[ REDACTED ]", code=INVALID_ARGUMENT, version=6.14.1)
+    at makeError (/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:122:21)
+    at assert (/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:149:15)
+    at assertArgument (/app/verifier/node_modules/ethers/lib.commonjs/utils/errors.js:161:5)
+    at new BaseWallet (/app/verifier/node_modules/ethers/lib.commonjs/wallet/base-wallet.js:35:39)
+    at new Wallet (/app/verifier/node_modules/ethers/lib.commonjs/wallet/wallet.js:34:9)
+    at Object.<anonymous> (/app/verifier/verifier.js:16:16)
+    at Module._compile (node:internal/modules/cjs/loader:1358:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1416:10)
+    at Module.load (node:internal/modules/cjs/loader:1208:32)
+    at Module._load (node:internal/modules/cjs/loader:1024:12) {
+  code: 'INVALID_ARGUMENT',
+  argument: 'privateKey',
+  value: '[ REDACTED ]',
+  shortMessage: 'invalid private key'
+}
+
+Node.js v20.15.1
+-e 
+===== ./gunicorn.err.log =====
+
+[2025-05-16 17:59:17 +0000] [17] [INFO] Starting gunicorn 23.0.0
+[2025-05-16 17:59:17 +0000] [17] [INFO] Listening at: https://0.0.0.0:5000 (17)
+[2025-05-16 17:59:17 +0000] [17] [INFO] Using worker: gevent
+[2025-05-16 17:59:17 +0000] [27] [INFO] Booting worker with pid: 27
+[2025-05-16 17:59:17 +0000] [28] [INFO] Booting worker with pid: 28
+[2025-05-16 17:59:17 +0000] [29] [INFO] Booting worker with pid: 29
+[2025-05-16 17:59:17 +0000] [30] [INFO] Booting worker with pid: 30
+[2025-05-16 17:59:17 +0000] [31] [INFO] Booting worker with pid: 31
+[2025-05-16 17:59:17 +0000] [32] [INFO] Booting worker with pid: 32
+[2025-05-16 17:59:17 +0000] [33] [INFO] Booting worker with pid: 33
+[2025-05-16 17:59:17 +0000] [34] [INFO] Booting worker with pid: 34
+[2025-05-16 17:59:17 +0000] [35] [INFO] Booting worker with pid: 35
+[2025-05-16 17:59:22 +0000] [35] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [35] [INFO] Worker exiting (pid: 35)
+[2025-05-16 17:59:22 +0000] [29] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [29] [INFO] Worker exiting (pid: 29)
+[2025-05-16 17:59:22 +0000] [34] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [34] [INFO] Worker exiting (pid: 34)
+[2025-05-16 17:59:22 +0000] [27] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [31] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [27] [INFO] Worker exiting (pid: 27)
+[2025-05-16 17:59:22 +0000] [33] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [33] [INFO] Worker exiting (pid: 33)
+[2025-05-16 17:59:22 +0000] [31] [INFO] Worker exiting (pid: 31)
+[2025-05-16 17:59:22 +0000] [28] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [28] [INFO] Worker exiting (pid: 28)
+[2025-05-16 17:59:22 +0000] [32] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [32] [INFO] Worker exiting (pid: 32)
+[2025-05-16 17:59:22 +0000] [30] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+    worker.init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/ggevent.py", line 146, in init_process
+    super().init_process()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 135, in init_process
+    self.load_wsgi()
+  File "/venv/lib/python3.11/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+    self.wsgi = self.app.wsgi()
+                ^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 66, in wsgi
+    self.callable = self.load()
+                    ^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+    return self.load_wsgiapp()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+    return util.import_app(self.app_uri)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/util.py", line 370, in import_app
+    mod = importlib.import_module(module)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/driver.py", line 5, in <module>
+    from api import create_app
+  File "/app/api/__init__.py", line 7, in <module>
+    from api.routes.verify_proxy import verify_bp
+ModuleNotFoundError: No module named 'api.routes.verify_proxy'; 'api.routes' is not a package
+[2025-05-16 17:59:22 +0000] [30] [INFO] Worker exiting (pid: 30)
+[2025-05-16 17:59:23 +0000] [17] [ERROR] Worker (pid:29) exited with code 3
+[2025-05-16 17:59:23 +0000] [17] [ERROR] Worker (pid:34) exited with code 3
+Traceback (most recent call last):
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 208, in run
+    self.sleep()
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 359, in sleep
+    ready = select.select([self.PIPE[0]], [], [], 1.0)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 241, in handle_chld
+    self.reap_workers()
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 529, in reap_workers
+    raise HaltServer(reason, self.WORKER_BOOT_ERROR)
+gunicorn.errors.HaltServer: <HaltServer 'Worker failed to boot.' 3>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/venv/bin/gunicorn", line 8, in <module>
+[2025-05-16 17:59:23 +0000] [17] [ERROR] Worker (pid:31) was sent SIGTERM!
+    sys.exit(run())
+             ^^^^^
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/wsgiapp.py", line 66, in run
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]", prog=prog).run()
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 235, in run
+    super().run()
+  File "/venv/lib/python3.11/site-packages/gunicorn/app/base.py", line 71, in run
+    Arbiter(self).run()
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 228, in run
+    self.halt(reason=inst.reason, exit_status=inst.exit_status)
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 341, in halt
+    self.stop()
+  File "/venv/lib/python3.11/site-packages/gunicorn/arbiter.py", line 395, in stop
+    time.sleep(0.1)
+[2025-05-16 17:59:23 +0000] [17] [ERROR] Worker (pid:28) exited with code 3
+object address  : 0x79d1a055c580
+object refcount : 2
+object type     : 0x79d1a13773e0
+object type name: HaltServer
+object repr     : HaltServer('Worker failed to boot.', 3)
+lost sys.stderr
+[2025-05-16 17:59:23 +0000] [45] [INFO] Starting gunicorn 23.0.0
+[2025-05-16 17:59:23 +0000] [45] [INFO] Listening at: https://0.0.0.0:5000 (45)
+[2025-05-16 17:59:23 +0000] [45] [INFO] Using worker: gevent
+[2025-05-16 17:59:23 +0000] [47] [INFO] Booting worker with pid: 47
+[2025-05-16 17:59:23 +0000] [48] [INFO] Booting worker with pid: 48
+[2025-05-16 17:59:23 +0000] [54] [INFO] Booting worker with pid: 54
+[2025-05-16 17:59:23 +0000] [56] [INFO] Booting worker with pid: 56
+[2025-05-16 17:59:23 +0000] [57] [INFO] Booting worker with pid: 57
+[2025-05-16 17:59:23 +0000] [58] [INFO] Booting worker with pid: 58
+[2025-05-16 17:59:23 +0000] [59] [INFO] Booting worker with pid: 59
+[2025-05-16 17:59:23 +0000] [60] [INFO] Booting worker with pid: 60
+[2025-05-16 17:59:24 +0000] [61] [INFO] Booting worker with pid: 61
+-e 
+===== ./database.log =====
+
+[2025-05-16 17:59:16,929] INFO in driver: Initializing database tables...
+[2025-05-16 17:59:17,014] INFO in driver: ✅ Tables created.
+[2025-05-16 17:59:18,705] INFO in driver: [driver] Starting Flask app on http://0.0.0.0:5003
+[2025-05-16 17:59:18,705] INFO in driver: static: /static/<path:filename> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,705] INFO in driver: main.get_secret: /get_secret/<eth_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,705] INFO in driver: main.retrieve_magnet_urls: /get_magnet_urls/<eth_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,705] INFO in driver: main.generate_and_store_secret: /generate_secret [POST,OPTIONS]
+[2025-05-16 17:59:18,705] INFO in driver: main.get_rtmp_url: /get_rtmp_url/<eth_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,705] INFO in driver: main.store_magnet_url_route: /store_magnet_url [POST,OPTIONS]
+[2025-05-16 17:59:18,705] INFO in driver: main.clear_magnet_urls_route: /clear_magnet_urls/<eth_address> [DELETE,OPTIONS]
+[2025-05-16 17:59:18,706] INFO in driver: main.store_streamer_info: /store_streamer_info [POST,OPTIONS]
+[2025-05-16 17:59:18,706] INFO in driver: main.get_streamer_ip: /get_streamer_eth_address/<ip_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,706] INFO in driver: main.verify_secret_fun: /verify_secret [POST,OPTIONS]
+[2025-05-16 17:59:18,706] INFO in driver: main.create_group: /create_group [POST,OPTIONS]
+[2025-05-16 17:59:18,706] INFO in driver: main.add_file_to_group: /add_file_to_group [POST,OPTIONS]
+[2025-05-16 17:59:18,706] INFO in driver: main.update_file_metadata: /update_file_metadata [POST,OPTIONS]
+[2025-05-16 17:59:18,706] INFO in driver: main.get_group_files: /get_group_files/<int:group_id> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,706] INFO in driver: main.list_snapshots: /list_snapshots [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:18,741] INFO in _internal: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5003
+ * Running on http://172.19.0.3:5003
+[2025-05-16 17:59:18,741] INFO in _internal: [33mPress CTRL+C to quit[0m
+[2025-05-16 17:59:18,746] INFO in _internal:  * Restarting with stat
+[2025-05-16 17:59:19,707] INFO in driver: [driver] Starting Flask app on http://0.0.0.0:5003
+[2025-05-16 17:59:19,708] INFO in driver: static: /static/<path:filename> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,709] INFO in driver: main.get_secret: /get_secret/<eth_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,709] INFO in driver: main.retrieve_magnet_urls: /get_magnet_urls/<eth_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,709] INFO in driver: main.generate_and_store_secret: /generate_secret [POST,OPTIONS]
+[2025-05-16 17:59:19,709] INFO in driver: main.get_rtmp_url: /get_rtmp_url/<eth_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,710] INFO in driver: main.store_magnet_url_route: /store_magnet_url [POST,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.clear_magnet_urls_route: /clear_magnet_urls/<eth_address> [DELETE,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.store_streamer_info: /store_streamer_info [POST,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.get_streamer_ip: /get_streamer_eth_address/<ip_address> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,710] INFO in driver: main.verify_secret_fun: /verify_secret [POST,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.create_group: /create_group [POST,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.add_file_to_group: /add_file_to_group [POST,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.update_file_metadata: /update_file_metadata [POST,OPTIONS]
+[2025-05-16 17:59:19,710] INFO in driver: main.get_group_files: /get_group_files/<int:group_id> [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,710] INFO in driver: main.list_snapshots: /list_snapshots [HEAD,OPTIONS,GET]
+[2025-05-16 17:59:19,730] WARNING in _internal:  * Debugger is active!
+[2025-05-16 17:59:19,732] INFO in _internal:  * Debugger PIN: 969-267-179
+[2025-05-16 17:59:20,634] INFO in _internal: 172.19.0.7 - - [16/May/2025 17:59:20] "[35m[1mGET /get_magnet_urls/0xtest HTTP/1.1[0m" 500 -
+-e 
+===== ./gunicorn.out.log =====
+
+-e 
+===== ./verifier.out.log =====
+
