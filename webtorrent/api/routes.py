@@ -13,6 +13,7 @@ from api.services.monitor import (
     retrieve_magnet_urls,
     stream_output
 )
+import subprocess
 
 
 blueprint = Blueprint("webtorrent", __name__)
