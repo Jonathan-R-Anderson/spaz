@@ -4,3 +4,6 @@ integrate blockchain api into front-end
 each container should have a config file unless they don't import env variables
 heavily comment code
 viewers distributing content need to be turned into tor hidden services, so viewers ip's aren't exposed
+snapshot function of front_end, facilitated by webtorrent.
+management panel for front_end where i can automatically have the snapshot saved from webtorrent
+refactor front_end in how it retrieves pages to compensate for webtorrent fetching static page
