@@ -1,7 +1,7 @@
-from system.logging import setup_logging
+from system.logging import setup_logger
 from api import create_app
 
-setup_logging()
+setup_logger()
 app = create_app()
 
 if __name__ == "__main__":

@@ -114,6 +114,18 @@ services:
     env_file:
       - .env
 
+  contracts:
+    build: ./contracts
+    volumes:
+      - contract_data:/contracts
+      - ./blockchain/abi:/app/abi
+      - ./blockchain/address:/app/address
+    env_file:
+      - .env
+    command: ["npx", "hardhat", "run", "--network", "zksyncMainnet", "scripts/deploy.js"]
+    networks:
+      - spaz_net
+
   blockchain:
     build:
       context: ./blockchain
@@ -139,18 +151,6 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
-
-  contracts:
-    build: ./contracts
-    volumes:
-      - contract_data:/contracts
-      - ./blockchain/abi:/app/abi
-      - ./blockchain/address:/app/address
-    env_file:
-      - .env
-    command: ["npx", "hardhat", "run", "--network", "zksyncMainnet", "scripts/deploy.js"]
-    networks:
-      - spaz_net
 
 volumes:
   data:
