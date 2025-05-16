@@ -37,6 +37,7 @@ services:
   webtorrent:
     environment:
       - PYTHONPATH=/app
+    command: python services/file_watcher.py
     build:
       context: ./webtorrent
       args:

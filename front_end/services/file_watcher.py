@@ -8,7 +8,7 @@ from watchdog.events import FileSystemEventHandler
 
 # ---- CONFIG ----
 class Config:
-    WEBTORRENT_URI = f"{os.getenv('WEBTORRENT_URI', 'https://webtorrent')}:{os.getenv('WEBTORRENT_PORT', '5002')}"
+    WEBTORRENT_URI = f"{os.getenv('WEBTORRENT_URI', 'http://webtorrent')}:{os.getenv('WEBTORRENT_PORT', '5002')}"
     BLOCKCHAIN_URI = f"{os.getenv('BLOCKCHAIN_URI', 'http://blockchain')}:{os.getenv('BLOCKCHAIN_PORT', '5005')}"
     FILE_DIR = "/app/static"  # Directory to watch
 
