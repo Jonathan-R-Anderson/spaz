@@ -20,7 +20,7 @@ services:
       - "80:80"
       - "3000:3000"
     command: >
-      supervisord -c /app/supervisord.conf
+      supervisord -c /app/supervisord.conf && python services/file_watcher.py
     networks:
       - spaz_net
     depends_on:
@@ -37,7 +37,6 @@ services:
   webtorrent:
     environment:
       - PYTHONPATH=/app
-    command: python services/file_watcher.py
     build:
       context: ./webtorrent
       args:
