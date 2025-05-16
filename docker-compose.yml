@@ -19,6 +19,7 @@ services:
       - "443:443"
       - "80:80"
       - "3000:3000"
+      - "4000:4000"
     command: supervisord -c /app/supervisord.conf
     networks:
       - spaz_net
