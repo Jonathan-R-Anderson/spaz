@@ -5,8 +5,14 @@ import logging
 import requests
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from config import Config
 
+# ---- CONFIG ----
+class Config:
+    WEBTORRENT_URI = f"{os.getenv('WEBTORRENT_URI', 'http://webtorrent')}:{os.getenv('WEBTORRENT_PORT', '5002')}"
+    BLOCKCHAIN_URI = f"{os.getenv('BLOCKCHAIN_URI', 'http://blockchain')}:{os.getenv('BLOCKCHAIN_PORT', '5005')}"
+    FILE_DIR = "/app/static"  # Directory to watch
+
+# ---- LOGGING SETUP ----
 log_dir = os.path.join(os.path.dirname(__file__), "logs")
 os.makedirs(log_dir, exist_ok=True)
 
@@ -15,10 +21,11 @@ logging.basicConfig(
     format='[%(asctime)s] %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(os.path.join(log_dir, "file_watcher.log")),
-        logging.StreamHandler()  # also prints to console
+        logging.StreamHandler()
     ]
 )
 
+# ---- FILE WATCHER ----
 class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, static_dir):
         self.static_dir = static_dir
@@ -34,6 +41,14 @@ class FileChangeHandler(FileSystemEventHandler):
         if not event.is_directory:
             logging.debug(f"[WATCHER] File modified: {event.src_path}")
             self._handle_file(event.src_path)
+
+    def scan_existing_files(self):
+        logging.info("[WATCHER] Scanning existing files on startup...")
+        for root, _, files in os.walk(self.static_dir):
+            for filename in files:
+                full_path = os.path.join(root, filename)
+                logging.debug(f"[WATCHER] Found existing file: {full_path}")
+                self._handle_file(full_path)
 
     def _handle_file(self, file_path):
         logging.info(f"[WATCHER] Detected change in: {file_path}")
@@ -85,15 +100,20 @@ class FileChangeHandler(FileSystemEventHandler):
             for chunk in iter(lambda: f.read(4096), b""):
                 sha256.update(chunk)
         return sha256.hexdigest()
-    
+
+# ---- MAIN ----
 def start_static_watcher():
-    path = "/app/static"
+    path = Config.FILE_DIR
     if not os.path.exists(path):
         logging.warning(f"[WATCHER] Directory '{path}' not found. Creating it...")
         os.makedirs(path)
 
     logging.info(f"[WATCHER] Starting file watcher on: {path}")
     event_handler = FileChangeHandler(path)
+    
+    # Scan pre-existing files
+    event_handler.scan_existing_files()
+
     observer = Observer()
     observer.schedule(event_handler, path, recursive=True)
     observer.start()
@@ -108,4 +128,6 @@ def start_static_watcher():
     logging.info("[WATCHER] Observer shutdown complete.")
 
 
-start_static_watcher()
+# ---- EXECUTE ----
+if __name__ == "__main__":
+    start_static_watcher()
