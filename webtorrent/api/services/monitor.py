@@ -23,7 +23,7 @@ def start_monitoring(eth_address):
 # Function to store a magnet URL using the DATABASE_URL API
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
     logging.debug(f"Storing magnet URL for {eth_address}, snapshot {snapshot_index}")
-    url = f"{Config.DATABASE_URL}/store_magnet_url"
+    url = f"{Config.DATABASE_URI}/store_magnet_url"
     payload = {
         "eth_address": eth_address,
         "magnet_url": magnet_url,
@@ -43,7 +43,7 @@ def store_magnet_url(eth_address, magnet_url, snapshot_index):
 # Function to retrieve magnet URLs from DATABASE_URL
 def retrieve_magnet_urls(eth_address):
     logging.debug(f"Retrieving magnet URLs for {eth_address}")
-    url = f"{Config.DATABASE_URL}/get_magnet_urls/{eth_address}"
+    url = f"{Config.DATABASE_URI}/get_magnet_urls/{eth_address}"
     
     try:
         logging.info(f"Sending GET request to retrieve magnet URLs for {eth_address}")
