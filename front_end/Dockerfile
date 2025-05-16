@@ -48,8 +48,8 @@ RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
 
 # Install dependencies for verifier
 WORKDIR /app/verifier
-COPY front_end/api/verifier/verifier.js ./
-COPY front_end/api/verifier/.env ./
+COPY ./api/verifier/verifier.js ./
+COPY ./api/verifier/.env ./
 
 # Install Node.js and npm (required for WebTorrent and verifier)
 RUN apk add --no-cache nodejs npm
