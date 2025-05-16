@@ -1,3 +1,10 @@
 Flask==3.0.3
 requests
 pytest
+Werkzeug
+gunicorn
+multiprocess
+psutil
+python-dotenv
+SQLAlchemy
+flask_sqlalchemy

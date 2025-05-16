@@ -7,6 +7,7 @@ from extensions import db, redis_client
 from api.routes import blueprint
 from models.user import Users
 from models.magnet import MagnetURL
+from models.torrent import TorrentGroup, TorrentFile
 import sys
 
 # Logging setup

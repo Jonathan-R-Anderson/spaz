@@ -12,6 +12,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
+      - uploads_data:/app/uploads
     environment:
       - FLASK_ENV=development
     ports:
@@ -48,6 +49,7 @@ services:
       - hls_data:/app/static
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
+      - uploads_data:/app/uploads
     networks:
       - spaz_net
     logging:
@@ -136,7 +138,8 @@ services:
 volumes:
   hls_data:
     driver: local
-
+  uploads_data:
+    driver: local
 
 networks:
   spaz_net:

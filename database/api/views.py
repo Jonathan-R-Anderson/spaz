@@ -11,7 +11,8 @@ from extensions import db
 from models.user import Users
 from models.magnet import MagnetURL
 from system.logging import setup_logger
-
+from flask import Blueprint, request, jsonify
+from models import db, TorrentGroup, TorrentFile
 
 logger = setup_logger(__name__)
 
@@ -200,6 +201,61 @@ def verify_secret_fun():
         return '', 204
     return '', 403
 
+@blueprint.route("/create_group", methods=["POST"])
+def create_group():
+    group = TorrentGroup()
+    db.session.add(group)
+    db.session.commit()
+    return jsonify({"group_id": group.id})
+
+@blueprint.route("/add_file_to_group", methods=["POST"])
+def add_file_to_group():
+    data = request.get_json()
+    file = TorrentFile(
+        group_id=data["group_id"],
+        file_path=data["file_path"],
+        file_hash=data["file_hash"]
+    )
+    db.session.add(file)
+    db.session.commit()
+    return jsonify({"message": "File registered"})
+
+@blueprint.route("/update_file_metadata", methods=["POST"])
+def update_file_metadata():
+    data = request.get_json()
+    file = TorrentFile.query.filter_by(
+        group_id=data["group_id"],
+        file_path=data["file_path"]
+    ).first()
+    if not file:
+        return jsonify({"error": "File not found"}), 404
+
+    file.file_hash = data["file_hash"]
+    file.magnet_url = data["magnet_url"]
+    db.session.commit()
+    return jsonify({"message": "Metadata updated"})
+
+@blueprint.route("/get_group_files/<int:group_id>", methods=["GET"])
+def get_group_files(group_id):
+    files = TorrentFile.query.filter_by(group_id=group_id).all()
+    return jsonify([
+        {
+            "file_path": f.file_path,
+            "file_hash": f.file_hash,
+            "magnet_url": f.magnet_url
+        } for f in files
+    ])
+
+@blueprint.route("/list_snapshots", methods=["GET"])
+def list_snapshots():
+    groups = TorrentGroup.query.all()
+    return jsonify([
+        {
+            "group_id": g.id,
+            "created_at": g.created_at.isoformat(),
+            "updated_at": g.updated_at.isoformat()
+        } for g in groups
+    ])
 
 # Expose route logic functions for direct use in unit tests
 __all__ = [

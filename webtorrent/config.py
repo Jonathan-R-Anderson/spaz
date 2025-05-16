@@ -14,3 +14,4 @@ class Config:
     is_monitoring_hls = {}
     seeded_files = {}
     seed_processes = {}
+    UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")

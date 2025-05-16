@@ -10,3 +10,4 @@ class Config:
     TRACKER_PORT = os.getenv('TRACKER_PORT', 5000)
 
     SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
+    UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")

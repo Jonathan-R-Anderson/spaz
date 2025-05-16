@@ -14,9 +14,12 @@ from api.services.monitor import (
     stream_output
 )
 import subprocess
-
+import requests
+from config import Config
 
 blueprint = Blueprint("webtorrent", __name__)
+UPLOAD_DIR = Config.UPLOAD_DIR
+DATABASE_API = f"{Config.DATABASE_URI}:{Config.DATABASE_PORT}"
 
 
 @blueprint.route('/start_static_monitor', methods=['POST'])
@@ -250,24 +253,85 @@ def seed_file():
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
 
-@blueprint.route('/stop_seeding', methods=['POST'])
-def stop_seeding():
-    data = request.get_json()
-    eth_address = data.get("eth_address")
+@blueprint.route("/add_file", methods=["POST"])
+def add_file():
+    file = request.files['file']
+    group_id = request.form.get('group_id')
 
-    if not eth_address:
-        return jsonify({"error": "eth_address is required"}), 400
+    if not os.path.exists(Config.UPLOAD_DIR):
+        os.makedirs(Config.UPLOAD_DIR)
 
-    process = Config.seed_processes.get(eth_address)
-    if not process:
-        return jsonify({"error": f"No seeding process found for {eth_address}"}), 404
+    if not group_id:
+        resp = requests.post(f"{DATABASE_API}/create_group")
+        if not resp.ok:
+            return jsonify({"error": "Failed to create group"}), 500
+        group_id = resp.json()["group_id"]
 
-    try:
-        process.terminate()
-        process.wait(timeout=5)
-        del Config.seed_processes[eth_address]
-        logging.info(f"Seeding process for {eth_address} has been stopped.")
-        return jsonify({"message": f"Seeding stopped for {eth_address}"}), 200
-    except Exception as e:
-        logging.error(f"Failed to stop seeding for {eth_address}: {e}")
-        return jsonify({"error": str(e)}), 500
+    group_path = os.path.join(Config.UPLOAD_DIR, str(group_id))
+    os.makedirs(group_path, exist_ok=True)
+
+    file_path = os.path.join(group_path, secure_filename(file.filename))
+    file.save(file_path)
+
+    # Calculate hash
+    sha256 = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            sha256.update(chunk)
+    file_hash = sha256.hexdigest()
+
+    relative_path = os.path.relpath(file_path, Config.UPLOAD_DIR)
+
+    resp = requests.post(f"{DATABASE_API}/add_file_to_group", json={
+        "group_id": group_id,
+        "file_path": relative_path,
+        "file_hash": file_hash
+    })
+    if not resp.ok:
+        return jsonify({"error": "Failed to register file"}), 500
+
+    return jsonify({"status": "ok", "group_id": group_id, "file_hash": file_hash})
+
+
+@blueprint.route("/finalize_snapshot/<int:group_id>", methods=["POST"])
+def finalize_snapshot(group_id):
+    group_path = os.path.join(Config.UPLOAD_DIR, str(group_id))
+    if not os.path.exists(group_path):
+        return jsonify({"error": "group not found"}), 404
+
+    torrent_path, magnet_uri, file_hashes = create_torrent(group_path)
+
+    # Update metadata via database API
+    for filename, hash_val in file_hashes.items():
+        requests.post(f"{DATABASE_API}/update_file_metadata", json={
+            "group_id": group_id,
+            "file_path": filename,
+            "file_hash": hash_val,
+            "magnet_url": magnet_uri
+        })
+
+    return jsonify({
+        "group_id": group_id,
+        "magnet": magnet_uri,
+        "torrent_path": torrent_path,
+        "files": file_hashes
+    })
+
+
+@blueprint.route("/get_snapshot/<int:group_id>", methods=["GET"])
+def get_snapshot(group_id):
+    resp = requests.get(f"{DATABASE_API}/get_group_files/{group_id}")
+    if not resp.ok:
+        return jsonify({"error": "Failed to retrieve group"}), 500
+    return jsonify(resp.json())
+
+
+@blueprint.route("/update_snapshot/<int:group_id>", methods=["POST"])
+def update_snapshot(group_id):
+    return finalize_snapshot(group_id)
+
+
+@blueprint.route("/list_snapshots", methods=["GET"])
+def list_snapshots():
+    resp = requests.get(f"{DATABASE_API}/list_snapshots")
+    return jsonify(resp.json())
