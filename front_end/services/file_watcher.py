@@ -87,7 +87,7 @@ class FileChangeHandler(FileSystemEventHandler):
         return sha256.hexdigest()
     
 def start_static_watcher():
-    path = Config.FILE_DIR
+    path = "/app/static"
     if not os.path.exists(path):
         logging.warning(f"[WATCHER] Directory '{path}' not found. Creating it...")
         os.makedirs(path)
