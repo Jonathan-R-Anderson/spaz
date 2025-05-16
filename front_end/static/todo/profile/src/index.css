@@ -1,0 +1,108 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 225 20% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 25% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 262 83% 66%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 260 25% 54%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262 83% 66%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 225 20% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 262 83% 66%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 225 20% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 225 20% 15%;
+    --sidebar-ring: 262 83% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-web3-darker text-foreground overflow-x-hidden;
+  }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(26, 31, 44, 0.5);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.7);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 1);
+  }
+}
+
+@layer components {
+  .web3-card {
+    @apply bg-web3-dark border border-web3-purple/20 rounded-lg overflow-hidden shadow-lg backdrop-blur-sm;
+  }
+  
+  .web3-input {
+    @apply bg-web3-darker border-web3-purple/30 focus:border-web3-purple text-white rounded-md;
+  }
+  
+  .glow-effect {
+    @apply relative;
+  }
+  
+  .glow-effect::after {
+    @apply content-[''] absolute top-0 left-0 w-full h-full bg-transparent border border-web3-purple/30 rounded-lg opacity-0 transition-opacity duration-300 ease-in-out;
+  }
+  
+  .glow-effect:hover::after {
+    @apply opacity-100;
+  }
+  
+  .gradient-border {
+    @apply relative border border-transparent;
+    background-clip: padding-box;
+    background-origin: border-box;
+  }
+  
+  .gradient-border::before {
+    @apply content-[''] absolute top-0 left-0 right-0 bottom-0 -z-10 m-[-1px] rounded-lg bg-gradient-to-r from-web3-purple to-web3-purple-light opacity-50;
+  }
+}
