@@ -224,7 +224,7 @@ def seed_file():
         return jsonify({"error": "No file selected"}), 400
 
     file_name = file.filename
-    file_path = os.path.join(Config.HLS_DIR, file_name)
+    file_path = os.path.join(Config.UPLOAD_DIR, file_name)
 
     # Save the file to disk if not already saved
     if not os.path.exists(file_path):
