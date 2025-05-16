@@ -2,7 +2,6 @@ import io
 import pytest
 from unittest.mock import patch
 from api import create_app
-from api.services.monitor import seed_processes
 from config import Config
 from utils.files import is_valid_eth_address
 
