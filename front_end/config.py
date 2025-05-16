@@ -8,6 +8,6 @@ class Config:
     HMAC_SECRET_KEY = os.getenv('HMAC_SECRET_KEY', '11257560')
     FILE_DIR = os.getenv('FILE_DIR', 'hosted')
     TRACKER_PORT = os.getenv('TRACKER_PORT', 5000)
-
+    BLOCKCHAIN_URI = f"{os.getenv('BLOCKCHAIN_URI', 'https://blockchain')}:{os.getenv('BLOCKCHAIN_PORT', 5005)}"
     SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
     UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")
