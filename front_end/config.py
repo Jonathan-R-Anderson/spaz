@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 class Config:
     LOG_FILE_PATH = os.path.join("logs", "app.log")
-
+    REQUIRED_CONTRACTS = ["SpazMagnetStore", "SpazLivestream", "SpazModeration"]
     WEBTORRENT_URI = f"{os.getenv('WEBTORRENT_URI', 'http://webtorrent')}:{os.getenv('WEBTORRENT_PORT', 5002)}"
     BLOCKCHAIN_URI = f"{os.getenv('BLOCKCHAIN_URI', 'http://blockchain')}:{os.getenv('BLOCKCHAIN_PORT', 5005)}"
     DATABASE_URI = f"{os.getenv('DATABASE_URI', 'database')}:{os.getenv('DATABASE_PORT', 5003)}"
