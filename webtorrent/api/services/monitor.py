@@ -11,6 +11,14 @@ from urllib.parse import unquote
 from flask import Blueprint, render_template, request, jsonify, send_from_directory
 from config import Config
 
+def start_monitoring(eth_address):
+    # Placeholder logic, or call both monitoring functions
+    from multiprocessing import Process
+    p1 = Process(target=monitor_static_directory, args=(eth_address,))
+    p2 = Process(target=monitor_hls_directory, args=(eth_address,))
+    p1.start()
+    p2.start()
+
 
 # Function to store a magnet URL using the DATABASE_URL API
 def store_magnet_url(eth_address, magnet_url, snapshot_index):
