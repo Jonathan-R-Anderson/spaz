@@ -1,68 +1,85 @@
-// ✅ 1. BACKEND - Node.js Express Server Example (verifier.js)
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const cors = require('cors');
 const ethers = require('ethers');
 require("dotenv").config();
-const { Wallet } = require("ethers");
 
-const privateKey = process.env.PRIVATE_KEY;
-console.log("[DEBUG] PRIVATE_KEY length:", privateKey?.length);
-console.log("[DEBUG] PRIVATE_KEY starts with 0x:", privateKey?.startsWith("0x"));
+// Validate and load private key
+let privateKey = process.env.PRIVATE_KEY;
+if (!privateKey) throw new Error("Missing PRIVATE_KEY in environment");
 
-const wallet = new Wallet(privateKey.startsWith("0x") ? privateKey : "0x" + privateKey);
+if (!privateKey.startsWith("0x")) privateKey = "0x" + privateKey;
+if (privateKey.length !== 66) throw new Error("PRIVATE_KEY must be 64 hex chars with optional '0x' prefix");
 
+const wallet = new ethers.Wallet(privateKey);
+console.log(`[INFO] Wallet loaded: ${wallet.address}`);
 
+// Express setup
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
 const port = process.env.PORT || 4000;
-const verifierPrivateKey = process.env.VERIFIER_PRIVATE_KEY;
-const signer = new ethers.Wallet(verifierPrivateKey);
 
-// Memory store for challenge => user mapping
+// In-memory challenge store
 const challenges = {}; // domain => { challenge, address, expires }
 
-// Step 1: Generate challenge
+// Step 1: Issue a challenge
 app.post('/request-claim', (req, res) => {
   const { domain, address } = req.body;
+  if (!domain || !address) {
+    return res.status(400).json({ error: 'Missing domain or address' });
+  }
+
   const challenge = crypto.randomBytes(16).toString('hex');
   challenges[domain] = {
     challenge,
     address,
     expires: Date.now() + 5 * 60 * 1000 // 5 minutes
   };
-  res.json({
+
+  return res.json({
     challenge,
     instructions: `Please place this string in https://${domain}/.well-known/spaz-challenge.txt`
   });
 });
 
-// Step 2: Verify and sign
+// Step 2: Verify the file and sign the proof
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 app.post('/verify-claim', async (req, res) => {
   const { domain } = req.body;
   const record = challenges[domain];
-  if (!record || Date.now() > record.expires) return res.status(400).send('Challenge expired or not found');
+
+  if (!record || Date.now() > record.expires) {
+    return res.status(400).json({ error: 'Challenge expired or not found' });
+  }
 
   try {
     const url = `https://${domain}/.well-known/spaz-challenge.txt`;
     const response = await fetch(url);
     const body = await response.text();
 
-    if (body.trim() !== record.challenge) return res.status(400).send('Challenge file mismatch');
+    if (body.trim() !== record.challenge) {
+      return res.status(400).json({ error: 'Challenge file mismatch' });
+    }
 
-    const message = ethers.utils.solidityKeccak256(['address', 'string'], [record.address, domain]);
-    const signature = await signer.signMessage(ethers.utils.arrayify(message));
+    const messageHash = ethers.utils.solidityKeccak256(
+      ['address', 'string'],
+      [record.address, domain]
+    );
+
+    const signature = await wallet.signMessage(ethers.utils.arrayify(messageHash));
     delete challenges[domain];
-    res.json({ signature });
-  } catch (e) {
-    res.status(500).send('Error verifying challenge file');
+
+    return res.json({ signature });
+  } catch (err) {
+    console.error('[ERROR] Failed to fetch or sign challenge:', err.message);
+    return res.status(500).json({ error: 'Internal error verifying challenge' });
   }
 });
 
-app.listen(port, () => console.log(`Verifier running on port ${port}`));
+app.listen(port, () => {
+  console.log(`[INFO] Verifier server running on port ${port}`);
+});
