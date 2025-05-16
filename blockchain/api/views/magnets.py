@@ -2,16 +2,23 @@ from flask import Blueprint, request, jsonify
 from web3 import Web3
 from eth_account import Account
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+rpc_url = os.getenv("RPC_URL")
+private_key = os.getenv("PRIVATE_KEY")
 
 magnets_routes = Blueprint("magnets_routes", __name__)
 
 CONFIG_PATH = "/app/config.json"
 
-with open(CONFIG_PATH, "r") as f:
-    config = json.load(f)
 
-w3 = Web3(Web3.HTTPProvider(config["rpc_url"]))
-account = Account.from_key(config["private_key"])
+
+w3 = Web3(Web3.HTTPProvider(rpc_url))
+account = Account.from_key(private_key)
+
 contract_cache = {}
 
 def get_contract(name):
