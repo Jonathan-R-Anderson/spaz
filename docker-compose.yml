@@ -97,7 +97,7 @@ services:
       - "5004:5004"
       - "8080:8080"
     volumes:
-      - uploads_data:/app/uploads
+      - data:/app/uploads
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
       - hls_data:/app/static
