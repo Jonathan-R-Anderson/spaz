@@ -1,10 +1,15 @@
 import os
 import json
-import logging
 from flask import Blueprint, jsonify
+from system.logging import setup_logger
+from config import Config
+
+# Initialize logger
+logger = setup_logger("retrieve_contract_routes")
 
 retrieve_contract_routes = Blueprint("contracts", __name__)
 
+# Read environment variables
 SPAZ_LIVESTREAM_ADDRESS = os.getenv("SPAZ_LIVESTREAM_ADDRESS", "0x0")
 SPAZ_MODERATION_ADDRESS = os.getenv("SPAZ_MODERATION_ADDRESS", "0x0")
 SPAZ_LIVESTREAM_ABI_PATH = os.getenv("SPAZ_LIVESTREAM_ABI_PATH", "./contracts/SpazLivestream.json")
@@ -12,22 +17,31 @@ SPAZ_MODERATION_ABI_PATH = os.getenv("SPAZ_MODERATION_ABI_PATH", "./contracts/Sp
 
 def load_abi(path):
     try:
+        logger.debug(f"[load_abi] Attempting to load ABI from: {path}")
         with open(path) as f:
-            return json.load(f)
+            abi = json.load(f)
+        logger.info(f"[load_abi] Successfully loaded ABI from: {path}")
+        return abi
     except Exception as e:
-        logging.error(f"Failed to load ABI from {path}: {e}")
+        logger.error(f"[load_abi] Failed to load ABI from {path}: {e}")
         return []
 
-@retrieve_contract_routes.route("/spaz_livestream")
+@retrieve_contract_routes.route("/spaz_livestream", methods=["GET"])
 def get_spaz_livestream():
-    return jsonify({
+    logger.info("[/spaz_livestream] GET request received")
+    response = {
         "address": SPAZ_LIVESTREAM_ADDRESS,
         "abi": load_abi(SPAZ_LIVESTREAM_ABI_PATH)
-    })
+    }
+    logger.debug(f"[/spaz_livestream] Returning contract data: address={SPAZ_LIVESTREAM_ADDRESS}")
+    return jsonify(response), 200
 
-@retrieve_contract_routes.route("/spaz_moderation")
+@retrieve_contract_routes.route("/spaz_moderation", methods=["GET"])
 def get_spaz_moderation():
-    return jsonify({
+    logger.info("[/spaz_moderation] GET request received")
+    response = {
         "address": SPAZ_MODERATION_ADDRESS,
         "abi": load_abi(SPAZ_MODERATION_ABI_PATH)
-    })
+    }
+    logger.debug(f"[/spaz_moderation] Returning contract data: address={SPAZ_MODERATION_ADDRESS}")
+    return jsonify(response), 200
