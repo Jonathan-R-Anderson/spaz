@@ -16,6 +16,9 @@ from api.services.monitor import (
 import subprocess
 import requests
 from config import Config
+from urllib.parse import unquote
+from threading import Thread
+import hashlib
 
 blueprint = Blueprint("webtorrent", __name__)
 UPLOAD_DIR = Config.UPLOAD_DIR
@@ -252,6 +255,29 @@ def seed_file():
         return jsonify({"magnet_url": magnet_url}), 200
     else:
         return jsonify({"error": "Failed to seed file and retrieve magnet URL"}), 500
+    
+@blueprint.route('/stop_seeding', methods=['POST'])
+def stop_seeding():
+    data = request.get_json()
+    eth_address = data.get("eth_address")
+
+    if not eth_address:
+        return jsonify({"error": "eth_address is required"}), 400
+
+    process = Config.seed_processes.get(eth_address)
+    if not process:
+        return jsonify({"error": f"No seeding process found for {eth_address}"}), 404
+
+    try:
+        process.terminate()
+        process.wait(timeout=5)
+        del Config.seed_processes[eth_address]
+        logging.info(f"Seeding process for {eth_address} has been stopped.")
+        return jsonify({"message": f"Seeding stopped for {eth_address}"}), 200
+    except Exception as e:
+        logging.error(f"Failed to stop seeding for {eth_address}: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @blueprint.route("/add_file", methods=["POST"])
 def add_file():
