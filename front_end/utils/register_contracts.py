@@ -1,5 +1,10 @@
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import sys
+import os
+
+# 🔧 Ensure /app is in the Python path so system and config modules are found
+project_root = "/app"
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 import time
 import json
@@ -8,6 +13,8 @@ from config import Config
 from system.logging import setup_logger
 
 logger = setup_logger("spaz_register")
+
+HELP_PORT = int(os.getenv("HELP_PORT", 5005))
 
 
 def wait_for_contracts():
@@ -24,6 +31,7 @@ def wait_for_contracts():
             break
         logger.debug(f"⏳ Still waiting for: {missing}")
         time.sleep(1)
+
 
 def register_contracts_from_files():
     logger.info("[REGISTER] Preparing to load and register contracts...")
@@ -50,5 +58,5 @@ def register_contracts_from_files():
 
 if __name__ == "__main__":
     wait_for_contracts()
-    time.sleep(2)  # or wait for flask to be ready
+    time.sleep(2)  # or better: replace with socket connection check
     register_contracts_from_files()
