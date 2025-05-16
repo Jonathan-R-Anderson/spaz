@@ -120,9 +120,13 @@ services:
     command: python3 driver.py
     ports:
       - "5005:5005"
+    depends_on:
+      - contracts
     volumes:
       - ./blockchain/abi:/app/abi
       - ./blockchain/address:/app/address
+      - key_data:/app/keys
+      - contract_data:/contracts
     environment:
       - SPAZ_LIVESTREAM_ABI_PATH=/app/abi/SpazLivestream.json
       - SPAZ_MODERATION_ABI_PATH=/app/abi/SpazModeration.json
@@ -136,13 +140,29 @@ services:
         max-size: "100m"
         max-file: "10"
 
+  deployer:
+    build: ./contracts
+    volumes:
+      - contract_data:/contracts
+      - ./blockchain/abi:/app/abi
+      - ./blockchain/address:/app/address
+    env_file:
+      - .env
+    command: ["npx", "hardhat", "run", "--network", "zksyncMainnet", "scripts/deploy.js"]
+    networks:
+      - spaz_net
+
 
 volumes:
   data:
     driver: local
   hls_data:
     driver: local
-
+  contract_data:
+    driver: local
+  key_data:
+    driver: local
+    
 networks:
   spaz_net:
     driver: bridge

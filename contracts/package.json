@@ -1,0 +1,17 @@
+{
+    "name": "spaz-deployer",
+    "version": "1.0.0",
+    "scripts": {
+      "deploy": "npx hardhat run --network zksyncMainnet scripts/deploy.js",
+      "start": "node server.js",
+      "test": "jest"
+    },
+    "dependencies": {
+      "hardhat": "^2.22.0",
+      "@matterlabs/hardhat-zksync-deploy": "^0.6.5",
+      "@matterlabs/zksync-ethers": "^0.13.1",
+      "@nomiclabs/hardhat-ethers": "^2.2.5",
+      "ethers": "^5.7.2"
+    }
+  }
+  
