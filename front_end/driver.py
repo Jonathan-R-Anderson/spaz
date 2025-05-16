@@ -5,7 +5,6 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from api import create_app
 from config import Config
 from gevent.pywsgi import WSGIServer
-import subprocess
 
 # Setup logging
 logging.basicConfig(
@@ -25,8 +24,6 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 os.makedirs(Config.FILE_DIR, exist_ok=True)
 
 if __name__ == '__main__':
-    subprocess.Popen(["python3", "services/file_watcher.py"])  
-
 
     http_server = WSGIServer(
         ('0.0.0.0', 5000),
