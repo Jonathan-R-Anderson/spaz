@@ -29,8 +29,8 @@ RUN apk update && apk add --no-cache \
     ca-certificates \
     && ln -sf python3 /usr/bin/python && \
     ln -sf pip3 /usr/bin/pip
-    
-RUN adduser -D -u 33 www-data
+
+RUN addgroup -S www-data && adduser -S -G www-data www-data
 
 RUN python3 -m venv $VIRTUAL_ENV
 
