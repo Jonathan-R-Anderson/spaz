@@ -15,3 +15,6 @@ class Config:
     REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
     REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
     REDIS_DB = int(os.getenv('REDIS_DB', 0))
+    SHARED_DIR = os.getenv("SHARED_DIR", "/shared")
+    FILE_DIR = os.path.join(SHARED_DIR, "files")
+    UPLOAD_DIR = os.path.join(SHARED_DIR, "uploads")

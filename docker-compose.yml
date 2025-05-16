@@ -8,11 +8,10 @@ services:
       args:
         - DOCKER_BUILDKIT=0
     volumes:
-      - hls_data:/app/static
       - /var/run/docker.sock:/var/run/docker.sock
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
-      - uploads_data:/app/uploads
+      - uploads:/app/uploads
     environment:
       - FLASK_ENV=development
     ports:
@@ -47,10 +46,10 @@ services:
     depends_on:
       - database
     volumes:
-      - hls_data:/app/static
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
       - uploads_data:/app/uploads
+      - hls_data:/app/static
     networks:
       - spaz_net
     logging:
@@ -77,6 +76,7 @@ services:
       - ./logs:/app/logs
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/ssl/psychos.is:/certs:ro
+      - uploads_data:/app/uploads
     networks:
       - spaz_net
     logging:
@@ -97,9 +97,10 @@ services:
       - "5004:5004"
       - "8080:8080"
     volumes:
-      - hls_data:/app/static
+      - uploads_data:/app/uploads
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
+      - hls_data:/app/static
     depends_on:
       - database
       - webtorrent
@@ -137,9 +138,9 @@ services:
 
 
 volumes:
-  hls_data:
+  data:
     driver: local
-  uploads_data:
+  hls_data:
     driver: local
 
 networks:

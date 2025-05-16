@@ -75,7 +75,7 @@ class FileChangeHandler(FileSystemEventHandler):
         return sha256.hexdigest()
 
 def start_static_watcher():
-    path = Config.HLS_DIR
+    path = Config.FILE_DIR
     logging.info(f"[WATCHER] Starting file watcher on: {path}")
     event_handler = FileChangeHandler(path)
     observer = Observer()
