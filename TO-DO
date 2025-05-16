@@ -13,3 +13,4 @@ create economy where users are tipped by streamer for facilitating the stream
 give option to configure who you will seed for on the website, regardless of where you are on the page
 need to expand smart contracts to enable features like indexing of streamers, as well as those that are live
 create a setup script that gives the admin the option to remain federated or launch their own copies of the contracts
+in the script someone must prove they own a domain in order to claim a domain under the contract

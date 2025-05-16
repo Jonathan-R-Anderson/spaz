@@ -45,6 +45,20 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
 
+
+# Install dependencies for verifier
+WORKDIR /app/verifier
+COPY front_end/api/verifier/verifier.js ./
+COPY front_end/api/verifier/.env ./
+
+# Install Node.js and npm (required for WebTorrent and verifier)
+RUN apk add --no-cache nodejs npm
+
+
+RUN npm install express body-parser cors ethers dotenv node-fetch webtorrent
+
+
+
 # Download MediaMTX
 WORKDIR /opt/mediamtx
 RUN wget --no-check-certificate https://github.com/bluenviron/mediamtx/releases/download/v1.9.1/mediamtx_v1.9.1_linux_amd64.tar.gz && \
