@@ -11,16 +11,16 @@ class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, static_dir):
         self.static_dir = static_dir
         self.hash_cache = {}
-        logging.debug(f"[WATCHER] Initialized FileChangeHandler with directory: {static_dir}")
+        print(f"[WATCHER] Initialized FileChangeHandler with directory: {static_dir}")
 
     def on_created(self, event):
         if not event.is_directory:
-            logging.debug(f"[WATCHER] File created: {event.src_path}")
+            print(f"[WATCHER] File created: {event.src_path}")
             self._handle_file(event.src_path)
 
     def on_modified(self, event):
         if not event.is_directory:
-            logging.debug(f"[WATCHER] File modified: {event.src_path}")
+            print(f"[WATCHER] File modified: {event.src_path}")
             self._handle_file(event.src_path)
 
     def _handle_file(self, file_path):
@@ -29,14 +29,14 @@ class FileChangeHandler(FileSystemEventHandler):
             file_hash = self._hash_file(file_path)
             relative_path = os.path.relpath(file_path, self.static_dir)
 
-            logging.debug(f"[WATCHER] Computed SHA256 hash: {file_hash} for file: {relative_path}")
+            print(f"[WATCHER] Computed SHA256 hash: {file_hash} for file: {relative_path}")
 
             if self.hash_cache.get(relative_path) == file_hash:
-                logging.debug(f"[WATCHER] No change in file contents for: {relative_path}")
+                print(f"[WATCHER] No change in file contents for: {relative_path}")
                 return
 
             self.hash_cache[relative_path] = file_hash
-            logging.debug(f"[WATCHER] Updated hash cache for: {relative_path}")
+            print(f"[WATCHER] Updated hash cache for: {relative_path}")
 
             with open(file_path, 'rb') as f:
                 files = {'file': (os.path.basename(file_path), f)}
@@ -47,7 +47,7 @@ class FileChangeHandler(FileSystemEventHandler):
             if resp.ok:
                 logging.info(f"[WATCHER] Seed successful for file: {relative_path}")
                 magnet_url = resp.json().get("magnet_url")
-                logging.debug(f"[WATCHER] Received magnet URL: {magnet_url}")
+                print(f"[WATCHER] Received magnet URL: {magnet_url}")
                 commit_payload = {
                     "eth_address": "0xSTATIC_MONITOR",
                     "magnet_url": magnet_url,
@@ -67,7 +67,7 @@ class FileChangeHandler(FileSystemEventHandler):
             logging.exception(f"[WATCHER] Error handling file {file_path}: {e}")
 
     def _hash_file(self, path):
-        logging.debug(f"[WATCHER] Hashing file: {path}")
+        print(f"[WATCHER] Hashing file: {path}")
         sha256 = hashlib.sha256()
         with open(path, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b""):
