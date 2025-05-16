@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Circular Phylogenetic Tree (Modern D3)</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    #tree-container {
+      margin: auto;
+      width: 800px;
+      height: 800px;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      font-size: 14px;
+      display: none;
+    }
+
+    .node circle {
+      fill: steelblue;
+      cursor: pointer;
+    }
+
+    .node text {
+      font-size: 12px;
+    }
+
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Modern D3 Circular Phylogenetic Tree</h2>
+  <div id="tree-container"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+const data = {
+  name: "Life",
+  children: [
+    {
+      name: "Eukaryotes",
+      children: [
+        {
+          name: "Animals",
+          children: [
+            {
+              name: "Chordates",
+              children: [
+                {
+                  name: "Mammals",
+                  children: [
+                    {
+                      name: "Primates",
+                      children: [
+                        { name: "Human" },
+                        { name: "Chimpanzee" },
+                        { name: "Gorilla" },
+                        { name: "Orangutan" }
+                      ]
+                    },
+                    {
+                      name: "Carnivores",
+                      children: [
+                        { name: "Dog" },
+                        { name: "Cat" },
+                        { name: "Bear" },
+                        { name: "Hyena" }
+                      ]
+                    },
+                    {
+                      name: "Rodents",
+                      children: [
+                        { name: "Mouse" },
+                        { name: "Rat" },
+                        { name: "Squirrel" },
+                        { name: "Beaver" }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  name: "Birds",
+                  children: [
+                    { name: "Eagle" },
+                    { name: "Penguin" },
+                    { name: "Parrot" },
+                    { name: "Ostrich" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          name: "Plants",
+          children: [
+            {
+              name: "Flowering Plants",
+              children: [
+                { name: "Rose" },
+                { name: "Tulip" },
+                { name: "Sunflower" }
+              ]
+            },
+            {
+              name: "Conifers",
+              children: [
+                { name: "Pine" },
+                { name: "Fir" },
+                { name: "Cedar" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Prokaryotes",
+      children: [
+        {
+          name: "Bacteria",
+          children: [
+            { name: "E. coli" },
+            { name: "Salmonella" },
+            { name: "Streptococcus" }
+          ]
+        },
+        {
+          name: "Archaea",
+          children: [
+            { name: "Halobacteria" },
+            { name: "Methanogens" }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+
+    const width = 800;
+    const radius = width / 2;
+
+    const treeLayout = d3.tree()
+      .size([2 * Math.PI, radius - 100])  // [angle, radius]
+      .separation(() => 1);
+
+    const root = d3.hierarchy(data);
+    treeLayout(root);
+
+    const svg = d3.select("#tree-container")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", width)
+      .append("g")
+      .attr("transform", `translate(${radius},${radius})`);
+
+    const link = svg.append("g")
+      .selectAll("path")
+      .data(root.links())
+      .join("path")
+      .attr("class", "link")
+      .attr("d", d3.linkRadial()
+        .angle(d => d.x)
+        .radius(d => d.y)
+      );
+
+    const node = svg.append("g")
+      .selectAll("g")
+      .data(root.descendants())
+      .join("g")
+      .attr("transform", d => `
+        rotate(${d.x * 180 / Math.PI - 90})
+        translate(${d.y},0)
+      `)
+      .attr("class", "node");
+
+    node.append("circle")
+      .attr("r", 4)
+      .on("mouseover", function(event, d) {
+        d3.select("#tooltip")
+          .style("display", "block")
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY + 10) + "px")
+          .text(d.data.name);
+      })
+      .on("mouseout", () => d3.select("#tooltip").style("display", "none"))
+      .on("click", (event, d) => alert("Clicked: " + d.data.name));
+
+    node.append("text")
+      .attr("dy", "0.31em")
+      .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+      .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+      .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+      .text(d => d.data.name);
+  </script>
+</body>
+</html>
