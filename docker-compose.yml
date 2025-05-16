@@ -29,6 +29,7 @@ services:
     depends_on:
       - database
       - blockchain
+      - webtorrent
     logging:
       driver: "json-file"
       options:
