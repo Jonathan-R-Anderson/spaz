@@ -246,7 +246,7 @@ def seed_file():
     )
     Config.seed_processes[eth_address] = process  
 
-    magnet_url = stream_output(process, eth_address, snapshot_index=0)
+    magnet_url = stream_output(process, eth_address, 0)
 
 
     if magnet_url:
