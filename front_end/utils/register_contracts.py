@@ -1,16 +1,22 @@
 import sys
 import os
 
-# 🔧 Ensure /app is in the Python path so system and config modules are found
-project_root = "/app"
+# 🔧 Dynamically resolve and insert the true root of the project
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, ".."))
+
+print("🧪 [DEBUG] project_root:", project_root)
+print("🧪 [DEBUG] sys.path before:", sys.path)
+
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-import time
-import json
-import requests
+print("🧪 [DEBUG] sys.path after:", sys.path)
+
+# ✅ Now you can safely import
 from config import Config
 from system.logging import setup_logger
+
 
 logger = setup_logger("spaz_register")
 
