@@ -30,7 +30,7 @@ RUN apk update && apk add --no-cache \
     && ln -sf python3 /usr/bin/python && \
     ln -sf pip3 /usr/bin/pip
 
-RUN addgroup -S www-data && adduser -S -G www-data www-data
+RUN id -u www-data || adduser -S -G www-data www-data || true
 
 RUN python3 -m venv $VIRTUAL_ENV
 
