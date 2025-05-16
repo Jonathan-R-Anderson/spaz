@@ -8,3 +8,6 @@ snapshot function of front_end, facilitated by webtorrent.
 management panel for front_end where i can automatically have the snapshot saved from webtorrent
 refactor front_end in how it retrieves pages to compensate for webtorrent fetching static page
 if a user doesn't have the metamask plugin then the content needs to be fetched from a web3 container and fed to the front-end
+make unit tests store to something in logs
+create economy where users are tipped by streamer for facilitating the stream
+give option to configure who you will seed for on the website, regardless of where you are on the page

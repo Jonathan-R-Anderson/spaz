@@ -23,8 +23,6 @@ import hashlib
 blueprint = Blueprint("webtorrent", __name__)
 UPLOAD_DIR = Config.UPLOAD_DIR
 
-
-
 @blueprint.route('/start_static_monitor', methods=['POST'])
 def start_static_monitor():
     data = request.get_json()
