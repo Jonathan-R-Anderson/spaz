@@ -130,6 +130,8 @@ services:
   blockchain:
     build:
       context: ./blockchain
+    networks:
+      - spaz_net
     command: python3 driver.py
     ports:
       - "5005:5005"
@@ -145,8 +147,6 @@ services:
       - SPAZ_MODERATION_ABI_PATH=/app/abi/SpazModeration.json
       - SPAZ_LIVESTREAM_ADDRESS_FILE=/app/address/SpazLivestream.txt
       - SPAZ_MODERATION_ADDRESS_FILE=/app/address/SpazModeration.txt
-    networks:
-      - spaz_net
     env_file:
       - .env
     logging:
