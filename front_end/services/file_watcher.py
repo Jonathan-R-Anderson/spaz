@@ -7,6 +7,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from config import Config
 
+from dotenv import load_dotenv
+load_dotenv()
 
 
 # ---- LOGGING SETUP ----
