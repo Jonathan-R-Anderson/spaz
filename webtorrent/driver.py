@@ -1,5 +1,5 @@
-from api import create_app
 from system.logging import setup_logging
+from api import create_app
 
 setup_logging()
 app = create_app()
