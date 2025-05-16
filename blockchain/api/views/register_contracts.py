@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from flask import Blueprint, request, jsonify
 import json
 import os
-from system.logging import setup_logger
+from ...system.logging import setup_logger
 from config import Config
 
 # Setup logger
