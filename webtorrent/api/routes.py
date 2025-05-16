@@ -19,7 +19,7 @@ from config import Config
 
 blueprint = Blueprint("webtorrent", __name__)
 UPLOAD_DIR = Config.UPLOAD_DIR
-DATABASE_API = f"{Config.DATABASE_URI}:{Config.DATABASE_PORT}"
+
 
 
 @blueprint.route('/start_static_monitor', methods=['POST'])
@@ -262,7 +262,7 @@ def add_file():
         os.makedirs(Config.UPLOAD_DIR)
 
     if not group_id:
-        resp = requests.post(f"{DATABASE_API}/create_group")
+        resp = requests.post(f"{Config.DATABASE_URI}/create_group")
         if not resp.ok:
             return jsonify({"error": "Failed to create group"}), 500
         group_id = resp.json()["group_id"]
@@ -282,7 +282,7 @@ def add_file():
 
     relative_path = os.path.relpath(file_path, Config.UPLOAD_DIR)
 
-    resp = requests.post(f"{DATABASE_API}/add_file_to_group", json={
+    resp = requests.post(f"{Config.DATABASE_URI}/add_file_to_group", json={
         "group_id": group_id,
         "file_path": relative_path,
         "file_hash": file_hash
@@ -303,7 +303,7 @@ def finalize_snapshot(group_id):
 
     # Update metadata via database API
     for filename, hash_val in file_hashes.items():
-        requests.post(f"{DATABASE_API}/update_file_metadata", json={
+        requests.post(f"{Config.DATABASE_URI}/update_file_metadata", json={
             "group_id": group_id,
             "file_path": filename,
             "file_hash": hash_val,
@@ -320,7 +320,7 @@ def finalize_snapshot(group_id):
 
 @blueprint.route("/get_snapshot/<int:group_id>", methods=["GET"])
 def get_snapshot(group_id):
-    resp = requests.get(f"{DATABASE_API}/get_group_files/{group_id}")
+    resp = requests.get(f"{Config.DATABASE_URI}/get_group_files/{group_id}")
     if not resp.ok:
         return jsonify({"error": "Failed to retrieve group"}), 500
     return jsonify(resp.json())
@@ -333,5 +333,5 @@ def update_snapshot(group_id):
 
 @blueprint.route("/list_snapshots", methods=["GET"])
 def list_snapshots():
-    resp = requests.get(f"{DATABASE_API}/list_snapshots")
+    resp = requests.get(f"{Config.DATABASE_URI}/list_snapshots")
     return jsonify(resp.json())
