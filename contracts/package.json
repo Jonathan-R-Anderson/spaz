@@ -8,8 +8,8 @@
     },
     "dependencies": {
       "hardhat": "^2.22.0",
-      "@matterlabs/hardhat-zksync-deploy": "^0.6.5",
-      "zksync-web3": "^0.13.1",
+      "@matterlabs/hardhat-zksync-deploy": "^0.6.6",
+      "zksync-web3": "^0.14.3",
       "@nomiclabs/hardhat-ethers": "^2.2.5",
       "ethers": "^5.7.2"
     }
