@@ -26,6 +26,7 @@ services:
       - spaz_net
     depends_on:
       - database
+      - blockchain
     logging:
       driver: "json-file"
       options:
