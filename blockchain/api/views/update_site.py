@@ -7,7 +7,7 @@ update_site_routes = Blueprint("update_site", __name__)
 
 # Web3 setup
 w3 = Web3(Web3.HTTPProvider(os.getenv("WEB3_PROVIDER_URI", "http://localhost:8545")))
-MAGNET_CONTRACT_ADDRESS = os.getenv("MAGNET_CONTRACT_ADDRESS")
+MAGNET_CONTRACT_ADDRESS = os.getenv("MAGNET_CONTRACT_ADDRESS", "0x000000000000000000000000000000000000dEaD")
 MAGNET_CONTRACT_ABI_PATH = os.getenv("MAGNET_CONTRACT_ABI_PATH", "./abi/SpazLivestream.json")
 
 with open(MAGNET_CONTRACT_ABI_PATH) as f:
