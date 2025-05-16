@@ -5,7 +5,7 @@ import logging
 import requests
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from ..config import Config
+from config import Config
 
 class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, static_dir):
