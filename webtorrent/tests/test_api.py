@@ -4,6 +4,7 @@ from unittest.mock import patch
 from api import create_app
 from api.services.monitor import seed_processes
 from config import Config
+from utils.files import is_valid_eth_address
 
 
 
@@ -99,3 +100,8 @@ def test_stop_seeding_no_process(client):
     Config.seed_processes.clear()
     response = client.post('/stop_seeding', json={"eth_address": "0xabc123"})
     assert response.status_code == 404
+
+def test_valid_eth_address():
+    assert is_valid_eth_address("0x1234567890abcdef1234567890abcdef12345678")
+    assert not is_valid_eth_address("1234567890abcdef")
+    assert not is_valid_eth_address("0x123")
