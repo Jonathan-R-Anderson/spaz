@@ -73,9 +73,13 @@ class FileChangeHandler(FileSystemEventHandler):
             for chunk in iter(lambda: f.read(4096), b""):
                 sha256.update(chunk)
         return sha256.hexdigest()
-
+    
 def start_static_watcher():
     path = Config.FILE_DIR
+    if not os.path.exists(path):
+        logging.warning(f"[WATCHER] Directory '{path}' not found. Creating it...")
+        os.makedirs(path)
+
     logging.info(f"[WATCHER] Starting file watcher on: {path}")
     event_handler = FileChangeHandler(path)
     observer = Observer()
@@ -90,5 +94,6 @@ def start_static_watcher():
         observer.stop()
     observer.join()
     logging.info("[WATCHER] Observer shutdown complete.")
+
 
 start_static_watcher()

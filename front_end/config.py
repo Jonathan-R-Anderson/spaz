@@ -9,6 +9,6 @@ class Config:
     TRACKER_PORT = os.getenv('TRACKER_PORT', 5000)
     BLOCKCHAIN_URI = f"{os.getenv('BLOCKCHAIN_URI', 'https://blockchain')}:{os.getenv('BLOCKCHAIN_PORT', 5005)}"
     SECURE_MESSAGE = "Please sign this message to verify ownership of your Ethereum address."
-    SHARED_DIR = os.getenv("SHARED_DIR", "/shared")
-    FILE_DIR = os.path.join(SHARED_DIR, "files")
+    SHARED_DIR = os.getenv("SHARED_DIR", "/app")
+    FILE_DIR = os.path.join(SHARED_DIR, "uploads")
     UPLOAD_DIR = os.path.join(SHARED_DIR, "uploads")
