@@ -4,7 +4,7 @@ import json
 import os
 import requests
 from config import Config
-from system.logging import setup_logger
+from ..system.logging import setup_logger
 
 logger = setup_logger("spaz_register")
 
