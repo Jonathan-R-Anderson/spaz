@@ -48,7 +48,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - /opt/ssl/psychos.is:/certs:ro
-      - uploads_data:/app/uploads
+      - uploads:/app/uploads
       - hls_data:/app/static
     networks:
       - spaz_net
