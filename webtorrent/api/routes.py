@@ -103,7 +103,7 @@ def convert_to_mp4():
 
         logging.info(f"[convert_to_mp4] Conversion successful, seeding {output_mp4}")
         process = subprocess.Popen(
-            ['/usr/bin/webtorrent', 'seed', output_mp4,
+            ['/usr/local/bin/webtorrent', 'seed', output_mp4,
              '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -147,7 +147,7 @@ def peer_count():
         return jsonify({"error": "magnet_url is required"}), 400
 
     try:
-        cmd = ['/usr/bin/webtorrent', 'info', magnet_url]
+        cmd = ['/usr/local/bin/webtorrent', 'info', magnet_url]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         output = result.stdout
 
@@ -241,7 +241,7 @@ def seed_file():
     logging.info(f"Seeding file {file_path}...")
 
     process = subprocess.Popen(
-        ['/usr/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
+        ['/usr/local/bin/webtorrent', 'seed', file_path, '--announce=wss://tracker.openwebtorrent.com', '--keep-seeding'],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
     Config.seed_processes[eth_address] = process  
