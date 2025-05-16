@@ -14,7 +14,7 @@ class Config:
     WEBTORRENT_URI = f"{os.getenv('WEBTORRENT_URI', 'http://webtorrent')}:{os.getenv('WEBTORRENT_PORT', '5002')}"
     BLOCKCHAIN_URI = f"{os.getenv('BLOCKCHAIN_URI', 'http://blockchain')}:{os.getenv('BLOCKCHAIN_PORT', '5005')}"
     FILE_DIR = os.getenv("STATIC_DIR", "/app/static")
-    ETH_ADDRESS = os.getenv("WATCHDOG_ETH", "0xSTATIC_MONITOR")
+    ETH_ADDRESS = os.getenv("WATCHDOG_ETH", "0x000000000000000000000000000000000000dead")
 
 # ---- LOGGING SETUP ----
 log_dir = os.path.join("/app/logs")
