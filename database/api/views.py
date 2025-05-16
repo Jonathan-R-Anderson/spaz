@@ -12,7 +12,7 @@ from models.user import Users
 from models.magnet import MagnetURL
 from system.logging import setup_logger
 from flask import Blueprint, request, jsonify
-from models import db, TorrentGroup, TorrentFile
+from models import TorrentGroup, TorrentFile
 
 logger = setup_logger(__name__)
 
