@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+export PYTHONPATH=/app 
+
 echo "🔍 Running unit tests..."
 if ! pytest -q --tb=short; then
     echo "❌ Unit tests failed. Shutting down container."
