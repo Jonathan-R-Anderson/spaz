@@ -1,3 +1,6 @@
 Flask==3.0.3
 requests
 python-dotenv
+web3
+pytest
+pytest-mock
