@@ -6,7 +6,6 @@ from api import create_app
 from config import Config
 from gevent.pywsgi import WSGIServer
 import subprocess
-from services.file_watcher import start_static_watcher
 
 # Setup logging
 logging.basicConfig(

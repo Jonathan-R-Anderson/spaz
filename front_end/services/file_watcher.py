@@ -90,3 +90,5 @@ def start_static_watcher():
         observer.stop()
     observer.join()
     logging.info("[WATCHER] Observer shutdown complete.")
+
+start_static_watcher()
