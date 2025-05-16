@@ -167,4 +167,5 @@ volumes:
     
 networks:
   spaz_net:
+    name: spaz_net
     driver: bridge
