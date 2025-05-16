@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://user-images.githubusercontent.com/your-logo.png" width="80" alt="spaz logo"><br>
+  <img src="https://raw.githubusercontent.com/Jonathan-R-Anderson/spaz/refs/heads/main/logo.png" width="80" alt="spaz logo"><br>
   <strong>spaz</strong>
   <br><br>
 </h1>
