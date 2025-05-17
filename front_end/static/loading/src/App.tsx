@@ -60,7 +60,7 @@ const App = () => {
     });
   }, []);
 
-  const RealApp = () => (
+  const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
