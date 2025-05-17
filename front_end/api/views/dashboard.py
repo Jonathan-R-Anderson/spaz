@@ -1,4 +1,4 @@
-from flask import jsonify, request, send_from_directory, url_for, render_template, current_app as app
+from flask import jsonify, request, send_from_directory, url_for, render_template, current_app as app, redirect
 from ..routes import blueprint
 import logging, json, os
 from utils.contracts import (
