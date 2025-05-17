@@ -8,6 +8,13 @@ from utils.contracts import (
 from services.stream import RTMP_URLS
 from werkzeug.utils import safe_join
 
+
+
+@blueprint.route('/', defaults={'path': ''})
+@blueprint.route('/<path:path>')
+def forward_to_loading(path):
+    return redirect(f"/loading?target=/{path}")
+
 @blueprint.route('/')
 def index():
     logging.debug("Rendering welcome page.")
@@ -30,8 +37,3 @@ def user_profile(eth_address, path):
     
     logging.debug(f"Serving static file: {target_path}")
     return send_from_directory(profile_dir, path)
-
-@dynamic_bp.route('/', defaults={'path': ''})
-@dynamic_bp.route('/<path:path>')
-def forward_to_loading(path):
-    return redirect(f"/loading?target=/{path}")
