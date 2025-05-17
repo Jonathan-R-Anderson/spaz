@@ -13,25 +13,60 @@ const queryClient = new QueryClient();
 
 const App = ({ targetPath }: Props) => {
   useEffect(() => {
-    // Step 1: Determine app name based on path
-    let app = "welcome";
-    if (targetPath.startsWith("/dashboard")) app = "dashboard";
-    else if (targetPath.startsWith("/users")) app = "profile";
-
-    // Step 2: Ask backend to fetch/verify availability
+    const app = determineAppFromPath(targetPath);
+    console.log("Target path:", targetPath);
+    console.log("Determined app:", app);
+  
     fetch(`/load_app/${app}`).then(() => {
-      const interval = setInterval(() => {
-        fetch(`/static/apps/${app}/index.html`, { method: "HEAD" }).then(res => {
-          if (res.ok) {
-            clearInterval(interval);
-
-            // ✅ Redirect to FULL path within the loaded app
-            window.location.href = `/static/apps/${app}${targetPath}`;
-          }
+      const checkAssets = async () => {
+        const indexUrl = `/static/apps/${app}/index.html`;
+        const res = await fetch(indexUrl);
+        if (!res.ok) return false;
+  
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+  
+        // Get all asset links
+        const assetUrls: string[] = [];
+  
+        doc.querySelectorAll("script[src]").forEach((el) => {
+          const src = el.getAttribute("src");
+          if (src) assetUrls.push(src);
         });
+  
+        doc.querySelectorAll("link[rel='stylesheet'][href]").forEach((el) => {
+          const href = el.getAttribute("href");
+          if (href) assetUrls.push(href);
+        });
+  
+        // Check if all assets exist
+        const checks = await Promise.all(
+          assetUrls.map((url) =>
+            fetch(url, { method: "HEAD" }).then((r) => r.ok).catch(() => false)
+          )
+        );
+  
+        return checks.every(Boolean);
+      };
+  
+      const interval = setInterval(async () => {
+        const ready = await checkAssets();
+        if (ready) {
+          clearInterval(interval);
+          window.location.href = `/static/apps/${app}${targetPath}`;
+        }
       }, 1500);
     });
   }, [targetPath]);
+  
+  function determineAppFromPath(path: string): string {
+    if (path.startsWith("/dashboard")) return "dashboard";
+    if (path.startsWith("/users")) return "profile";
+    return "welcome";
+  }
+  
+  
 
   return (
     <QueryClientProvider client={queryClient}>
