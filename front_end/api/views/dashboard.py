@@ -91,4 +91,4 @@ def user_profile(eth_address, path):
 def fallback_to_loading(path):
     """Fallback: redirect to /loading with original target in query."""
     logging.debug(f"Redirecting to /loading?target=/{path}")
-    return redirect(f"/loading?target=/{path}")
+    return send_from_directory("static/apps/loading", "index.html") 

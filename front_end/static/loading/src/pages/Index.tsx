@@ -51,7 +51,10 @@ const Index = () => {
   };
   const fetchDynamicPage = async () => {
     const domain = window.location.hostname;
-    const path = window.location.pathname.replace(/^\/+/, '') || 'index.html';
+  
+    // ⛳ Correctly get `target` from the query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const path = urlParams.get("target")?.replace(/^\/+/, "") || "index.html";
   
     try {
       const magnet = await fetch(`/api/get_magnet/${domain}`).then(res => res.text());
@@ -64,10 +67,8 @@ const Index = () => {
         file.getBlobURL((err, url) => {
           if (err) return setHtmlContent('<h1>Error loading file</h1>');
   
-          // Embed with iframe
-          setHtmlContent(`
-            <iframe src="${url}" style="width:100%; height:80vh; border:none;"></iframe>
-          `);
+          // 🚀 Redirect once file is downloaded
+          window.location.href = url;
         });
       });
     } catch (err) {
@@ -75,6 +76,7 @@ const Index = () => {
       setHtmlContent('<h1>Failed to load site via WebTorrent</h1>');
     }
   };
+  
   
 
   const handleLoadingComplete = async () => {
