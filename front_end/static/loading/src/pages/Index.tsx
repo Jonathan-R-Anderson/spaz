@@ -48,7 +48,7 @@ const Index = () => {
 
   const fetchDynamicPage = async () => {
     const domain = window.location.hostname;
-    const path = window.location.pathname.replace(/^\\//, '') || 'index.html';
+    const path = window.location.pathname.replace(/^\/+/, '') || 'index.html';
   
     try {
       const magnet = await fetch(`/api/get_magnet/${domain}`).then(res => res.text());
