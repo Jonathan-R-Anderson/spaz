@@ -49,7 +49,6 @@ const Index = () => {
       setError((err as Error).message);
     }
   };
-
   const fetchDynamicPage = async () => {
     const domain = window.location.hostname;
     const path = window.location.pathname.replace(/^\/+/, '') || 'index.html';
@@ -65,9 +64,10 @@ const Index = () => {
         file.getBlobURL((err, url) => {
           if (err) return setHtmlContent('<h1>Error loading file</h1>');
   
-          fetch(url)
-            .then(res => res.text())
-            .then(html => setHtmlContent(html));
+          // Embed with iframe
+          setHtmlContent(`
+            <iframe src="${url}" style="width:100%; height:80vh; border:none;"></iframe>
+          `);
         });
       });
     } catch (err) {
