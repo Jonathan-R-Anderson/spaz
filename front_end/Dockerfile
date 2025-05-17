@@ -75,14 +75,11 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY static/ /app/static/
 RUN mkdir -p /app/static/apps
 
-# Build and deploy each Vite app
-RUN for app in profile dashboard loading welcome; do \
-    echo "🛠️ Building $app..."; \
-    cd /app/static/$app && \
+RUN cd /app/static/loading && \
     npm install --legacy-peer-deps && \
     npm run build && \
-    mkdir -p /app/static/apps/$app && \
-    rm -rf /app/static/apps/$app/* && \
+    mkdir -p /app/static/apps/loading && \
+    rm -rf /app/static/apps/loading/* && \
     cp -r dist/. /app/static/apps/$app/; \
   done
 
