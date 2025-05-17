@@ -75,7 +75,6 @@ COPY __init__.py /app/
 COPY models/ /app/models/
 COPY services/ /app/services/
 COPY static/ /app/static/
-COPY templates/ /app/templates/
 COPY tests/ /app/tests/
 COPY utils/ /app/utils/
 
