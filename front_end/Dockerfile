@@ -75,14 +75,13 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY static/ /app/static/
 
 # Build Vite frontend using npm (you can replace with bun if needed)
-WORKDIR /app/static/profile
-RUN npm install && npm run build
+RUN for app in profile dashboard loading welcome; do \
+    cd /app/static/$app && \
+    npm install && npm run build && \
+    mkdir -p /app/static/apps/$app && \
+    cp -r dist/* /app/static/apps/$app/; \
+done
 
-WORKDIR /app/static/dashboard
-RUN npm install && npm run build
-
-WORKDIR /app/static/loading
-RUN npm install && npm run build
 
 WORKDIR /app
 
