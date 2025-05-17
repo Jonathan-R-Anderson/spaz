@@ -6,7 +6,8 @@ from ..routes import blueprint
 import logging, os
 from werkzeug.utils import safe_join
 
-# --- 🧱 Serve Vite-built "loading" app ---
+
+# --- 🧱 Serve loading page from Vite (default /loading/index.html) ---
 @blueprint.route("/loading")
 def loading_screen():
     """Serve loading page (Vite index.html)."""
@@ -16,16 +17,36 @@ def loading_screen():
 
 @blueprint.route("/loading/<path:path>")
 def loading_static(path):
-    """Serve other Vite-built files (JS, CSS, images)."""
+    """Serve Vite loader JS/CSS/static assets."""
     return send_from_directory(
         os.path.join(app.static_folder, "loading", "dist"), path
     )
 
-@blueprint.route("/assets/<path:filename>")
-def vite_assets(filename):
-    """Serve Vite-generated assets with absolute paths."""
+
+# --- 🔁 Endpoint used by loading app to check if a Vite app is ready ---
+@blueprint.route("/load_app/<app_name>")
+def load_app_check(app_name):
+    app_path = os.path.join(app.static_folder, "apps", app_name, "index.html")
+    if os.path.exists(app_path):
+        logging.debug(f"[LOADER] App '{app_name}' is ready.")
+        return jsonify({"status": "ready", "path": f"/static/apps/{app_name}/index.html"})
+    logging.warning(f"[LOADER] App '{app_name}' not found.")
+    return jsonify({"status": "not_found"}), 404
+
+
+# --- 📦 Serve any app in /static/apps/<app_name> ---
+@blueprint.route("/static/apps/<app_name>/<path:filename>")
+def serve_app_static_file(app_name, filename):
+    """Serve app JS/CSS/assets from compiled folder."""
     return send_from_directory(
-        os.path.join(app.static_folder, "loading", "dist", "assets"), filename
+        os.path.join(app.static_folder, "apps", app_name), filename
+    )
+
+@blueprint.route("/static/apps/<app_name>/")
+def serve_app_index(app_name):
+    """Serve index.html for the Vite app (e.g. /static/apps/welcome/)."""
+    return send_from_directory(
+        os.path.join(app.static_folder, "apps", app_name), "index.html"
     )
 
 
@@ -51,7 +72,7 @@ def user_profile(eth_address, path):
     return send_from_directory(profile_dir, path)
 
 
-# --- 🔁 Catch-all: redirect to loading with original path ---
+# --- 🔁 Catch-all: redirect to /loading with ?target=/original/path ---
 @blueprint.route('/', defaults={'path': ''})
 @blueprint.route('/<path:path>')
 def fallback_to_loading(path):
