@@ -18,13 +18,15 @@ const App = ({ targetPath }: Props) => {
     if (targetPath.startsWith("/dashboard")) app = "dashboard";
     else if (targetPath.startsWith("/users")) app = "profile";
 
-    // Step 2: Ask backend to load via magnet
+    // Step 2: Ask backend to fetch/verify availability
     fetch(`/load_app/${app}`).then(() => {
       const interval = setInterval(() => {
         fetch(`/static/apps/${app}/index.html`, { method: "HEAD" }).then(res => {
           if (res.ok) {
             clearInterval(interval);
-            window.location.href = targetPath;
+
+            // ✅ Redirect to FULL path within the loaded app
+            window.location.href = `/static/apps/${app}${targetPath}`;
           }
         });
       }, 1500);
