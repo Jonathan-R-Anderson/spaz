@@ -3,6 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -16,7 +19,7 @@ const App = () => {
     const target = params.get("target") || "/";
     setTargetPath(target);
 
-    const app = "loading"; // 🔒 hardcoded for now
+    const app = "loading"; // hardcoded
 
     const checkAssets = async () => {
       const indexUrl = `/static/apps/${app}/index.html`;
@@ -53,28 +56,33 @@ const App = () => {
         const ready = await checkAssets();
         if (ready) {
           clearInterval(interval);
-          // ✅ Now stay in place — no redirect
           setLoading(false);
         }
       }, 1500);
     });
   }, []);
 
-  const App = () => (
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/static/apps/loading/">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        {loading ? (
+          <div className="loader-screen">
+            <h1>Loading your experience…</h1>
+            <p>Fetching content securely via decentralized web...</p>
+          </div>
+        ) : (
+          <BrowserRouter basename="/static/apps/loading/">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        )}
       </TooltipProvider>
     </QueryClientProvider>
   );
-  
-  
+};
 
 export default App;
