@@ -57,13 +57,19 @@ def serve_app_index(app_name):
         "index.html"
     )
 
-@blueprint.route("/static/apps/<app_name>/<path:filename>")
-def serve_app_static_file(app_name, filename):
-    """Serve app-specific JS/CSS/assets."""
-    return send_from_directory(
-        os.path.join(app.static_folder, "apps", app_name),
-        filename
-    )
+@blueprint.route("/static/apps/<app_name>/", defaults={"subpath": ""})
+@blueprint.route("/static/apps/<app_name>/<path:subpath>")
+def serve_vite_app(app_name, subpath):
+    app_dir = os.path.join(app.static_folder, "apps", app_name)
+    full_path = os.path.join(app_dir, subpath)
+
+    # If actual file exists, serve it
+    if subpath and os.path.exists(full_path):
+        return send_from_directory(app_dir, subpath)
+
+    # Otherwise serve index.html (for SPA routing like /users/0xabc)
+    return send_from_directory(app_dir, "index.html")
+
 
 
 # --- 🧭 Dashboard route (Jinja-rendered) ---
