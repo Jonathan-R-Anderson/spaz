@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "webtorrent": "^1.9.7",
     "ethers": "^6.10.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
