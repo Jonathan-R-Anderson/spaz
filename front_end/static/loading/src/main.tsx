@@ -1,9 +1,12 @@
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { BrowserRouter } from "react-router-dom";
 
-const target = new URLSearchParams(window.location.search).get('target') || '/';
-
-createRoot(document.getElementById("root")!).render(
-  <App targetPath={target} />
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter basename="/static/apps/welcome/">
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
 );
