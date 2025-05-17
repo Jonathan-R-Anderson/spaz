@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, request
+from flask import jsonify, request, send_from_directory, url_for
 from ..routes import blueprint
 import logging, json
 from utils.contracts import (
@@ -25,9 +25,7 @@ def user_profile(eth_address):
         rtmp_url = RTMP_URLS.get(eth_address, "psichos.is") if is_owner else "psichos.is"
         logging.debug(f"Profile POST for {eth_address}, owner={is_owner}")
         return jsonify({"is_owner": is_owner, "rtmp_stream_url": rtmp_url})
-    logging.debug(f"Rendering profile for {eth_address}")
-    return render_template('profile.html', eth_address=eth_address,
-                           livestreamABI=json.dumps(get_spaz_livestream_abi(), ensure_ascii=False),
-                           livestreamAddress=get_spaz_livestream_address(),
-                           moderationAddres=get_spaz_moderation_address(),
-                           moderationABI=json.dumps(get_spaz_moderation_abi(), ensure_ascii=False))
+
+    # Serve the Vite-based static index.html from loading/
+    logging.debug(f"Serving loading page for {eth_address}")
+    return send_from_directory("static/loading", "index.html")
