@@ -60,25 +60,21 @@ const App = () => {
     });
   }, []);
 
-  return (
+  const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        {loading ? (
-          <div className="loader-screen">
-            <h1>Loading your experience…</h1>
-            <p>Fetching content securely via decentralized web...</p>
-          </div>
-        ) : (
-          <div className="loaded-content">
-            <h1>✅ Loaded: {targetPath}</h1>
-            <p>This is where you mount or route to the actual app.</p>
-          </div>
-        )}
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+  
 
 export default App;
