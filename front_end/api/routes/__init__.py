@@ -4,7 +4,7 @@ from flask import Blueprint
 blueprint = Blueprint('main', __name__)
 
 # Import view modules to register their routes
-from api.routes.views import dashboard, rtmp, magnet, session, internal
+from api.views import dashboard, rtmp, magnet, session, internal
 
 # Import sub-blueprints
 from .verify_proxy import verify_bp
