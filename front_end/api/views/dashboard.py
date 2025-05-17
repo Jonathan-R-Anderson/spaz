@@ -15,6 +15,10 @@ from werkzeug.utils import safe_join
 def forward_to_loading(path):
     return redirect(f"/loading?target=/{path}")
 
+@blueprint.route("/loading")
+def loading_screen():
+    return send_from_directory(os.path.join(app.static_folder, "loading", "dist"), "index.html")
+
 @blueprint.route('/')
 def index():
     logging.debug("Rendering welcome page.")
