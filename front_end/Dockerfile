@@ -78,14 +78,18 @@ RUN mkdir -p /app/static/apps
 # Build and deploy each Vite app
 RUN for app in profile dashboard loading welcome; do \
     if [ -d "/app/static/$app" ]; then \
+      echo "🛠️ Building $app..."; \
       cd /app/static/$app && \
       npm install --legacy-peer-deps && \
       npm run build && \
       mkdir -p /app/static/apps/$app && \
       rm -rf /app/static/apps/$app/* && \
       cp -r dist/. /app/static/apps/$app/; \
-    fi \
+    else \
+      echo "⚠️ Skipping $app — not found at /app/static/$app"; \
+    fi; \
   done
+
 
 
 WORKDIR /app
