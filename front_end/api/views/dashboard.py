@@ -6,6 +6,7 @@ from utils.contracts import (
     get_spaz_moderation_abi, get_spaz_moderation_address
 )
 from services.stream import RTMP_URLS
+import os
 
 @blueprint.route('/')
 def index():
@@ -28,4 +29,4 @@ def user_profile(eth_address):
 
     # Serve the Vite-based static index.html from loading/
     logging.debug(f"Serving loading page for {eth_address}")
-    return send_from_directory("static/loading", "index.html")
+    return send_from_directory(os.path.join("static", "profile"), "index.html")
