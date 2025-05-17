@@ -7,75 +7,91 @@ import logging, os
 from werkzeug.utils import safe_join
 
 
-# --- 🧱 Serve loading page from Vite (default /loading/index.html) ---
+# --- 🧱 Serve Vite "loading" app (index + static assets) ---
 @blueprint.route("/loading")
 def loading_screen():
     """Serve loading page (Vite index.html)."""
     return send_from_directory(
-        os.path.join(app.static_folder, "loading", "dist"), "index.html"
+        os.path.join(app.static_folder, "loading", "dist"),
+        "index.html"
     )
 
 @blueprint.route("/loading/<path:path>")
 def loading_static(path):
-    """Serve Vite loader JS/CSS/static assets."""
+    """Serve other Vite-built files (JS, CSS, images)."""
     return send_from_directory(
-        os.path.join(app.static_folder, "loading", "dist"), path
+        os.path.join(app.static_folder, "loading", "dist"),
+        path
+    )
+
+@blueprint.route("/assets/<path:filename>")
+def vite_global_assets(filename):
+    """Support assets Vite emits as absolute /assets/*.js/.css paths."""
+    return send_from_directory(
+        os.path.join(app.static_folder, "loading", "dist", "assets"),
+        filename
     )
 
 
-# --- 🔁 Endpoint used by loading app to check if a Vite app is ready ---
+# --- 🔁 Loader: check if app exists in /static/apps/<app_name>/index.html ---
 @blueprint.route("/load_app/<app_name>")
 def load_app_check(app_name):
+    """Used by the loader to verify if an app is available and pre-fetched."""
     app_path = os.path.join(app.static_folder, "apps", app_name, "index.html")
     if os.path.exists(app_path):
         logging.debug(f"[LOADER] App '{app_name}' is ready.")
-        return jsonify({"status": "ready", "path": f"/static/apps/{app_name}/index.html"})
+        return jsonify({
+            "status": "ready",
+            "path": f"/static/apps/{app_name}/index.html"
+        })
     logging.warning(f"[LOADER] App '{app_name}' not found.")
     return jsonify({"status": "not_found"}), 404
 
 
-# --- 📦 Serve any app in /static/apps/<app_name> ---
-@blueprint.route("/static/apps/<app_name>/<path:filename>")
-def serve_app_static_file(app_name, filename):
-    """Serve app JS/CSS/assets from compiled folder."""
-    return send_from_directory(
-        os.path.join(app.static_folder, "apps", app_name), filename
-    )
-
+# --- 📦 Serve built Vite app files under /static/apps/<app_name>/ ---
 @blueprint.route("/static/apps/<app_name>/")
 def serve_app_index(app_name):
-    """Serve index.html for the Vite app (e.g. /static/apps/welcome/)."""
+    """Serve main index.html for the app."""
     return send_from_directory(
-        os.path.join(app.static_folder, "apps", app_name), "index.html"
+        os.path.join(app.static_folder, "apps", app_name),
+        "index.html"
+    )
+
+@blueprint.route("/static/apps/<app_name>/<path:filename>")
+def serve_app_static_file(app_name, filename):
+    """Serve app-specific JS/CSS/assets."""
+    return send_from_directory(
+        os.path.join(app.static_folder, "apps", app_name),
+        filename
     )
 
 
-# --- 🧭 Dashboard Route (Flask-rendered template) ---
-@blueprint.route('/dashboard/<eth_address>', methods=['GET'])
+# --- 🧭 Dashboard route (Jinja-rendered) ---
+@blueprint.route("/dashboard/<eth_address>", methods=["GET"])
 def dashboard_view(eth_address):
     logging.debug(f"Rendering dashboard for {eth_address}")
-    return render_template('dashboard.html', eth_address=eth_address)
+    return render_template("dashboard.html", eth_address=eth_address)
 
 
-# --- 👤 User Profile App (SPA-style fallback to profile/index.html) ---
-@blueprint.route('/users/<eth_address>', defaults={'path': ''})
-@blueprint.route('/users/<eth_address>/<path:path>')
+# --- 👤 Profile (SPA-style fallback to profile/index.html) ---
+@blueprint.route("/users/<eth_address>", defaults={"path": ""})
+@blueprint.route("/users/<eth_address>/<path:path>")
 def user_profile(eth_address, path):
-    profile_dir = os.path.join(app.static_folder, 'profile')
+    profile_dir = os.path.join(app.static_folder, "profile")
     target_path = safe_join(profile_dir, path)
 
     if not path or not os.path.exists(target_path):
         logging.debug(f"Serving profile index.html for {eth_address}")
-        return send_from_directory(profile_dir, 'index.html')
+        return send_from_directory(profile_dir, "index.html")
     
-    logging.debug(f"Serving static file: {target_path}")
+    logging.debug(f"Serving profile file: {target_path}")
     return send_from_directory(profile_dir, path)
 
 
-# --- 🔁 Catch-all: redirect to /loading with ?target=/original/path ---
-@blueprint.route('/', defaults={'path': ''})
-@blueprint.route('/<path:path>')
+# --- 🔁 Catch-all: forward everything else to the loader ---
+@blueprint.route("/", defaults={"path": ""})
+@blueprint.route("/<path:path>")
 def fallback_to_loading(path):
-    """Redirect unmatched paths to the Vite loading app."""
-    logging.debug(f"Redirecting to /loading for unknown path: /{path}")
+    """Fallback: redirect to /loading with original target in query."""
+    logging.debug(f"Redirecting to /loading?target=/{path}")
     return redirect(f"/loading?target=/{path}")
