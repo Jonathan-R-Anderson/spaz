@@ -53,7 +53,7 @@ const App = ({ targetPath }: Props) => {
         const ready = await checkAssets();
         if (ready) {
           clearInterval(interval);
-          window.location.href = `/static/apps/${app}${targetPath}`;
+          window.location.href = `/static/apps/${app}?target=${encodeURIComponent(targetPath)}`;
         }
       }, 1500);
     });

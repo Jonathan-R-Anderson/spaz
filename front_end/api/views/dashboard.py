@@ -48,15 +48,6 @@ def load_app_check(app_name):
     return jsonify({"status": "not_found"}), 404
 
 
-# --- 📦 Serve built Vite app files under /static/apps/<app_name>/ ---
-@blueprint.route("/static/apps/<app_name>/")
-def serve_app_index(app_name):
-    """Serve main index.html for the app."""
-    return send_from_directory(
-        os.path.join(app.static_folder, "apps", app_name),
-        "index.html"
-    )
-
 @blueprint.route("/static/apps/<app_name>/", defaults={"subpath": ""})
 @blueprint.route("/static/apps/<app_name>/<path:subpath>")
 def serve_vite_app(app_name, subpath):
