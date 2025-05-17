@@ -77,13 +77,16 @@ RUN mkdir -p /app/static/apps
 
 # Build and deploy each Vite app
 RUN for app in profile dashboard loading welcome; do \
-    cd /app/static/$app && \
-    npm install --legacy-peer-deps && \
-    npm run build && \
-    mkdir -p /app/static/apps/$app && \
-    rm -rf /app/static/apps/$app/* && \
-    cp -r dist/. /app/static/apps/$app/; \
-done
+    if [ -d "/app/static/$app" ]; then \
+      cd /app/static/$app && \
+      npm install --legacy-peer-deps && \
+      npm run build && \
+      mkdir -p /app/static/apps/$app && \
+      rm -rf /app/static/apps/$app/* && \
+      cp -r dist/. /app/static/apps/$app/; \
+    fi \
+  done
+
 
 WORKDIR /app
 
