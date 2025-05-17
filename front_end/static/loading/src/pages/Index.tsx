@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import LoadingPage from '../components/LoadingPage';
-import WebTorrent from 'webtorrent';
+declare global {
+  interface Window {
+    WebTorrent: any;
+  }
+}
 
 const CONTRACT_ADDRESS = '0xYourSpazMagnetStoreAddress';
 const CONTRACT_ABI = [
@@ -53,7 +57,7 @@ const Index = () => {
     try {
       const magnet = await fetch(`/api/get_magnet/${domain}`).then(res => res.text());
   
-      const client = new WebTorrent();
+      const client = new (window as any).WebTorrent();
       client.add(magnet, torrent => {
         const file = torrent.files.find(f => f.name === path || f.name.endsWith(`/${path}`));
         if (!file) return setHtmlContent('<h1>File not found in torrent</h1>');
