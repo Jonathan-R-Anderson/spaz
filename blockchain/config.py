@@ -15,7 +15,7 @@ class Config:
     UPLOAD_DIR = os.path.join(SHARED_DIR, "uploads")
 
     # Logging configuration
-    LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "/app/logs/blockchain.log")
+    LOG_FILE_PATH = os.getenv("BLOCKCHAIN_LOG_PATH", "logs/blockchain.log")
 
     # Flask server settings
     HOST = os.getenv("FLASK_HOST", "0.0.0.0")
