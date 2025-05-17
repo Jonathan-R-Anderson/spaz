@@ -1,12 +1,12 @@
-from flask import jsonify, request, send_from_directory, url_for
+from flask import jsonify, request, send_from_directory, url_for, render_template, current_app as app
 from ..routes import blueprint
-import logging, json
+import logging, json, os
 from utils.contracts import (
     get_spaz_livestream_abi, get_spaz_livestream_address,
     get_spaz_moderation_abi, get_spaz_moderation_address
 )
 from services.stream import RTMP_URLS
-import os
+from werkzeug.utils import safe_join
 
 @blueprint.route('/')
 def index():
@@ -18,15 +18,15 @@ def home(eth_address):
     logging.debug(f"Rendering dashboard for {eth_address}")
     return render_template('dashboard.html', eth_address=eth_address)
 
-@blueprint.route('/users/<eth_address>', methods=['POST', 'GET'])
-def user_profile(eth_address):
-    if request.method == 'POST':
-        current_user_eth_address = request.json.get('current_user_eth_address')
-        is_owner = current_user_eth_address.lower() == eth_address.lower()
-        rtmp_url = RTMP_URLS.get(eth_address, "psichos.is") if is_owner else "psichos.is"
-        logging.debug(f"Profile POST for {eth_address}, owner={is_owner}")
-        return jsonify({"is_owner": is_owner, "rtmp_stream_url": rtmp_url})
-
-    # Serve the Vite-based static index.html from loading/
-    logging.debug(f"Serving loading page for {eth_address}")
-    return send_from_directory(os.path.join("static", "profile"), "index.html")
+@blueprint.route('/users/<eth_address>', defaults={'path': ''})
+@blueprint.route('/users/<eth_address>/<path:path>')
+def user_profile(eth_address, path):
+    profile_dir = os.path.join(app.static_folder, 'profile')
+    
+    target_path = safe_join(profile_dir, path)
+    if not path or not os.path.exists(target_path):
+        logging.debug(f"Serving profile index.html for {eth_address}")
+        return send_from_directory(profile_dir, 'index.html')
+    
+    logging.debug(f"Serving static file: {target_path}")
+    return send_from_directory(profile_dir, path)
