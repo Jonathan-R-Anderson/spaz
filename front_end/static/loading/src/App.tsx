@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import "./index.css";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +20,7 @@ const App = () => {
     const target = params.get("target") || "/";
     setTargetPath(target);
 
-    const app = "loading"; // hardcoded
+    const app = "loading";
 
     const checkAssets = async () => {
       const indexUrl = `/static/apps/${app}/index.html`;
@@ -76,6 +77,7 @@ const App = () => {
           <BrowserRouter basename="/static/apps/loading/">
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/users/:eth_address" element={<UserProfile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
