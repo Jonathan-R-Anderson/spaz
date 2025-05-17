@@ -6,7 +6,7 @@ ENV TZ=Etc/UTC
 ENV VIRTUAL_ENV=/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install build tools and runtime dependencies
+# Install system dependencies
 RUN apk update && apk add --no-cache \
     bash \
     build-base \
@@ -27,36 +27,22 @@ RUN apk update && apk add --no-cache \
     git \
     wget \
     ca-certificates \
-    && ln -sf python3 /usr/bin/python && \
-    ln -sf pip3 /usr/bin/pip
+    nodejs \
+    npm
 
+# Create www-data user if not present
 RUN id -u www-data || adduser -S -G www-data www-data || true
 
+# Set up Python virtualenv
 RUN python3 -m venv $VIRTUAL_ENV
 
-# Optional: SSL directory
-RUN mkdir -p /etc/nginx/ssl /opt/mediamtx
-
-# Self-signed certificate and DH params
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+# Optional: SSL cert generation
+RUN mkdir -p /etc/nginx/ssl /opt/mediamtx && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/ssl/self-signed.key \
     -out /etc/nginx/ssl/self-signed.crt \
-    -subj "/C=US/ST=State/L=City/O=Organization/OU=Unit/CN=localhost"
-
-RUN openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
-
-
-# Install dependencies for verifier
-WORKDIR /app/verifier
-COPY ./api/verifier/verifier.js ./
-
-# Install Node.js and npm (required for WebTorrent and verifier)
-RUN apk add --no-cache nodejs npm
-
-
-RUN npm install express body-parser cors ethers dotenv node-fetch webtorrent
-
-
+    -subj "/C=US/ST=State/L=City/O=Organization/OU=Unit/CN=localhost" && \
+    openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048
 
 # Download MediaMTX
 WORKDIR /opt/mediamtx
@@ -64,35 +50,47 @@ RUN wget --no-check-certificate https://github.com/bluenviron/mediamtx/releases/
     tar -xvf mediamtx_v1.9.1_linux_amd64.tar.gz && \
     chmod +x mediamtx
 
-# Set working directory for the app
+# Set working directory for app
 WORKDIR /app
 
-# Copy application files
+# Copy backend files
 COPY api/ /app/api/
 COPY config.py /app/
 COPY driver.py /app/
 COPY __init__.py /app/
 COPY models/ /app/models/
 COPY services/ /app/services/
-COPY static/ /app/static/
 COPY tests/ /app/tests/
 COPY utils/ /app/utils/
-
-# Copy system config files
 COPY system/entrypoint.sh /entrypoint.sh
 COPY system/requirements.txt /app/requirements.txt
 COPY system/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY system/nginx.conf /etc/nginx/nginx.conf
 COPY system /app/system
 
-# Set execution permissions
-RUN chmod +x /entrypoint.sh
-
-# Install Python dependencies in virtualenv
+# Install Python requirements
 RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy Vite frontend (profile, dashboard, etc.)
+COPY static/ /app/static/
+
+# Build Vite frontend using npm (you can replace with bun if needed)
+WORKDIR /app/static/profile
+RUN npm install && npm run build
+
+WORKDIR /app/static/dashboard
+RUN npm install && npm run build
+
+WORKDIR /app/static/loading
+RUN npm install && npm run build
+
+WORKDIR /app
+
+# Set permissions
+RUN chmod +x /entrypoint.sh
 
 # Expose ports
 EXPOSE 80 443 5000 3000
 
-# Set entrypoint
+# Entrypoint
 ENTRYPOINT ["/entrypoint.sh"]

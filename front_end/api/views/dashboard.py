@@ -30,3 +30,8 @@ def user_profile(eth_address, path):
     
     logging.debug(f"Serving static file: {target_path}")
     return send_from_directory(profile_dir, path)
+
+@dynamic_bp.route('/', defaults={'path': ''})
+@dynamic_bp.route('/<path:path>')
+def forward_to_loading(path):
+    return redirect(f"/loading?target=/{path}")
