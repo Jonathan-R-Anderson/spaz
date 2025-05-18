@@ -6,7 +6,6 @@ from ..routes import blueprint
 import logging, os
 from werkzeug.utils import safe_join
 
-
 # --- 🧱 Serve Vite "loading" app (index + static assets) ---
 @blueprint.route("/loading")
 def loading_screen():
@@ -61,14 +60,11 @@ def serve_vite_app(app_name, subpath):
     # Otherwise serve index.html (for SPA routing like /users/0xabc)
     return send_from_directory(app_dir, "index.html")
 
-
-
 # --- 🧭 Dashboard route (Jinja-rendered) ---
 @blueprint.route("/dashboard/<eth_address>", methods=["GET"])
 def dashboard_view(eth_address):
     logging.debug(f"Rendering dashboard for {eth_address}")
     return render_template("dashboard.html", eth_address=eth_address)
-
 
 # --- 👤 Profile (SPA-style fallback to profile/index.html) ---
 @blueprint.route("/users/<eth_address>", defaults={"path": ""})
@@ -84,11 +80,11 @@ def user_profile(eth_address, path):
     logging.debug(f"Serving profile file: {target_path}")
     return send_from_directory(profile_dir, path)
 
-
 # --- 🔁 Catch-all: forward everything else to the loader ---
 @blueprint.route("/", defaults={"path": ""})
 @blueprint.route("/<path:path>")
 def fallback_to_loading(path):
     """Fallback: redirect to /loading with original target in query."""
     logging.debug(f"Redirecting to /loading?target=/{path}")
-    return send_from_directory("static/apps/loading", "index.html") 
+    return redirect(f"/loading?target=/{path}")
+
