@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import "./index.css";
-import UserProfile from "./pages/UserProfile";
+import LoadingPage from "./components/LoadingPage";
 
 const queryClient = new QueryClient();
 
@@ -77,7 +77,7 @@ const App = () => {
           <BrowserRouter basename="/static/apps/loading/">
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/users/:eth_address" element={<UserProfile />} />
+              <Route path="/users/:eth_address" element={<LoadingPage onComplete={() => setLoading(false)} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
