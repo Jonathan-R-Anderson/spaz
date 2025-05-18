@@ -69,10 +69,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         {loading ? (
-          <div className="loader-screen">
-            <h1>Loading your experience…</h1>
-            <p>Fetching content securely via decentralized web...</p>
-          </div>
+          <div className="loader-screen" />
         ) : (
           <BrowserRouter basename="/static/apps/loading/">
             <Routes>
