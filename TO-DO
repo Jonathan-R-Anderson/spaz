@@ -16,3 +16,4 @@ create a setup script that gives the admin the option to remain federated or lau
 in the script someone must prove they own a domain in order to claim a domain under the contract
 circular phylogenetic tree for chat room comments, so people can quickly navigate and engage in discussions
 open port 80 but forward to 443
+need to serve the files directly if the torrent doesn't resolve

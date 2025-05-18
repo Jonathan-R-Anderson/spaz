@@ -51,8 +51,6 @@ const Index = () => {
   };
   const fetchDynamicPage = async () => {
     const domain = window.location.hostname;
-  
-    // ⛳ Correctly get `target` from the query string
     const urlParams = new URLSearchParams(window.location.search);
     const path = urlParams.get("target")?.replace(/^\/+/, "") || "index.html";
   
@@ -62,20 +60,31 @@ const Index = () => {
       const client = new (window as any).WebTorrent();
       client.add(magnet, torrent => {
         const file = torrent.files.find(f => f.name === path || f.name.endsWith(`/${path}`));
-        if (!file) return setHtmlContent('<h1>File not found in torrent</h1>');
+        if (!file) {
+          return setHtmlContent('<h1>File not found in torrent</h1>');
+        }
   
         file.getBlobURL((err, url) => {
           if (err) return setHtmlContent('<h1>Error loading file</h1>');
   
-          // 🚀 Redirect once file is downloaded
-          window.location.href = url;
+          // ✅ Show the content in an iframe (don't navigate away)
+          setHtmlContent(`
+            <iframe src="${url}" style="width:100%; height:100vh; border:none;"></iframe>
+          `);
+  
+          // ✅ Call onComplete once iframe is rendered
+          setTimeout(() => {
+            setLoading(false); // triggers React to unmount the LoadingPage
+          }, 300); // short delay to let iframe start loading
         });
       });
     } catch (err) {
       console.error('Torrent load failed', err);
       setHtmlContent('<h1>Failed to load site via WebTorrent</h1>');
+      setLoading(false);
     }
   };
+  
   
   
 
@@ -137,10 +146,11 @@ const Index = () => {
   );
 
   return loading ? (
-    <LoadingPage onComplete={handleLoadingComplete} duration={3000} />
+    <LoadingPage onComplete={() => {}} duration={3000} />
   ) : (
-    <MainContent />
+    <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
   );
+  
 };
 
 export default Index;
