@@ -51,8 +51,8 @@ const Index = () => {
   };
   const fetchDynamicPage = async () => {
     const domain = window.location.hostname;
-    const urlParams = new URLSearchParams(window.location.search);
-    const path = urlParams.get("target")?.replace(/^\/+/, "") || "index.html";
+    const params = new URLSearchParams(window.location.search);
+    const path = params.get('target') || 'index.html';
   
     try {
       const magnet = await fetch(`/api/get_magnet/${domain}`).then(res => res.text());
@@ -61,32 +61,24 @@ const Index = () => {
       client.add(magnet, torrent => {
         const file = torrent.files.find(f => f.name === path || f.name.endsWith(`/${path}`));
         if (!file) {
-          return setHtmlContent('<h1>File not found in torrent</h1>');
+          console.error('❌ File not found in torrent');
+          return;
         }
   
-        file.getBlobURL((err, url) => {
-          if (err) return setHtmlContent('<h1>Error loading file</h1>');
+        file.getBlobURL((err, blobUrl) => {
+          if (err || !blobUrl) {
+            console.error('❌ Error creating blob URL', err);
+            return;
+          }
   
-          // ✅ Show the content in an iframe (don't navigate away)
-          setHtmlContent(`
-            <iframe src="${url}" style="width:100%; height:100vh; border:none;"></iframe>
-          `);
-  
-          // ✅ Call onComplete once iframe is rendered
-          setTimeout(() => {
-            setLoading(false); // triggers React to unmount the LoadingPage
-          }, 300); // short delay to let iframe start loading
+          // ✅ Hard redirect the browser to the downloaded blob
+          window.location.href = blobUrl;
         });
       });
     } catch (err) {
       console.error('Torrent load failed', err);
-      setHtmlContent('<h1>Failed to load site via WebTorrent</h1>');
-      setLoading(false);
     }
   };
-  
-  
-  
 
   const handleLoadingComplete = async () => {
     setContent(fetchBlockchainContent());
@@ -146,10 +138,11 @@ const Index = () => {
   );
 
   return loading ? (
-    <LoadingPage onComplete={() => {}} duration={3000} />
+    <LoadingPage onComplete={handleLoadingComplete} duration={3000} />
   ) : (
     <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
   );
+  
   
 };
 
