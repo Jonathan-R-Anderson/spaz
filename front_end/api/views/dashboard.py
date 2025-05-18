@@ -85,6 +85,5 @@ def user_profile(eth_address, path):
 @blueprint.route("/<path:path>")
 def fallback_to_loading(path):
     """Fallback: redirect to /loading with original target in query."""
-    logging.debug(f"Redirecting to /loading?target=/{path}")
-    return redirect(f"/loading?target=/{path}")
-
+    logging.debug(f"Redirecting to /loading?url=/{path}")
+    return redirect(f"/loading?url=/{path}")
