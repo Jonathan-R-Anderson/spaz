@@ -17,3 +17,15 @@ in the script someone must prove they own a domain in order to claim a domain un
 circular phylogenetic tree for chat room comments, so people can quickly navigate and engage in discussions
 open port 80 but forward to 443
 need to serve the files directly if the torrent doesn't resolve
+configuration options
+whitelist/blacklist of streamers
+make mechanism to push and roll back updates
+make smart contracts inherit or point to the last version's data records
+seed box with controls
+allow engagement measurements for streamers to analyze on their channel. such as sentiment analysis of discussions, viewers, tips, etc. 
+    use an llm to analyze the metrics and give streaming advice
+    need to analyze video in real time to give advice
+    use tfidf to see what words most resinate with viewers
+need system for creating directory of federated servers
+need system for creating directory of streamers, which servers they are supported on
+servers on federated system will be referenced by name or favicn

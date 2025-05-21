@@ -14,6 +14,8 @@ SPAZ_LIVESTREAM_ADDRESS = os.getenv("SPAZ_LIVESTREAM_ADDRESS", "0x0")
 SPAZ_MODERATION_ADDRESS = os.getenv("SPAZ_MODERATION_ADDRESS", "0x0")
 SPAZ_LIVESTREAM_ABI_PATH = os.getenv("SPAZ_LIVESTREAM_ABI_PATH", "./contracts/SpazLivestream.json")
 SPAZ_MODERATION_ABI_PATH = os.getenv("SPAZ_MODERATION_ABI_PATH", "./contracts/SpazModeration.json")
+SPAZ_MAGNET_STORE_ADDRESS = os.getenv("SPAZ_MAGNET_STORE_ADDRESS", "0x0")
+SPAZ_MAGNET_STORE_ABI_PATH = os.getenv("SPAZ_MAGNET_STORE_ABI_PATH", "./contracts/SpazMagnetStore.json")
 
 def load_abi(path):
     try:
@@ -44,4 +46,14 @@ def get_spaz_moderation():
         "abi": load_abi(SPAZ_MODERATION_ABI_PATH)
     }
     logger.debug(f"[/spaz_moderation] Returning contract data: address={SPAZ_MODERATION_ADDRESS}")
+    return jsonify(response), 200
+
+@retrieve_contract_routes.route("/spaz_magnet_store", methods=["GET"])
+def get_spaz_magnet_store():
+    logger.info("[/spaz_magnet_store] GET request received")
+    response = {
+        "address": SPAZ_MAGNET_STORE_ADDRESS,
+        "abi": load_abi(SPAZ_MAGNET_STORE_ABI_PATH)
+    }
+    logger.debug(f"[/spaz_magnet_store] Returning contract data: address={SPAZ_MAGNET_STORE_ADDRESS}")
     return jsonify(response), 200

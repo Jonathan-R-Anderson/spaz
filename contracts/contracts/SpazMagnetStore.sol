@@ -7,11 +7,11 @@ contract SpazMagnetStore {
     // domain => owner
     mapping(string => address) public domainOwners;
 
-    // domain => magnet links
-    mapping(string => string[]) private magnetUrls;
+    // domain => path => magnet links
+    mapping(string => mapping(string => string[])) private domainToPathMagnetUrls;
 
+    // domain => single magnet link (for default path)
     mapping(string => string) public domainToMagnet;
-
 
     modifier onlyDomainOwner(string memory domain) {
         require(domainOwners[domain] == msg.sender, "Not domain owner");
@@ -34,12 +34,34 @@ contract SpazMagnetStore {
         domainOwners[domain] = msg.sender;
     }
 
-    function addMagnet(string memory domain, string memory url) public onlyDomainOwner(domain) {
-        magnetUrls[domain].push(url);
+    // Add magnet link to a specific path on the domain (only domain owner)
+    function addMagnetToPath(string memory domain, string memory path, string memory url) public onlyDomainOwner(domain) {
+        domainToPathMagnetUrls[domain][path].push(url);
     }
 
-    function getMagnets(string memory domain) public view returns (string[] memory) {
-        return magnetUrls[domain];
+    // Retrieve all magnet links for a given path on a domain
+    function getMagnetsForPath(string memory domain, string memory path) public view returns (string[] memory) {
+        return domainToPathMagnetUrls[domain][path];
+    }
+
+    // Set a single magnet link for the default path of the domain (only domain owner)
+    function setMagnetForDomain(string memory domain, string memory url) public onlyDomainOwner(domain) {
+        domainToMagnet[domain] = url;
+    }
+
+    // Retrieve the single magnet link for the default path on the domain
+    function getMagnetForDomain(string memory domain) public view returns (string memory) {
+        return bytes(domainToMagnet[domain]).length > 0 ? domainToMagnet[domain] : "No magnet link found";
+    }
+
+    // Retrieve the single magnet link for a specific path on the domain
+    function getMagnetForDomainAndPath(string memory domain, string memory path) public view returns (string memory) {
+        // Return the first magnet link for the specified path on the domain
+        string[] memory magnets = domainToPathMagnetUrls[domain][path];
+        if (magnets.length > 0) {
+            return magnets[0];
+        }
+        return "No magnet link found for path";
     }
 
     // --- Signature helpers ---
@@ -62,8 +84,4 @@ contract SpazMagnetStore {
     function prefixed(bytes32 hash) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
     }
-
-    function getMagnetForDomain(string memory domain) public view returns (string memory) {
-    return domainToMagnet[domain];
-}
 }
