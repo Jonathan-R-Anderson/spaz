@@ -3,7 +3,6 @@ set -e
 
 echo "🔐 Waiting for Kerberos files to be generated..."
 
-# Wait up to 20 seconds for Kerberos files to be present
 for i in {1..10}; do
   if [[ -f "/kerberos/output/krb5.conf" && -f "/kerberos/output/service.keytab" ]]; then
     echo "✅ Kerberos files found."
@@ -13,7 +12,6 @@ for i in {1..10}; do
   sleep 2
 done
 
-# Final check
 if [[ ! -f "/kerberos/output/krb5.conf" || ! -f "/kerberos/output/service.keytab" ]]; then
   echo "❌ Kerberos files not found in /kerberos/output. Cannot continue."
   exit 1
@@ -21,13 +19,14 @@ fi
 
 echo "📁 Copying Kerberos files to container..."
 
-# Use a writable path under /home/appuser
-mkdir -p /home/appuser/.krb5
-cp /kerberos/output/krb5.conf /home/appuser/.krb5/krb5.conf
-cp /kerberos/output/service.keytab /etc/krb5.keytab
+# Use sudo if available, otherwise run as root
+cp /kerberos/output/krb5.conf /tmp/krb5.conf
+cp /kerberos/output/service.keytab /tmp/service.keytab
+chmod 644 /tmp/krb5.conf /tmp/service.keytab
 
-# Export custom krb5.conf path
-export KRB5_CONFIG=/home/appuser/.krb5/krb5.conf
+# Need root to copy to /etc
+sudo cp /tmp/service.keytab /etc/krb5.keytab 2>/dev/null || cp /tmp/service.keytab /etc/krb5.keytab
+export KRB5_CONFIG=/tmp/krb5.conf
 
 echo "✅ Kerberos configuration loaded."
 
