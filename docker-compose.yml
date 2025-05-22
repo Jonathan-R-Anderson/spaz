@@ -137,8 +137,8 @@ services:
       - "6660:6660"
     volumes:
       - ./openvpn-data:/etc/openvpn
-      - ./krb5.conf:/etc/krb5.conf:ro
-      - ./keytab:/etc/krb5.keytab:ro
+      - ./kerberos/output/krb5.conf:/etc/krb5.conf:ro
+      - ./kerberos/output/service.keytab:/etc/krb5.keytab:ro
     restart: unless-stopped
     networks:
       - spaz_net
@@ -168,6 +168,14 @@ services:
       options:
         max-size: "100m"
         max-file: "10"
+
+  kerberos_setup:
+    build: ./kerberos_setup
+    container_name: kdc
+    volumes:
+    - ./kerberos/kdc-data:/var/lib/krb5kdc
+    - ./kerberos/output:/tmp
+    restart: unless-stopped
 
 volumes:
   data:
