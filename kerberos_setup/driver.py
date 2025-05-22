@@ -22,6 +22,8 @@ def write_krb5_conf():
     os.makedirs("/kerberos/output", exist_ok=True)
     with open("/kerberos/output/krb5.conf", "w") as f:
         f.write(krb5_template)
+
+    # ✅ copy into correct location now that container is running
     subprocess.run(["cp", "/kerberos/output/krb5.conf", "/etc/krb5.conf"], check=True)
 
 def initialize_kdc():
