@@ -170,7 +170,8 @@ services:
         max-file: "10"
 
   kerberos_setup:
-    build: ./kerberos_setup
+    build:
+      context: ./kerberos_setup
     container_name: kdc
     volumes:
     - ./kerberos/kdc-data:/var/lib/krb5kdc
