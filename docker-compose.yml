@@ -134,7 +134,7 @@ services:
       - NET_ADMIN
     ports:
       - "1194:1194/udp"
-      - "8080:8080"
+      - "6660:6660"
     volumes:
       - ./openvpn-data:/etc/openvpn
       - ./krb5.conf:/etc/krb5.conf:ro
