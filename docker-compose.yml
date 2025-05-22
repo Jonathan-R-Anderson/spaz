@@ -128,12 +128,13 @@ services:
       - spaz_net
 
   vpn:
-    image: kylemanna/openvpn
+    build: ./vpn
     container_name: openvpn
     cap_add:
       - NET_ADMIN
     ports:
       - "1194:1194/udp"
+      - "8080:8080"
     volumes:
       - ./openvpn-data:/etc/openvpn
     restart: unless-stopped
