@@ -25,17 +25,18 @@ RUN npm install -g pnpm
 # Clone and build anime-captcha
 RUN git clone https://github.com/leomotors/anime-captcha.git /app/anime-captcha && \
     cd /app/anime-captcha && \
+    sed -i '/PUBLIC_ENV/d' src/routes/debug/+page.ts && \
     pnpm install && \
     pnpm build
 
-# Copy requirements and install Python dependencies
+# Copy Python requirements and install them
 COPY ./system/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source code
+# Copy the rest of the application source code
 COPY . /app
 
-# Copy entrypoint script and make it executable
+# Make entrypoint executable
 COPY ./system/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
