@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-source /app/.env
-
 echo "🔐 Checking and copying Kerberos configuration..."
 if [[ -f "/kerberos/output/krb5.conf" && -f "/kerberos/output/service.keytab" ]]; then
   cp /kerberos/output/krb5.conf /etc/krb5.conf
