@@ -21,10 +21,13 @@ fi
 
 echo "📁 Copying Kerberos files to container..."
 
-# Copy to writable location and set env var
-cp /kerberos/output/krb5.conf /app/krb5.conf
+# Use a writable path under /home/appuser
+mkdir -p /home/appuser/.krb5
+cp /kerberos/output/krb5.conf /home/appuser/.krb5/krb5.conf
 cp /kerberos/output/service.keytab /etc/krb5.keytab
-export KRB5_CONFIG=/app/krb5.conf
+
+# Export custom krb5.conf path
+export KRB5_CONFIG=/home/appuser/.krb5/krb5.conf
 
 echo "✅ Kerberos configuration loaded."
 

@@ -30,10 +30,14 @@ RUN python3 -m venv /venv && \
 
 ENV PATH="/venv/bin:$PATH"
 
+# Add the entrypoint script with universal execute permission
 COPY ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
 
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+# Add app user and give permissions to their home
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser && \
+    mkdir -p /home/appuser/.krb5 && chown -R appuser:appgroup /home/appuser
+
 USER appuser
 
 EXPOSE 8080 1194/udp

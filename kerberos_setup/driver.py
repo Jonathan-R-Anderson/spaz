@@ -29,20 +29,19 @@ def write_krb5_conf():
     with open(path, "w") as f:
         f.write(krb5_template)
 
-
 def initialize_kdc():
-    stash_file = f"/etc/krb5kdc/.k5.{REALM}"
+    stash_path = f"/etc/krb5kdc/.k5.{REALM}"
+    db_base = "/var/lib/krb5kdc/principal"
 
-    print(f"🔥 Initializing KDC for realm: {REALM}")
-    if os.path.exists("/var/lib/krb5kdc/principal"):
-        if not os.path.exists(stash_file):
-            print(f"🛠️ Found DB but missing stash file {stash_file}, deleting DB and recreating...")
-            os.remove("/var/lib/krb5kdc/principal")
-            if os.path.exists(stash_file):
-                os.remove(stash_file)
-        else:
-            print("🟡 KDC already initialized. Skipping creation.")
-            return
+    if not os.path.exists(stash_path):
+        print(f"🛠️ Found DB but missing stash file {stash_path}, deleting DB and recreating...")
+        for suffix in ["", ".ok", ".kadm5", ".kadm5.lock", ".db"]:
+            path = f"{db_base}{suffix}"
+            try:
+                os.remove(path)
+                print(f"🧹 Deleted {path}")
+            except FileNotFoundError:
+                continue
 
     subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
 
