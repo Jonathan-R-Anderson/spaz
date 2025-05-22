@@ -30,3 +30,4 @@ need system for creating directory of federated servers
 need system for creating directory of streamers, which servers they are supported on
 servers on federated system will be referenced by name or favicn
 need interface for deploying smart contracts on the backend. they should deploy for an address which is separate from the one hard-coded into the site. it should request the funds to deploy from the original account
+make .env not store raw passwords, but hashes
