@@ -27,12 +27,17 @@ def write_krb5_conf():
     subprocess.run(["cp", "/kerberos/output/krb5.conf", "/etc/krb5.conf"], check=True)
 
 def initialize_kdc():
-    print(f"🔥 Initializing KDC for realm: {REALM}")
     with open("/etc/krb5kdc/kdc.conf", "w") as f:
         f.write(f"{REALM}\n")
     with open("/etc/krb5kdc/kadm5.acl", "w") as f:
         f.write(f"*/admin@{REALM} *\n")
-    
+
+    print(f"🔥 Initializing KDC for realm: {REALM}")
+    if not os.path.exists("/var/lib/krb5kdc/principal"):
+        subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
+    else:
+        print("🟡 KDC already initialized. Skipping creation.")
+
     subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
 
 def create_principal():
