@@ -1,7 +1,9 @@
+# driver.py
 import subprocess
-from config import REALM, DOMAIN, PRINCIPAL, KEYTAB_PATH
+import os
+from config import REALM, DOMAIN, PRINCIPAL, KEYTAB_PATH, MASTER_PASS
 
-def write_krb5_conf_template():
+def write_krb5_conf():
     krb5_template = f"""[libdefaults]
   default_realm = {REALM}
   dns_lookup_realm = false
@@ -17,18 +19,19 @@ def write_krb5_conf_template():
   .{DOMAIN} = {REALM}
   {DOMAIN} = {REALM}
 """
-    with open("krb5.conf.template", "w") as f:
+    os.makedirs("/kerberos/output", exist_ok=True)
+    with open("/kerberos/output/krb5.conf", "w") as f:
         f.write(krb5_template)
-    subprocess.run(["cp", "krb5.conf.template", "/etc/krb5.conf"], check=True)
+    subprocess.run(["cp", "/kerberos/output/krb5.conf", "/etc/krb5.conf"], check=True)
 
 def initialize_kdc():
+    print(f"🔥 Initializing KDC for realm: {REALM}")
     with open("/etc/krb5kdc/kdc.conf", "w") as f:
         f.write(f"{REALM}\n")
     with open("/etc/krb5kdc/kadm5.acl", "w") as f:
         f.write(f"*/admin@{REALM} *\n")
-
-    print(f"🔥 Initializing KDC for realm: {REALM}")
-    subprocess.run(["krb5_newrealm"], check=True)
+    
+    subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
 
 def create_principal():
     print(f"🧪 Creating service principal: {PRINCIPAL}")
@@ -37,7 +40,7 @@ def create_principal():
     print(f"✅ Keytab generated at {KEYTAB_PATH}")
 
 if __name__ == "__main__":
-    write_krb5_conf_template()
+    write_krb5_conf()
     initialize_kdc()
     create_principal()
     subprocess.run(["tail", "-f", "/dev/null"])  # Keep container running
