@@ -179,6 +179,8 @@ services:
     volumes:
     - ./kerberos/kdc-data:/var/lib/krb5kdc
     - ./kerberos/output:/tmp
+    env_file:
+      - .env
     restart: unless-stopped
 
 volumes:
