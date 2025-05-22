@@ -31,3 +31,7 @@ need system for creating directory of streamers, which servers they are supporte
 servers on federated system will be referenced by name or favicn
 need interface for deploying smart contracts on the backend. they should deploy for an address which is separate from the one hard-coded into the site. it should request the funds to deploy from the original account
 make .env not store raw passwords, but hashes
+need to ask in setup container whether or not the person wants to be federated with the default network, or start their own
+    if they decide to, then they bootstrap to the existing network
+    if not, then they generate the abi/address of existing contracts
+need master directory of all federated networks for someone to choose from and retrieve the relevant info for bootstrapping
