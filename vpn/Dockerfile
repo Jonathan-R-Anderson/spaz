@@ -1,20 +1,21 @@
-FROM alpine:3.18
+FROM debian:stable-slim
 
-# Install core packages
-RUN apk add --no-cache \
+# Install core system packages
+RUN apt-get update && apt-get install -y \
     openvpn \
     easy-rsa \
     python3 \
-    py3-pip \
+    python3-pip \
     bash \
     curl \
-    krb5 \
-    krb5-server \
-    krb5-libs \
+    krb5-user \
+    krb5-kdc \
+    krb5-admin-server \
+    libkrb5-dev \
     nginx \
-    build-base \
-    git
-
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -32,13 +33,8 @@ RUN pip install --no-cache-dir \
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Add krb5.conf and keytab files (should be mounted or copied securely)
-# Example (commented, handled at runtime via volume):
-# COPY ./krb5.conf /etc/krb5.conf
-# COPY ./service.keytab /etc/krb5.keytab
-
 # Create non-root user for better security (optional)
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 USER appuser
 
 # Expose HTTP and VPN ports
