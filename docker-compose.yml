@@ -25,7 +25,7 @@ services:
       - spaz_net
     depends_on:
       - database
-      - blockchain
+      - contract_manager
       - webtorrent
     logging:
       driver: "json-file"
