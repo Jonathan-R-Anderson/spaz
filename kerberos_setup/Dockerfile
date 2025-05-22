@@ -18,10 +18,8 @@ ENV PATH="/venv/bin:$PATH"
 RUN pip install --upgrade pip && pip install python-dotenv
 
 # Copy app files
-COPY config.py generate_krb5_template.py initialize_kdc.py /kerberos/
-COPY create-principal.sh /kerberos/
-RUN chmod +x /kerberos/create-principal.sh
+COPY config.py driver.py /kerberos/
 
 VOLUME /var/lib/krb5kdc /etc/krb5kdc
 
-CMD ["python", "/kerberos/initialize_kdc.py"]
+CMD ["python", "/kerberos/driver.py"]
