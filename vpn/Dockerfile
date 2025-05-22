@@ -11,11 +11,10 @@ RUN apk add --no-cache \
     krb5 \
     krb5-server \
     krb5-libs \
-    krb5-extra \
-    gssproxy \
     nginx \
     build-base \
     git
+
 
 # Set working directory
 WORKDIR /app
