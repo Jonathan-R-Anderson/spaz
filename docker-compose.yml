@@ -140,8 +140,6 @@ services:
     volumes:
       - ./openvpn-data:/etc/openvpn
       - ./kerberos/output:/kerberos/output
-      - ./kerberos/output/krb5.conf:/etc/krb5.conf:ro
-      - ./kerberos/output/service.keytab:/etc/krb5.keytab:ro
     restart: unless-stopped
     networks:
       - spaz_net
