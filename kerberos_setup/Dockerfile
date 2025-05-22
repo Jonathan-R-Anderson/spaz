@@ -18,7 +18,7 @@ ENV PATH="/venv/bin:$PATH"
 RUN pip install --upgrade pip && pip install python-dotenv
 
 # Copy Python scripts
-COPY driver.py config.py .env /kerberos/
+COPY driver.py config.py /kerberos/
 
 # Mount persistent KDC storage
 VOLUME ["/var/lib/krb5kdc", "/etc/krb5kdc", "/kerberos/output"]
