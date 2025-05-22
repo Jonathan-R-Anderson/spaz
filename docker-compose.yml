@@ -137,6 +137,8 @@ services:
       - "8080:8080"
     volumes:
       - ./openvpn-data:/etc/openvpn
+      - ./krb5.conf:/etc/krb5.conf:ro
+      - ./keytab:/etc/krb5.keytab:ro
     restart: unless-stopped
     networks:
       - spaz_net

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OpenVPN Config Generator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #1a1a1a;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: #262626;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 255, 200, 0.2);
+      width: 90%;
+      max-width: 450px;
+    }
+    h2 {
+      text-align: center;
+      color: #00ffc8;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input[type="text"], input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: none;
+      background: #333;
+      color: #fff;
+    }
+    button {
+      margin-top: 25px;
+      padding: 12px;
+      width: 100%;
+      background-color: #00ffc8;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #00dab0;
+    }
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .modal button {
+      width: auto;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>OpenVPN Config Generator</h2>
+    <form id="vpn-form">
+      <label for="client">Client Name:</label>
+      <input type="text" id="client" name="client" required placeholder="e.g. alice-laptop" />
+
+      <label for="email">Email (optional):</label>
+      <input type="email" id="email" name="email" placeholder="alice@example.com" />
+
+      <label for="org">Organization (optional):</label>
+      <input type="text" id="org" name="org" placeholder="MyOrg Inc." />
+
+      <button type="submit">Generate OVPN</button>
+    </form>
+  </div>
+
+  <div class="modal" id="confirm-modal">
+    <div class="modal-content">
+      <p>Are you sure you want to generate this OVPN config?</p>
+      <button id="confirm-yes">Yes</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('vpn-form');
+    const modal = document.getElementById('confirm-modal');
+    const confirmBtn = document.getElementById('confirm-yes');
+
+    let formData = null;
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      formData = new FormData(form);
+      modal.style.display = 'flex';
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+      const client = formData.get('client');
+      modal.style.display = 'none';
+
+      const response = await fetch("/", {
+        method: "POST",
+        body: new URLSearchParams(formData),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${client}.ovpn`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // Inform server to shut down
+        await fetch("/shutdown", { method: "POST" });
+      } else {
+        alert("Error creating config.");
+      }
+    });
+
+    function closeModal() {
+      modal.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
