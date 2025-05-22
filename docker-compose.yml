@@ -173,7 +173,6 @@ services:
   kerberos_setup:
     build:
       context: ./kerberos_setup
-    container_name: kdc
     volumes:
     - ./kerberos/output:/kerberos/output
     - ./kerberos/kdc-data:/var/lib/krb5kdc
