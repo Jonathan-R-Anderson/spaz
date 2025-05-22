@@ -33,12 +33,11 @@ def initialize_kdc():
         f.write(f"*/admin@{REALM} *\n")
 
     print(f"🔥 Initializing KDC for realm: {REALM}")
-    if not os.path.exists("/var/lib/krb5kdc/principal"):
-        subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
-    else:
+    if os.path.exists("/var/lib/krb5kdc/principal"):
         print("🟡 KDC already initialized. Skipping creation.")
-
+        return 
     subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
+
 
 def create_principal():
     print(f"🧪 Creating service principal: {PRINCIPAL}")
@@ -50,4 +49,4 @@ if __name__ == "__main__":
     write_krb5_conf()
     initialize_kdc()
     create_principal()
-    subprocess.run(["tail", "-f", "/dev/null"])  # Keep container running
+    subprocess.run(["tail", "-f", "/dev/null"])
