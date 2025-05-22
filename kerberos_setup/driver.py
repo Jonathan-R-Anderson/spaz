@@ -5,24 +5,30 @@ from config import REALM, DOMAIN, PRINCIPAL, KEYTAB_PATH, MASTER_PASS
 
 def write_krb5_conf():
     path = "/kerberos/output/krb5.conf"
-    if os.path.isdir(path):
-        os.rmdir(path)  # or shutil.rmtree(path) if needed
 
-    with open(path, "w") as f:
-        f.write(f"""[libdefaults]
+    if os.path.isdir(path):
+        os.rmdir(path)
+
+    krb5_template = f"""
+[libdefaults]
     default_realm = {REALM}
+    dns_lookup_realm = false
+    dns_lookup_kdc = false
+
 [realms]
     {REALM} = {{
         kdc = localhost
         admin_server = localhost
     }}
-""")
-    os.makedirs("/kerberos/output", exist_ok=True)
-    with open("/kerberos/output/krb5.conf", "w") as f:
+
+[domain_realm]
+    .{REALM.lower()} = {REALM}
+    {REALM.lower()} = {REALM}
+"""
+
+    with open(path, "w") as f:
         f.write(krb5_template)
 
-    # ✅ copy into correct location now that container is running
-    subprocess.run(["cp", "/kerberos/output/krb5.conf", "/etc/krb5.conf"], check=True)
 
 def initialize_kdc():
     stash_file = f"/etc/krb5kdc/.k5.{REALM}"
