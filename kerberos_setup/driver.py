@@ -4,21 +4,19 @@ import os
 from config import REALM, DOMAIN, PRINCIPAL, KEYTAB_PATH, MASTER_PASS
 
 def write_krb5_conf():
-    krb5_template = f"""[libdefaults]
-  default_realm = {REALM}
-  dns_lookup_realm = false
-  dns_lookup_kdc = false
+    path = "/kerberos/output/krb5.conf"
+    if os.path.isdir(path):
+        os.rmdir(path)  # or shutil.rmtree(path) if needed
 
+    with open(path, "w") as f:
+        f.write(f"""[libdefaults]
+    default_realm = {REALM}
 [realms]
-  {REALM} = {{
-    kdc = localhost
-    admin_server = localhost
-  }}
-
-[domain_realm]
-  .{DOMAIN} = {REALM}
-  {DOMAIN} = {REALM}
-"""
+    {REALM} = {{
+        kdc = localhost
+        admin_server = localhost
+    }}
+""")
     os.makedirs("/kerberos/output", exist_ok=True)
     with open("/kerberos/output/krb5.conf", "w") as f:
         f.write(krb5_template)
@@ -27,16 +25,21 @@ def write_krb5_conf():
     subprocess.run(["cp", "/kerberos/output/krb5.conf", "/etc/krb5.conf"], check=True)
 
 def initialize_kdc():
-    with open("/etc/krb5kdc/kdc.conf", "w") as f:
-        f.write(f"{REALM}\n")
-    with open("/etc/krb5kdc/kadm5.acl", "w") as f:
-        f.write(f"*/admin@{REALM} *\n")
+    stash_file = f"/etc/krb5kdc/.k5.{REALM}"
 
     print(f"🔥 Initializing KDC for realm: {REALM}")
     if os.path.exists("/var/lib/krb5kdc/principal"):
-        print("🟡 KDC already initialized. Skipping creation.")
-        return 
+        if not os.path.exists(stash_file):
+            print(f"🛠️ Found DB but missing stash file {stash_file}, deleting DB and recreating...")
+            os.remove("/var/lib/krb5kdc/principal")
+            if os.path.exists(stash_file):
+                os.remove(stash_file)
+        else:
+            print("🟡 KDC already initialized. Skipping creation.")
+            return
+
     subprocess.run(["kdb5_util", "create", "-s", "-P", MASTER_PASS], check=True)
+
 
 
 def create_principal():
