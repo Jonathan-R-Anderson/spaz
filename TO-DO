@@ -29,3 +29,4 @@ allow engagement measurements for streamers to analyze on their channel. such as
 need system for creating directory of federated servers
 need system for creating directory of streamers, which servers they are supported on
 servers on federated system will be referenced by name or favicn
+need interface for deploying smart contracts on the backend. they should deploy for an address which is separate from the one hard-coded into the site. it should request the funds to deploy from the original account

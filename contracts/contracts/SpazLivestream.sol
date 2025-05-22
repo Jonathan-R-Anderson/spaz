@@ -12,6 +12,7 @@ contract SpazLivestream {
         address creator;
         uint[] segmentIds;
         bool isActive;
+        string alias;
     }
 
     uint public nextStreamId = 1;
@@ -19,6 +20,9 @@ contract SpazLivestream {
 
     mapping(uint => Stream) public streams;
     mapping(uint => StreamSegment) public segments;
+
+    // New: alias => streamId
+    mapping(string => uint) public aliasToStreamId;
 
     // Streamer moderation
     mapping(address => mapping(address => bool)) public viewerBans;
@@ -28,7 +32,7 @@ contract SpazLivestream {
     mapping(address => string) public themeMagnets;
 
     // --- Events ---
-    event StreamStarted(uint indexed streamId, address indexed creator, string firstMagnet);
+    event StreamStarted(uint indexed streamId, address indexed creator, string firstMagnet, string alias);
     event SegmentAdded(uint indexed streamId, uint indexed segmentId, string magnetURI);
     event Tipped(address indexed from, address indexed to, uint amount, uint indexed streamId);
     event ViewerBanned(address indexed streamer, address indexed viewer, string mode);
@@ -37,7 +41,9 @@ contract SpazLivestream {
 
     // --- Livestream Management ---
 
-    function startStream(string calldata firstMagnetURI) external returns (uint streamId) {
+    function startStream(string calldata firstMagnetURI, string calldata streamAlias) external returns (uint streamId) {
+        require(aliasToStreamId[streamAlias] == 0, "Alias already in use");
+
         streamId = nextStreamId++;
         uint segmentId = nextSegmentId++;
 
@@ -50,9 +56,12 @@ contract SpazLivestream {
         Stream storage s = streams[streamId];
         s.creator = msg.sender;
         s.isActive = true;
+        s.alias = streamAlias;
         s.segmentIds.push(segmentId);
 
-        emit StreamStarted(streamId, msg.sender, firstMagnetURI);
+        aliasToStreamId[streamAlias] = streamId;
+
+        emit StreamStarted(streamId, msg.sender, firstMagnetURI, streamAlias);
     }
 
     function addSegment(uint streamId, string calldata magnetURI) external {
@@ -85,6 +94,14 @@ contract SpazLivestream {
 
     function getStreamCreator(uint streamId) external view returns (address) {
         return streams[streamId].creator;
+    }
+
+    function getStreamAlias(uint streamId) external view returns (string memory) {
+        return streams[streamId].alias;
+    }
+
+    function getStreamIdByAlias(string calldata streamAlias) external view returns (uint) {
+        return aliasToStreamId[streamAlias];
     }
 
     // --- Tipping ---
