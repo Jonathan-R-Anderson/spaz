@@ -115,8 +115,8 @@ services:
     env_file:
       - .env
 
-  contracts:
-    build: ./contracts
+  contract_deployer:
+    build: ./contract_deployer
     volumes:
       - contract_data:/contracts
       - ./blockchain/abi:/app/abi
@@ -127,26 +127,37 @@ services:
     networks:
       - spaz_net
 
-  blockchain:
+  vpn:
+    image: kylemanna/openvpn
+    container_name: openvpn
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "1194:1194/udp"
+    volumes:
+      - ./openvpn-data:/etc/openvpn
+    restart: unless-stopped
+    networks:
+      - spaz_net
+    env_file:
+      - .env
+
+  contract_manager:
     build:
-      context: ./blockchain
+      context: ./contract_manager
     networks:
       - spaz_net
     command: python3 driver.py
     ports:
       - "5005:5005"
     depends_on:
-      - contracts
+      - vpn
+      - contract_deployer
     volumes:
       - ./blockchain/abi:/app/abi
       - ./blockchain/address:/app/address
       - key_data:/app/keys
       - contract_data:/contracts
-    environment:
-      - SPAZ_LIVESTREAM_ABI_PATH=/app/abi/SpazLivestream.json
-      - SPAZ_MODERATION_ABI_PATH=/app/abi/SpazModeration.json
-      - SPAZ_LIVESTREAM_ADDRESS_FILE=/app/address/SpazLivestream.txt
-      - SPAZ_MODERATION_ADDRESS_FILE=/app/address/SpazModeration.txt
     env_file:
       - .env
     logging:
