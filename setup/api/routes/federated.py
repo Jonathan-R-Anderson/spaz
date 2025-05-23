@@ -1,22 +1,15 @@
 import uuid
 import os
-from flask import Blueprint, render_template, request
+from flask import request, jsonify
+from . import blueprint
+from services.state import federations, systems
+from utils.common import generate_id
 
-
-
-federations = {}
-systems = {}
-
-# ---------------------------
-# Utilities
-# ---------------------------
-def generate_id():
-    return str(uuid.uuid4())
 
 # ---------------------------
 # 1. Join Existing Federation
 # ---------------------------
-@app.route('/federate/join', methods=['POST'])
+@blueprint.route('/federate/join', methods=['POST'])
 def join_federation():
     data = request.json
     federation_id = data.get("federation_id")
@@ -41,7 +34,7 @@ def join_federation():
 # ---------------------------
 # 2. Deploy Standalone System
 # ---------------------------
-@app.route('/federate/standalone', methods=['POST'])
+@blueprint.route('/federate/standalone', methods=['POST'])
 def create_standalone():
     data = request.json
     system_id = generate_id()
@@ -56,7 +49,7 @@ def create_standalone():
 # ---------------------------
 # 3. Create New Federation
 # ---------------------------
-@app.route('/federate/create', methods=['POST'])
+@blueprint.route('/federate/create', methods=['POST'])
 def create_federation():
     data = request.json
     federation_id = generate_id()
@@ -84,16 +77,13 @@ def create_federation():
 # ---------------------------
 # View All Federations
 # ---------------------------
-@app.route('/federate/list', methods=['GET'])
+@blueprint.route('/federate/list', methods=['GET'])
 def list_federations():
     return jsonify(federations)
 
 # ---------------------------
 # View All Systems
 # ---------------------------
-@app.route('/federate/systems', methods=['GET'])
+@blueprint.route('/federate/systems', methods=['GET'])
 def list_systems():
     return jsonify(systems)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
