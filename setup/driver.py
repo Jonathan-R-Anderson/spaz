@@ -1,20 +1,8 @@
-import os
-import logging
-from flask_cors import CORS
-from werkzeug.middleware.proxy_fix import ProxyFix
 from api import create_app
-from config import Config
-from gevent.pywsgi import WSGIServer
+from system.logging import setup_logger
 
-# Setup logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(Config.LOG_FILE_PATH),
-        logging.StreamHandler()
-    ]
-)
-
+setup_logger()
 app = create_app()
-CORS(app)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
