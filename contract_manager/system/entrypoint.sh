@@ -4,7 +4,10 @@ set -e
 export PYTHONPATH=/app 
 
 # Start anime-captcha server in background
-cd /app/anime-captcha && pnpm start &
+cd /app/anime-captcha && pnpm preview &
+
+# Ensure subsequent commands run from the application root
+cd /app
 
 # Run tests
 echo "🔍 Running unit tests..."

@@ -1,3 +1,8 @@
 import docker
 
-client = docker.from_env()
+
+def get_client():
+    try:
+        return docker.from_env()
+    except docker.errors.DockerException:
+        return None

@@ -9,3 +9,4 @@ class Config:
     PRINCIPAL = os.getenv("PRINCIPAL", f"HTTP/{DOMAIN}@{REALM}")
     KEYTAB_PATH = os.getenv("KEYTAB_PATH", "/kerberos/output/service.keytab")
     MASTER_PASS = os.getenv("KRB5_MASTER_PASSWORD")
+    LOG_FILE_PATH = os.getenv("SETUP_LOG_PATH", "logs/setup.log")

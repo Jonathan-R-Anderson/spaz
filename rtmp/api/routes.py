@@ -1,13 +1,17 @@
 import logging
 from flask import request, jsonify, Blueprint
 from multiprocessing import Process
-from services.magnet import retrieve_magnet_urls, seed_all_static_files_for_user
-from services.state import seeded_files
-from config import Config
-from utils.files import sanitize_eth_address
 import requests
 import os
 import hmac
+from config import Config
+from utils.files import sanitize_eth_address
+from services.state import seeded_files
+from services.magnet import seed_all_static_files_for_user
+import services.magnet as magnet_service
+
+def retrieve_magnet_urls(*args, **kwargs):
+    return magnet_service.retrieve_magnet_urls(*args, **kwargs)
 from services.auth import get_secret, store_streamer_info
 
 blueprint = Blueprint("rtmp", __name__)
