@@ -11,15 +11,14 @@ import LoadingPage from "./components/LoadingPage";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+interface AppProps {
+  targetPath: string;
+}
+
+const App: React.FC<AppProps> = ({ targetPath }) => {
   const [loading, setLoading] = useState(true);
-  const [targetPath, setTargetPath] = useState("/");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const target = params.get("target") || "/";
-    setTargetPath(target);
-
     const app = "loading";
 
     const checkAssets = async () => {
@@ -73,8 +72,11 @@ const App = () => {
         ) : (
           <BrowserRouter basename="/static/apps/loading/">
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/users/:eth_address" element={<LoadingPage onComplete={() => setLoading(false)} />} />
+              <Route path="/" element={<Index targetPath={targetPath} />} />
+              <Route
+                path="/users/:eth_address"
+                element={<LoadingPage onComplete={() => setLoading(false)} />}
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
