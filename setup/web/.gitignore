@@ -1,0 +1,6 @@
+node_modules
+dist
+
+bun.lockb
+public/favicon.ico
+src/assets/
