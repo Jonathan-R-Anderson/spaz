@@ -8,7 +8,7 @@ pytest_plugins = ['requests_mock']
 from flask import Flask
 from api import create_app
 
-ef test_index(client):
+def test_index(client):
     response = client.get('/')
     assert response.status_code == 200
 
