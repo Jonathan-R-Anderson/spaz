@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 from flask import Blueprint, request, jsonify
 from web3 import Web3
 from system.logging import setup_logger
@@ -16,7 +17,9 @@ w3 = Web3(Web3.HTTPProvider(web3_provider))
 logger.info(f"[INIT] Web3 provider set to: {web3_provider} | Connected: {w3.is_connected()}")
 
 MAGNET_CONTRACT_ADDRESS = os.getenv("MAGNET_CONTRACT_ADDRESS", "0x000000000000000000000000000000000000dEaD")
-MAGNET_CONTRACT_ABI_PATH = os.getenv("MAGNET_CONTRACT_ABI_PATH", "./abi/SpazLivestream.json")
+# Resolve the ABI path relative to this file so tests can run from any CWD
+default_abi_path = Path(__file__).resolve().parents[2] / "abi" / "SpazLivestream.json"
+MAGNET_CONTRACT_ABI_PATH = os.getenv("MAGNET_CONTRACT_ABI_PATH", str(default_abi_path))
 
 try:
     with open(MAGNET_CONTRACT_ABI_PATH) as f:
