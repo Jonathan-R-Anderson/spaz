@@ -21,23 +21,28 @@ MAGNET_CONTRACT_ADDRESS = os.getenv("MAGNET_CONTRACT_ADDRESS", "0x00000000000000
 default_abi_path = Path(__file__).resolve().parents[2] / "abi" / "SpazLivestream.json"
 MAGNET_CONTRACT_ABI_PATH = os.getenv("MAGNET_CONTRACT_ABI_PATH", str(default_abi_path))
 
+# Load ABI if present. Tests patch `magnet_contract`, so we avoid failing on missing files.
+magnet_contract_abi = None
 try:
     with open(MAGNET_CONTRACT_ABI_PATH) as f:
         magnet_contract_abi = json.load(f)
     logger.info(f"[INIT] Loaded ABI from {MAGNET_CONTRACT_ABI_PATH}")
+except FileNotFoundError:
+    logger.warning(f"[INIT] ABI file not found at {MAGNET_CONTRACT_ABI_PATH}")
 except Exception as e:
     logger.exception(f"[INIT] Failed to load ABI: {e}")
-    raise
 
-try:
-    magnet_contract = w3.eth.contract(
-        address=Web3.to_checksum_address(MAGNET_CONTRACT_ADDRESS),
-        abi=magnet_contract_abi
-    )
-    logger.info(f"[INIT] Contract initialized at {MAGNET_CONTRACT_ADDRESS}")
-except Exception as e:
-    logger.exception(f"[INIT] Failed to initialize contract: {e}")
-    raise
+# Initialize contract only if ABI was loaded
+magnet_contract = None
+if magnet_contract_abi:
+    try:
+        magnet_contract = w3.eth.contract(
+            address=Web3.to_checksum_address(MAGNET_CONTRACT_ADDRESS),
+            abi=magnet_contract_abi
+        )
+        logger.info(f"[INIT] Contract initialized at {MAGNET_CONTRACT_ADDRESS}")
+    except Exception as e:
+        logger.exception(f"[INIT] Failed to initialize contract: {e}")
 
 @update_site_routes.route("/commit_magnet", methods=["POST"])
 def commit_magnet():
