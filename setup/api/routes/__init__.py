@@ -1,4 +1,4 @@
-from flask import Blueprint
+"""Route blueprints for the setup service."""
 
-# Define the main blueprint for views
-blueprint = Blueprint('main', __name__)
+# Individual blueprints are defined in their respective modules and imported
+# by the application factory as needed.

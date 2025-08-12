@@ -1,15 +1,21 @@
-import uuid
+"""Routes for managing federations of systems."""
+
 import os
-from flask import request, jsonify
-from . import blueprint
+import uuid
+from flask import Blueprint, jsonify, request
+
 from services.state import federations, systems
 from utils.common import generate_id
+
+# Similar to ``kerberos_bp``, expose ``federated_bp`` for registration in the
+# application factory.
+federated_bp = Blueprint("federated", __name__)
 
 
 # ---------------------------
 # 1. Join Existing Federation
 # ---------------------------
-@blueprint.route('/federate/join', methods=['POST'])
+@federated_bp.route('/federate/join', methods=['POST'])
 def join_federation():
     data = request.json
     federation_id = data.get("federation_id")
@@ -34,7 +40,7 @@ def join_federation():
 # ---------------------------
 # 2. Deploy Standalone System
 # ---------------------------
-@blueprint.route('/federate/standalone', methods=['POST'])
+@federated_bp.route('/federate/standalone', methods=['POST'])
 def create_standalone():
     data = request.json
     system_id = generate_id()
@@ -49,7 +55,7 @@ def create_standalone():
 # ---------------------------
 # 3. Create New Federation
 # ---------------------------
-@blueprint.route('/federate/create', methods=['POST'])
+@federated_bp.route('/federate/create', methods=['POST'])
 def create_federation():
     data = request.json
     federation_id = generate_id()
@@ -77,13 +83,13 @@ def create_federation():
 # ---------------------------
 # View All Federations
 # ---------------------------
-@blueprint.route('/federate/list', methods=['GET'])
+@federated_bp.route('/federate/list', methods=['GET'])
 def list_federations():
     return jsonify(federations)
 
 # ---------------------------
 # View All Systems
 # ---------------------------
-@blueprint.route('/federate/systems', methods=['GET'])
+@federated_bp.route('/federate/systems', methods=['GET'])
 def list_systems():
     return jsonify(systems)
