@@ -1,10 +1,16 @@
 import os
+from pathlib import Path
 from flask import Flask, send_from_directory
 from api.routes.kerberos import kerberos_bp
 from api.routes.federated import federated_bp
 
 def create_app():
-    app = Flask(__name__, static_folder="web/dist", static_url_path="/")
+    base_dir = Path(__file__).resolve().parent.parent
+    dist_dir = base_dir / "web" / "dist"
+    web_dir = base_dir / "web"
+    static_dir = dist_dir if dist_dir.exists() else web_dir
+
+    app = Flask(__name__, static_folder=str(static_dir), static_url_path="/")
     app.register_blueprint(kerberos_bp)
     app.register_blueprint(federated_bp)
 
